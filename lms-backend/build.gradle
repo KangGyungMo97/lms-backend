@@ -33,7 +33,6 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	//junit
 	testImplementation 'org.junit.jupiter:junit-jupiter'
-	testRuntimeOnly 'org.junit.platform:junit-platform-launcher' 
 	//h2
 	implementation 'org.springframework.boot:spring-boot-h2console:4.1.1'
 	runtimeOnly 'com.h2database:h2'
@@ -43,6 +42,11 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     //thymeleaf
     implementation 'nz.net.ultraq.thymeleaf:thymeleaf-layout-dialect'
+    
+    /* 스프링 시큐리티 */
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'
+    
 }
 
 tasks.named('test') {
