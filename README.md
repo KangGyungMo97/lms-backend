@@ -1,5 +1,5 @@
 # dependencies
-* SringBoot - 4.1.1  
+* SpringBoot - 4.1.1  
 * Spring Tools - 4.32.2  
 * jpa  
 * mariaDB  
