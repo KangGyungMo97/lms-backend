@@ -11,26 +11,24 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class UserService {
 	
-	private final UserStudentRepository usr;
-	
-	private final UserTeacherRepository utr;
+	private final UsersRepository usr;
 	
 	private final PasswordEncoder passwordEncoder;
 	
-	public UserStudent create(String userId, String userName, String tempPassword, String userEmail, String userTel, String userBday, String deptId) {
+	public Users create(String userId, String userName, String tempPassword, String userEmail, String userTel, String userBday, String deptId) {
 
-			UserStudent user = new UserStudent();
+			Users user = new Users();
 			
-			user.setUserId(userId);                                        // PK (학번) - 직접 입력
-			user.setUserName(userName);
-			user.setUserPassword(passwordEncoder.encode(tempPassword));    // 임시 비번 암호화
-			user.setUserEmail(userEmail);
-			user.setUserTel(userTel);
-			user.setUserBday(userBday);
+			user.setUsersId(userId);                                        // PK (학번) - 직접 입력
+			user.setUsersName(userName);
+			user.setUsersPassword(passwordEncoder.encode(tempPassword));    // 임시 비번 암호화
+			user.setUsersEmail(userEmail);
+			user.setUsersTel(userTel);
+			user.setUsersBday(userBday);
 			user.setDeptId(deptId);
 			
-			user.setUserCreated(LocalDateTime.now());                   
-			user.setUserStatus("A");                                       
+			user.setUsersCreated(LocalDateTime.now());                   
+			user.setUsersStatus("A");                                       
 			
 			usr.save(user);
 			return user;
