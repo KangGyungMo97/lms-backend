@@ -35,3 +35,10 @@ out/
 
 ### VS Code ###
 .vscode/
+
+# DB 및 보안 설정 파일 exclusion
+src/main/resources/application-maria.properties
+src/main/resources/application-h2.properties
+src/main/resources/application-prod.properties
+# STS workspace
+.metadata/
