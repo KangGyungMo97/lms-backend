@@ -30,20 +30,19 @@ public class UserSecurityService implements UserDetailsService {
 	@Override
 	public UserDetails loadUserByUsername(String userName) throws UsernameNotFoundException {
 
-		// 학번으로 계정 
+		// 학번으로 계정찾기
 		Optional<UserStudent> _user = usr.findById(userName);
 
-		// 없으면 예외
+		// 없으면 예외 -> 로그인 실패
 		if (_user.isEmpty()) {
 			throw new UsernameNotFoundException("사용자를 찾을 수 없습니다.");
 		}
-
+		
 		UserStudent user = _user.get();
 
-		// 권한 목록 만들기
 		List<GrantedAuthority> authorities = new ArrayList<>();
 
-		// 교수 권한 결정
+		// 교수 테이블에 있는지 확인
 		Optional<UserTeacher> _teacher = utr.findByUserId(userName);
 
 		if (_teacher.isEmpty()) {
