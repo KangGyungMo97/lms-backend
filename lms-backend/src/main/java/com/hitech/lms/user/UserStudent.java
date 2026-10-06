@@ -12,7 +12,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class UserStudent {
-
+//DDDDD
 	@Id
 	@Column(length = 20, nullable = false)
 	private String userId; // 사용자 ID
