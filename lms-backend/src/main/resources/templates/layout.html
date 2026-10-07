@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title layout:title-pattern="$CONTENT_TITLE | $LAYOUT_TITLE">하이테크 LMS</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: 'Malgun Gothic', sans-serif; color: #222; background: #f7f7f9; }
+    header { background: #1f3a5f; color: #fff; }
+    .bar { max-width: 1100px; margin: 0 auto; padding: 0 16px; height: 56px;
+           display: flex; align-items: center; justify-content: space-between; }
+    .logo { color: #fff; text-decoration: none; font-weight: bold; font-size: 18px; }
+    nav a { color: #dfe7f2; text-decoration: none; margin-left: 16px; font-size: 14px; }
+    nav a:hover { color: #fff; }
+    main { max-width: 1100px; margin: 24px auto; padding: 0 16px; min-height: 60vh; }
+    footer { text-align: center; color: #888; font-size: 12px; padding: 24px 0; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="bar">
+      <a class="logo" th:href="@{/}">하이테크 LMS</a>
+      <nav>
+        <a th:href="@{/subject/list}">교육안내</a>
+        <a th:href="@{/lesson/list}">수업참여</a>
+        <a th:href="@{/homework/list}">나의 학습</a>
+        <a th:href="@{/info}">정보마당</a>
+        <a th:href="@{/board/list}">자유게시판</a>
+        <a th:href="@{/about}">기관소개</a>
+        <a th:href="@{/login}">로그인</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- 각 화면의 내용이 여기에 들어감 -->
+  <main layout:fragment="content"></main>
+
+  <footer>© 하이테크 LMS</footer>
+</body>
+</html>

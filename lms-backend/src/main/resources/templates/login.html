@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head>
+  <title>로그인</title>
+</head>
+<body>
+  <div layout:fragment="content" style="max-width:360px; margin:40px auto;">
+    <h2>로그인</h2>
+
+    <p th:if="${param.error}"  style="color:#c0392b;">아이디 또는 비밀번호가 올바르지 않습니다.</p>
+    <p th:if="${param.logout}" style="color:#2e7d32;">로그아웃되었습니다.</p>
+
+    <form th:action="@{/login}" method="post">
+      <p><input type="text"     name="username" placeholder="학번 / 사번" required style="width:100%; padding:8px;"></p>
+      <p><input type="password" name="password" placeholder="비밀번호"     required style="width:100%; padding:8px;"></p>
+      <p><button type="submit" style="width:100%; padding:10px;">로그인</button></p>
+    </form>
+  </div>
+</body>
+</html>

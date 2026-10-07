@@ -8,8 +8,6 @@ import lombok.Setter;
 @Getter
 @Setter
 public class Timetable {
-
-	/*학생별 시간표라면 user_id 추가 필요 → 팀 확인 */
 	
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
