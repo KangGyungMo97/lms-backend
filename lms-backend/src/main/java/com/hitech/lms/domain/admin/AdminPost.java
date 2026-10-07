@@ -9,7 +9,6 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
-/** 관리자 게시글 (admin_post) */
 @Entity
 @Getter
 @Setter
