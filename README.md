@@ -14,6 +14,11 @@ Spring Boot 4.1.1 · Java 17 · Gradle · JPA · H2 · Spring Security · Thymel
 4. 서버 실행 → `http://localhost:8080`
 5. H2 콘솔 `http://localhost:8080/h2-console` (JDBC URL은 `application.properties`와 똑같이)
 6. 테스트 계정은 `docs/test-data.sql` 실행 (서버를 한 번 띄워 테이블이 생긴 뒤)
+7. 
+
+### 테스트 데이터 쿼리
+**- 전에 공유했던 구글 드라이브에 'test-data.sql' 파일에 쿼리를 저장해 놓을테니, 확인후 직접 추가 바람.**
+
 
 ### 테스트 계정 (로컬 H2 전용, 비밀번호 `1234`)
 | 아이디 | 구분 | 로그인 후 이동 |
@@ -22,20 +27,16 @@ Spring Boot 4.1.1 · Java 17 · Gradle · JPA · H2 · Spring Security · Thymel
 | 2510001 | 2학년 | /dashboard/student |
 | 2630001 | 하이테크 | /dashboard/student |
 | 2090001 | 교수 | /dashboard/teacher |
-| 2600001 | 관리자 | /dashboard/admin |
+| 0000001 | 관리자 | /dashboard/admin |
 
 - 학번 규칙: **연도 2 + 과정 1 + 순번 4** (과정: 1 일반 / 3 하이테크 / 9 교수 / 0 관리자)
 - 학년은 학번이 아니라 `users.user_grade` 컬럼으로 관리
 - 권한: `users.user_role` → S 학생 / P 교수 / A 관리자
 
 ### 작업 규칙
-- 내 담당 **Controller · Service의 TODO 주석**부터 채우기
 - **공통 파일은 수정 전에 팀에 공유**: Entity, `SecurityConfig`, `layout.html`
-- 새 화면은 `main.html`을 복사해서 `layout:fragment="content"` 안만 작성
-- ⚠️ `layout:decorate="~{layout}"`는 **개별 화면에만**. `layout.html`에 넣으면 무한 반복으로 페이지가 멈춤
 - Controller 클래스에 `@RequestMapping("/board")`가 있으면 메서드는 `@GetMapping("/list")`처럼 **뒷부분만**
 - JPA는 컬럼명을 밑줄로 바꿈 (`noticeIsUse` → `notice_is_use`) → INSERT는 h2-console의 실제 컬럼명 기준
-- 로그아웃은 **POST만** 가능 (`<form th:action="@{/logout}" method="post">`)
 
 ### Git
 ```bash
@@ -57,18 +58,18 @@ src/main/java/com/hitech/lms
 ├── domain
 │   ├── user        Users, Dept / UsersRepository, DeptRepository
 │   │               UserService(계정 등록), UserSecurityService(로그인 조회·권한)
-│   │               LoginController            GET /login                         [강경모]
-│   ├── main        MainController             GET /                              [강경모]
-│   │               DashboardController        /dashboard → 권한별 이동            [강경모]
-│   ├── course      Subject · Course · Lesson · Timetable  (Entity·Repo·Service·Controller)  [김경모]
-│   │               ReplayController           /replay                            [홍승훈]
-│   ├── study       Att (출석)  /attendance                                        [김경모]
-│   │               Homework · Submit (과제·제출)  /homework                        [홍승훈]
-│   ├── qna         QnaBoard · Answer  /qna                                        [홍승훈]
-│   ├── board       Board (자유게시판)  /board                                      [홍승훈]
-│   │               Notice (공지)  /notice                                         [김경모]
-│   ├── admin       AdminPost  /admin  (계정 등록은 UserService.create())           [김경모]
-│   └── file        FileAtt · FileDetail / FileService                            [공통]
+│   │               LoginController            GET /login                         
+│   ├── main        MainController             GET /                              
+│   │               DashboardController        /dashboard → 권한별 이동            
+│   ├── course      Subject · Course · Lesson · Timetable  (Entity·Repo·Service·Controller)  
+│   │               ReplayController           /replay                            
+│   ├── study       Att (출석)  /attendance                                        
+│   │               Homework · Submit (과제·제출)  /homework                        
+│   ├── qna         QnaBoard · Answer  /qna                                       
+│   ├── board       Board (자유게시판)  /board                                      
+│   │               Notice (공지)  /notice                                         
+│   ├── admin       AdminPost  /admin  (계정 등록은 UserService.create())           
+│   └── file        FileAtt · FileDetail / FileService                            
 └── global
     └── config      SecurityConfig  (로그인 · 권한 · PasswordEncoder)
 
