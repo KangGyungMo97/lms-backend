@@ -36,8 +36,6 @@ public class BoardController {
 
 	private final FileService fs;
 
-	// ※ SecurityConfig 에 @EnableMethodSecurity 가 아직 없어서 @PreAuthorize 가 동작하지 않음
-	//    → 로그인 안 한 경우(principal == null) 를 메서드 안에서 직접 막아 둠
 	private static final String LOGIN_REDIRECT = "redirect:/login";
 
 	// 게시글 목록
@@ -67,7 +65,7 @@ public class BoardController {
 		return "board/detail";
 	}
 
-	// 첨부파일 내려받기 (P3 - 안 해도 OK, FileService 완성 후 구현)
+	// 첨부파일 내려받기
 	@PreAuthorize("isAuthenticated()")
 	@GetMapping("/download/{fileId}")
 	public ResponseEntity<Resource> download(@PathVariable("fileId") Long fileId) {
@@ -143,7 +141,7 @@ public class BoardController {
 		return "redirect:/board/list";
 	}
 
-	// ===== 댓글 (P3 - 안 해도 OK, 댓글 엔티티 생기면 구현) =====
+	// ===== 댓글 =====
 
 	// 댓글 작성
 	@PreAuthorize("isAuthenticated()")

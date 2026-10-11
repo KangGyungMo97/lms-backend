@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+
+<head>
+  <title>과제</title>
+  <style>
+    .board-head { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 12px; }
+    .board-head h2 { margin: 0; }
+    .btn { display: inline-block; padding: 7px 14px; border: 1px solid #1f3a5f; border-radius: 4px;
+           background: #fff; color: #1f3a5f; text-decoration: none; font-size: 14px; cursor: pointer; }
+    .btn-primary { background: #1f3a5f; color: #fff; }
+    .total { color: #666; font-size: 13px; margin: 8px 0; }
+    table.board { width: 100%; border-collapse: collapse; background: #fff; }
+    table.board th, table.board td { padding: 10px 8px; border-bottom: 1px solid #e5e5e5; font-size: 14px; }
+    table.board th { background: #eef2f7; border-top: 2px solid #1f3a5f; }
+    table.board td { text-align: center; }
+    table.board td.title { text-align: left; }
+    table.board td.title a { color: #222; text-decoration: none; }
+    table.board td.title a:hover { text-decoration: underline; }
+    .empty { padding: 40px 0; color: #888; }
+    /* 상태 배지 */
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 12px; }
+    .b-none { background: #fdecea; color: #c0392b; }   /* 미제출 */
+    .b-done { background: #e8f0fb; color: #1f3a5f; }   /* 제출완료 · 진행중 */
+    .b-graded { background: #e7f5ec; color: #1e7e46; } /* 채점완료 */
+    .b-closed { background: #eee; color: #777; }       /* 마감 */
+    .paging { display: flex; justify-content: center; gap: 4px; margin: 20px 0; padding: 0; list-style: none; }
+    .paging a, .paging span { display: block; min-width: 32px; padding: 6px 8px; border: 1px solid #ccc;
+           border-radius: 4px; text-align: center; text-decoration: none; color: #333; font-size: 13px; }
+    .paging .active span { background: #1f3a5f; color: #fff; border-color: #1f3a5f; }
+    .paging .disabled span { color: #bbb; }
+  </style>
+</head>
+
+<body>
+  <div layout:fragment="content">
+
+    <div class="board-head">
+      <h2>과제</h2>
+    </div>
+
+    <div class="board-head">
+      <p class="total">전체 <b th:text="${paging.totalElements}">0</b>건</p>
+      <!-- 과제 등록은 교수만 -->
+      <a th:if="${isTeacher}" th:href="@{/homework/create}" class="btn btn-primary">과제 등록</a>
+    </div>
+
+    <table class="board">
+      <thead>
+        <tr>
+          <th style="width:70px">번호</th>
+          <th style="width:150px">과목</th>
+          <th>제목</th>
+          <th style="width:100px">교수</th>
+          <th style="width:190px">기간</th>
+          <th style="width:100px" th:text="${isTeacher} ? '상태' : '제출 여부'">제출 여부</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:if="${paging.totalElements == 0}">
+          <td colspan="6" class="empty">등록된 과제가 없습니다.</td>
+        </tr>
+        <!-- 번호 = 전체 개수 - (현재 페이지 * 10) - 반복 순서  → 최신 과제가 가장 큰 번호 -->
+        <tr th:each="hw, loop : ${paging}"
+            th:with="closed=${hw.homeworkEndDate.isBefore(today)},
+                     st=${isTeacher ? null : submitStatus.get(hw.homeworkId)}">
+          <td th:text="${paging.totalElements - (paging.number * paging.size) - loop.index}">1</td>
+          <td th:text="${hw.lesson.course.subject.subjectName}">데이터베이스</td>
+          <td class="title">
+            <a th:href="@{|/homework/detail/${hw.homeworkId}|}" th:text="${hw.homeworkTitle}">과제 제목</a>
+          </td>
+          <td th:text="${hw.lesson.course.teacher.userName}">교수</td>
+          <td>
+            <span th:text="${#temporals.format(hw.homeworkStartDate, 'MM-dd')}">10-01</span>
+            ~ <span th:text="${#temporals.format(hw.homeworkEndDate, 'yyyy-MM-dd')}">2026-10-08</span>
+          </td>
+          <!-- 교수: 진행중 / 마감 -->
+          <td th:if="${isTeacher}">
+            <span th:if="${closed}" class="badge b-closed">마감</span>
+            <span th:unless="${closed}" class="badge b-done">진행중</span>
+          </td>
+          <!-- 학생: 채점완료 / 제출완료 / 미제출 / 마감(안 냈는데 기한 지남) -->
+          <td th:unless="${isTeacher}">
+            <span th:if="${st == 'R'}" class="badge b-graded">채점완료</span>
+            <span th:if="${st != null and st != 'R'}" class="badge b-done">제출완료</span>
+            <span th:if="${st == null and closed}" class="badge b-closed">마감</span>
+            <span th:if="${st == null and !closed}" class="badge b-none">미제출</span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- 페이징: 현재 페이지 앞뒤로 5페이지씩 표시 -->
+    <ul class="paging" th:if="${paging.totalPages > 0}">
+      <li th:classappend="${!paging.hasPrevious()} ? 'disabled'">
+        <a th:if="${paging.hasPrevious()}" th:href="@{/homework/list(page=${paging.number - 1})}">이전</a>
+        <span th:unless="${paging.hasPrevious()}">이전</span>
+      </li>
+      <li th:each="page : ${#numbers.sequence(0, paging.totalPages - 1)}"
+          th:if="${page >= paging.number - 5 and page <= paging.number + 5}"
+          th:classappend="${page == paging.number} ? 'active'">
+        <a th:unless="${page == paging.number}" th:href="@{/homework/list(page=${page})}" th:text="${page + 1}">1</a>
+        <span th:if="${page == paging.number}" th:text="${page + 1}">1</span>
+      </li>
+      <li th:classappend="${!paging.hasNext()} ? 'disabled'">
+        <a th:if="${paging.hasNext()}" th:href="@{/homework/list(page=${paging.number + 1})}">다음</a>
+        <span th:unless="${paging.hasNext()}">다음</span>
+      </li>
+    </ul>
+
+  </div>
+</body>
+
+</html>
