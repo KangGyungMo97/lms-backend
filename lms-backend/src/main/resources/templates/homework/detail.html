@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+
+<head>
+  <title>과제 상세</title>
+  <style>
+    .post { background: #fff; border-top: 2px solid #1f3a5f; border-bottom: 1px solid #e5e5e5; }
+    .post-title { margin: 0; padding: 16px; font-size: 20px; border-bottom: 1px solid #e5e5e5; }
+    .post-meta { padding: 10px 16px; color: #666; font-size: 13px; border-bottom: 1px solid #e5e5e5; }
+    .post-meta span + span::before { content: "|"; margin: 0 8px; color: #ccc; }
+    .post-content { padding: 24px 16px; min-height: 160px; line-height: 1.7; white-space: pre-wrap; }
+    .dday { font-weight: bold; color: #c0392b; }
+    .dday.closed { color: #777; }
+    /* 내 제출 내역 (학생) */
+    .my-submit { margin-top: 20px; background: #fff; border: 1px solid #e5e5e5; border-radius: 4px; padding: 16px; }
+    .my-submit h4 { margin: 0 0 10px; }
+    .my-submit dl { display: grid; grid-template-columns: 90px 1fr; gap: 6px 10px; margin: 0; font-size: 14px; }
+    .my-submit dt { color: #666; }
+    .my-submit dd { margin: 0; white-space: pre-wrap; }
+    .notice-none { color: #c0392b; font-size: 14px; margin: 0; }
+    .actions { display: flex; justify-content: space-between; margin-top: 16px; }
+    .btn { display: inline-block; padding: 7px 14px; border: 1px solid #1f3a5f; border-radius: 4px;
+           background: #fff; color: #1f3a5f; text-decoration: none; font-size: 14px; }
+  </style>
+</head>
+
+<body>
+  <div layout:fragment="content">
+
+    <h2>과제</h2>
+
+    <div class="post">
+      <h3 class="post-title" th:text="${homework.homeworkTitle}">과제 제목</h3>
+      <div class="post-meta">
+        <span>과목 <b th:text="${homework.lesson.course.subject.subjectName}">데이터베이스</b></span>
+        <span>수업 <span th:text="${homework.lesson.lessonTitle}">6주차</span></span>
+        <span>교수 <span th:text="${homework.lesson.course.teacher.userName}">교수</span></span>
+        <span>기간
+          <span th:text="${#temporals.format(homework.homeworkStartDate, 'yyyy-MM-dd')}">2026-10-01</span>
+          ~ <span th:text="${#temporals.format(homework.homeworkEndDate, 'yyyy-MM-dd')}">2026-10-08</span>
+          <!-- 마감 / D-day / D-n  (closed, daysLeft 는 컨트롤러에서 계산) -->
+          <span th:if="${closed}" class="dday closed">(마감)</span>
+          <span th:if="${!closed and daysLeft == 0}" class="dday">(D-day)</span>
+          <span th:if="${!closed and daysLeft > 0}" class="dday" th:text="|(D-${daysLeft})|">(D-3)</span>
+        </span>
+      </div>
+      <!-- white-space: pre-wrap 으로 줄바꿈 그대로 표시, th:text 라 HTML 태그는 글자로 나옴(안전) -->
+      <div class="post-content" th:text="${homework.homeworkContent}">과제 내용</div>
+    </div>
+
+    <!-- ===== 학생: 내 제출 내역 ===== -->
+    <div class="my-submit" th:unless="${isTeacher}">
+      <h4>내 제출 내역</h4>
+
+      <p class="notice-none" th:if="${mySubmit == null}"
+         th:text="${closed} ? '제출하지 않았고, 마감되었습니다.' : '아직 제출하지 않았습니다.'">아직 제출하지 않았습니다.</p>
+
+      <dl th:if="${mySubmit != null}">
+        <dt>제출일</dt>
+        <dd th:text="${#temporals.format(mySubmit.submitDate, 'yyyy-MM-dd HH:mm')}">2026-10-05 14:20</dd>
+        <dt>상태</dt>
+        <dd th:text="${mySubmit.submitIsDone == 'R'} ? '채점완료' : '제출완료'">제출완료</dd>
+        <dt>제출 내용</dt>
+        <dd th:text="${mySubmit.submitContent}">내용</dd>
+        <th:block th:if="${mySubmit.submitIsDone == 'R'}">
+          <dt>점수</dt>
+          <dd th:text="|${mySubmit.submitScore}점|">95점</dd>
+          <dt>피드백</dt>
+          <dd th:text="${mySubmit.submitFeedback} ?: '-'">피드백</dd>
+        </th:block>
+      </dl>
+
+      <!-- 과제 제출 · 제출 수정 폼은 '과제 제출' 기능 만들 때 여기에 추가
+           (POST /homework/submit/create/{id}, submitForm 은 컨트롤러에서 이미 넘겨줌) -->
+    </div>
+
+    <div class="actions">
+      <a th:href="@{/homework/list}" class="btn">목록</a>
+      <!-- 과제를 낸 교수에게만: 수정 · 삭제 · 제출 현황 버튼은 해당 기능 만들 때 추가
+      <div th:if="${isOwner}">
+        <a th:href="@{|/homework/submit/list/${homework.homeworkId}|}" class="btn">제출 현황</a>
+        <a th:href="@{|/homework/modify/${homework.homeworkId}|}" class="btn">수정</a>
+      </div>
+      -->
+    </div>
+
+  </div>
+</body>
+
+</html>
