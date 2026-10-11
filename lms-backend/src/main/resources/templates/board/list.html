@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+
+<head>
+  <title>자유게시판</title>
+  <style>
+    .board-head { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 12px; }
+    .board-head h2 { margin: 0; }
+    .search { display: flex; gap: 6px; }
+    .search input { padding: 7px 10px; border: 1px solid #ccc; border-radius: 4px; width: 240px; }
+    .btn { display: inline-block; padding: 7px 14px; border: 1px solid #1f3a5f; border-radius: 4px;
+           background: #fff; color: #1f3a5f; text-decoration: none; font-size: 14px; cursor: pointer; }
+    .btn-primary { background: #1f3a5f; color: #fff; }
+    .total { color: #666; font-size: 13px; margin: 8px 0; }
+    table.board { width: 100%; border-collapse: collapse; background: #fff; }
+    table.board th, table.board td { padding: 10px 8px; border-bottom: 1px solid #e5e5e5; font-size: 14px; }
+    table.board th { background: #eef2f7; border-top: 2px solid #1f3a5f; }
+    table.board td.title { text-align: left; }
+    table.board td.title a { color: #222; text-decoration: none; }
+    table.board td.title a:hover { text-decoration: underline; }
+    table.board td { text-align: center; }
+    .empty { padding: 40px 0; color: #888; }
+    .paging { display: flex; justify-content: center; gap: 4px; margin: 20px 0; padding: 0; list-style: none; }
+    .paging a, .paging span { display: block; min-width: 32px; padding: 6px 8px; border: 1px solid #ccc;
+           border-radius: 4px; text-align: center; text-decoration: none; color: #333; font-size: 13px; }
+    .paging .active span { background: #1f3a5f; color: #fff; border-color: #1f3a5f; }
+    .paging .disabled span { color: #bbb; }
+  </style>
+</head>
+
+<body>
+  <div layout:fragment="content">
+
+    <div class="board-head">
+      <h2>자유게시판</h2>
+      <!-- 검색: 제목 · 내용 · 작성자 이름 (GET 이라 CSRF 필요 없음) -->
+      <form class="search" th:action="@{/board/list}" method="get">
+        <input type="text" name="kw" th:value="${kw}" placeholder="제목, 내용, 작성자 검색">
+        <button type="submit" class="btn">검색</button>
+      </form>
+    </div>
+
+    <div class="board-head">
+      <p class="total">전체 <b th:text="${paging.totalElements}">0</b>건</p>
+      <a th:href="@{/board/create}" class="btn btn-primary">글쓰기</a>
+    </div>
+
+    <table class="board">
+      <thead>
+        <tr>
+          <th style="width:80px">번호</th>
+          <th>제목</th>
+          <th style="width:120px">작성자</th>
+          <th style="width:120px">작성일</th>
+          <th style="width:80px">조회</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:if="${paging.totalElements == 0}">
+          <td colspan="5" class="empty">등록된 게시글이 없습니다.</td>
+        </tr>
+        <!-- 번호 = 전체 개수 - (현재 페이지 * 10) - 반복 순서  → 최신 글이 가장 큰 번호 -->
+        <tr th:each="board, loop : ${paging}">
+          <td th:text="${paging.totalElements - (paging.number * paging.size) - loop.index}">1</td>
+          <td class="title">
+            <a th:href="@{|/board/detail/${board.boardId}|}" th:text="${board.boardTitle}">제목</a>
+          </td>
+          <td th:text="${board.writer.userName}">작성자</td>
+          <td th:text="${#temporals.format(board.boardCreateDate, 'yyyy-MM-dd')}">2026-10-11</td>
+          <td th:text="${board.boardViewCount}">0</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- 페이징: 현재 페이지 앞뒤로 5페이지씩 표시, 검색어(kw) 유지 -->
+    <ul class="paging" th:if="${paging.totalPages > 0}">
+      <li th:classappend="${!paging.hasPrevious()} ? 'disabled'">
+        <a th:if="${paging.hasPrevious()}" th:href="@{/board/list(page=${paging.number - 1}, kw=${kw})}">이전</a>
+        <span th:unless="${paging.hasPrevious()}">이전</span>
+      </li>
+      <li th:each="page : ${#numbers.sequence(0, paging.totalPages - 1)}"
+          th:if="${page >= paging.number - 5 and page <= paging.number + 5}"
+          th:classappend="${page == paging.number} ? 'active'">
+        <a th:unless="${page == paging.number}" th:href="@{/board/list(page=${page}, kw=${kw})}" th:text="${page + 1}">1</a>
+        <span th:if="${page == paging.number}" th:text="${page + 1}">1</span>
+      </li>
+      <li th:classappend="${!paging.hasNext()} ? 'disabled'">
+        <a th:if="${paging.hasNext()}" th:href="@{/board/list(page=${paging.number + 1}, kw=${kw})}">다음</a>
+        <span th:unless="${paging.hasNext()}">다음</span>
+      </li>
+    </ul>
+
+  </div>
+</body>
+
+</html>

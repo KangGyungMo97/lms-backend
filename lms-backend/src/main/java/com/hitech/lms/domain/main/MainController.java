@@ -15,7 +15,7 @@ public class MainController {
 
 	// 기관소개 - 과정 소개 (ABT-01)
 	@PreAuthorize("isAuthenticated()")
-	@GetMapping("/about/course")
+	@GetMapping({"/about", "/about/course"})
 	public String aboutCourse() {
 		return "about/course";
 	}

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+
+<head>
+  <title>게시글 상세</title>
+  <style>
+    .post { background: #fff; border-top: 2px solid #1f3a5f; border-bottom: 1px solid #e5e5e5; }
+    .post-title { margin: 0; padding: 16px; font-size: 20px; border-bottom: 1px solid #e5e5e5; }
+    .post-meta { padding: 10px 16px; color: #666; font-size: 13px; border-bottom: 1px solid #e5e5e5; }
+    .post-meta span + span::before { content: "|"; margin: 0 8px; color: #ccc; }
+    .post-content { padding: 24px 16px; min-height: 200px; line-height: 1.7; white-space: pre-wrap; }
+    .actions { display: flex; justify-content: space-between; margin-top: 16px; }
+    .btn { display: inline-block; padding: 7px 14px; border: 1px solid #1f3a5f; border-radius: 4px;
+           background: #fff; color: #1f3a5f; text-decoration: none; font-size: 14px; }
+    .btn-danger { border-color: #c0392b; color: #c0392b; }
+  </style>
+</head>
+
+<body>
+  <div layout:fragment="content">
+
+    <h2>자유게시판</h2>
+
+    <div class="post">
+      <h3 class="post-title" th:text="${board.boardTitle}">제목</h3>
+      <div class="post-meta">
+        <span>작성자 <b th:text="${board.writer.userName}">작성자</b></span>
+        <span>작성일 <span th:text="${#temporals.format(board.boardCreateDate, 'yyyy-MM-dd')}">2026-10-11</span></span>
+        <span th:if="${board.boardUpdateDate != board.boardCreateDate}">수정일 <span th:text="${#temporals.format(board.boardUpdateDate, 'yyyy-MM-dd')}">2026-10-11</span></span>
+        <span>조회 <span th:text="${board.boardViewCount}">0</span></span>
+      </div>
+      <!-- white-space: pre-wrap 으로 줄바꿈 그대로 표시, th:text 라 HTML 태그는 글자로 나옴(안전) -->
+      <div class="post-content" th:text="${board.boardContent}">내용</div>
+    </div>
+
+    <!-- 추천(후순위) · 첨부파일 · 댓글(P3)은 기능이 생기면 여기에 추가 -->
+
+    <div class="actions">
+      <a th:href="@{/board/list}" class="btn">목록</a>
+      <div>
+        <a th:if="${isWriter}" th:href="@{|/board/modify/${board.boardId}|}" class="btn">수정</a>
+        <a th:if="${canDelete}" th:href="@{|/board/delete/${board.boardId}|}" class="btn btn-danger"
+           onclick="return confirm('정말 삭제하시겠습니까?');">삭제</a>
+      </div>
+    </div>
+
+  </div>
+</body>
+
+</html>
