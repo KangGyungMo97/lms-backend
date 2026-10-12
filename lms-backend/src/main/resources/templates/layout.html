@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html lang="ko"
       xmlns:th="http://www.thymeleaf.org"
-      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -31,7 +32,9 @@
         <a th:href="@{/info}">정보마당</a>
         <a th:href="@{/board/list}">자유게시판</a>
         <a th:href="@{/about}">기관소개</a>
-        <a th:href="@{/login}">로그인</a>
+        <a sec:authorize="isAnonymous()" th:href="@{/user/login}">로그인</a>
+        <a sec:authorize="isAuthenticated()" th:href="@{/dashboard}">대시보드</a>
+        <a sec:authorize="isAuthenticated()" th:href="@{/user/logout}"><span sec:authentication="name"></span> 로그아웃</a>
       </nav>
     </div>
   </header>
