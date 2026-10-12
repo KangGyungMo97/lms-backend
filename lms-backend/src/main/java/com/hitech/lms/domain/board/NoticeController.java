@@ -2,6 +2,8 @@ package com.hitech.lms.domain.board;
 
 import java.security.Principal;
 
+import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -11,9 +13,13 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.hitech.lms.domain.user.UserService;
+import com.hitech.lms.domain.user.Users;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
@@ -23,23 +29,24 @@ import lombok.RequiredArgsConstructor;
 public class NoticeController {
 
 	private final NoticeService ns;
-
 	private final UserService us;
 
 	// 공지 목록 - 전체
 	@GetMapping("/list")
-	public String list(Model model, @RequestParam(value="page", defaultValue = "0") int page,
-			                        @RequestParam(value="kw", defaultValue = "") String kw) {
-
-
+	public String list(Model model, @RequestParam(value = "page", defaultValue = "0") int page,
+		@RequestParam(value = "kw", defaultValue = "") String kw) {
+		Page<Notice> paging = ns.getList(page, kw);
+		model.addAttribute("paging", paging);
+		model.addAttribute("kw", kw);
 		return "notice/list";
 	}
 
 	// 공지 상세 - 전체 (조회수 +1)
 	@GetMapping("/detail/{id}")
-	public String detail(Model model, @PathVariable("id") Long id) {
-
-
+	public String detail(Model model, @PathVariable("id") Long id,
+		HttpServletRequest request, HttpServletResponse response) {
+		Notice notice = ns.getNotice(id, request, response);  // 쿠키로 조회수 처리
+		model.addAttribute("notice", notice);
 		return "notice/detail";
 	}
 
@@ -54,7 +61,11 @@ public class NoticeController {
 	@PreAuthorize("hasRole('TEACHER')")
 	@PostMapping("/create")
 	public String noticeCreate(@Valid NoticeForm noticeForm, BindingResult bindingResult, Principal principal) {
-
+		if (bindingResult.hasErrors()) {
+			return "notice/form";
+		}
+		Users writer = us.getUser(principal.getName());   // ← 가정: UserService의 메서드명
+		ns.create(noticeForm.getTitle(), noticeForm.getContent(), writer);  // ← 가정: 폼 필드명
 		return "redirect:/notice/list";
 	}
 
@@ -62,16 +73,25 @@ public class NoticeController {
 	@PreAuthorize("hasRole('TEACHER')")
 	@GetMapping("/update/{id}")
 	public String noticeUpdate(NoticeForm noticeForm, Principal principal, @PathVariable("id") Long id) {
-
-
+		Notice notice = ns.getNotice(id);                 // 조회수 안 올라가는 쪽
+		checkWriter(notice, principal);
+		noticeForm.setTitle(notice.getNoticeTitle());
+		noticeForm.setContent(notice.getNoticeContent());
 		return "notice/form";
 	}
+
 
 	// 공지 수정 완료 - 교수
 	@PreAuthorize("hasRole('TEACHER')")
 	@PostMapping("/update/{id}")
-	public String noticeUpdate(@Valid NoticeForm noticeForm, BindingResult bindingResult, Principal principal, @PathVariable("id") Long id) {
-
+	public String noticeUpdate(@Valid NoticeForm noticeForm, BindingResult bindingResult, Principal principal,
+		@PathVariable("id") Long id) {
+		if (bindingResult.hasErrors()) {
+			return "notice/form";
+		}
+		Notice notice = ns.getNotice(id);
+		checkWriter(notice, principal);
+		ns.modify(notice, noticeForm.getTitle(), noticeForm.getContent());
 		return "redirect:/notice/detail/" + id;
 	}
 
@@ -79,9 +99,14 @@ public class NoticeController {
 	@PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
 	@PostMapping("/delete/{id}")
 	public String noticeDelete(Principal principal, @PathVariable("id") Long id) {
-
-
+		Notice notice = ns.getNotice(id);
+		checkWriter(notice, principal);   // 관리자는 모두 삭제 가능하게 하려면 아래 참고
+		ns.delete(notice);
 		return "redirect:/notice/list";
 	}
-
+	private void checkWriter(Notice notice, Principal principal) {
+		if (!notice.getWriter().getUserId().equals(principal.getName())) {  // ← 가정: Users의 로그인 ID 필드명
+			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "수정/삭제 권한이 없습니다.");
+		}
+	}
 }
