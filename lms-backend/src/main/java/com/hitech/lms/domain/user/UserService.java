@@ -2,10 +2,10 @@ package com.hitech.lms.domain.user;
 
 import java.time.LocalDateTime;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
+
+import com.hitech.lms.global.error.DataNotFoundException;
 
 import lombok.RequiredArgsConstructor;
 
@@ -41,6 +41,6 @@ public class UserService {
 	/** 로그인한 사용자 찾기 (principal.getName() = 학번/사번) */
 	public Users getUser(String userId) {
 		return ur.findById(userId)
-				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "사용자를 찾을 수 없습니다."));
+				.orElseThrow(() -> new DataNotFoundException("사용자를 찾을 수 없습니다."));
 	}
 }
