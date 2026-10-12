@@ -15,4 +15,7 @@ public interface SubmitRepository extends JpaRepository<Submit, Long> {
 	// 내가 제출한 전체 목록 (과제 목록의 '제출 여부' 칸 - 학생)
 	List<Submit> findByStudent(Users student);
 
+	// 이 과제의 제출 목록 - 먼저 낸 순서 (제출 현황 - 교수)
+	List<Submit> findByHomeworkOrderBySubmitDateAsc(Homework homework);
+
 }

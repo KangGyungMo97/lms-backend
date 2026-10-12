@@ -14,10 +14,11 @@ public class QnaForm {
 	private Long lessonId;
 
 	@NotBlank(message="제목은 필수항목입니다.")
-	@Size(max=200)
+	@Size(max=100, message="제목은 100자까지 입력할 수 있습니다.")   // qna_title 길이
 	private String title;
 
 	@NotBlank(message="내용은 필수항목입니다.")
+	@Size(max=1000, message="내용은 1000자까지 입력할 수 있습니다.") // qna_content 길이
 	private String content;
 
 	// TODO: 첨부파일은 MultipartFile 로 받기 (FileService)

@@ -1,10 +1,12 @@
 package com.hitech.lms.domain.study;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -18,6 +20,7 @@ import org.springframework.web.server.ResponseStatusException;
 import com.hitech.lms.domain.course.Lesson;
 import com.hitech.lms.domain.course.LessonRepository;
 import com.hitech.lms.domain.user.Users;
+import com.hitech.lms.global.error.DataNotFoundException;
 
 import lombok.RequiredArgsConstructor;
 
@@ -95,7 +98,14 @@ public class HomeworkService {
 
 	// 제출물 찾기 - findById, 없으면 DataNotFoundException
 	public Submit getSubmit(Long submitId) {
-		return null;
+
+		Optional<Submit> submit = sr.findById(submitId);
+
+		if (submit.isPresent()) {
+			return submit.get();
+		} else {
+			throw new DataNotFoundException("제출물을 찾을 수 없습니다.");
+		}
 	}
 
 	// 내 제출물 (과제 상세에서 학생용) - 아직 안 냈으면 null
@@ -113,8 +123,18 @@ public class HomeworkService {
 	}
 
 	// 제출 - 제출일 now, submit_is_done = "Y"
+	@Transactional
 	public void createSubmit(Homework homework, String content, Users student) {
 
+		Submit submit = new Submit();
+
+		submit.setHomework(homework);
+		submit.setStudent(student);
+		submit.setSubmitContent(content);
+		submit.setSubmitDate(LocalDateTime.now());
+		submit.setSubmitIsDone("Y");          // 제출완료
+
+		sr.save(submit);
 	}
 
 	// 제출 수정
@@ -127,14 +147,21 @@ public class HomeworkService {
 
 	}
 
-	// 제출 현황 - 과제별 제출 목록 (교수)
+	// 제출 현황 - 과제별 제출 목록 (교수), 먼저 낸 순서
 	public List<Submit> getSubmitList(Homework homework) {
-		return null;
+		return sr.findByHomeworkOrderBySubmitDateAsc(homework);
 	}
 
 	// 채점 - 점수, 피드백, 채점일 now, submit_is_done = "R"
+	@Transactional
 	public void grade(Submit submit, Integer score, String feedback) {
 
+		submit.setSubmitScore(score);
+		submit.setSubmitFeedback(feedback);
+		submit.setSubmitScoreDate(LocalDate.now());
+		submit.setSubmitIsDone("R");          // 채점완료
+
+		sr.save(submit);
 	}
 
 }
