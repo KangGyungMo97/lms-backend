@@ -35,8 +35,8 @@ public class HomeworkController {
 
 	private final UserService us;
 
-	// ※ SecurityConfig 에 @EnableMethodSecurity 가 아직 없어서 @PreAuthorize 가 동작하지 않음
-	//    → 로그인 안 한 경우(principal == null) 와 교수 권한을 메서드 안에서 직접 확인 (자유게시판과 같은 방식)
+	// ※ 이제 SecurityConfig 에 @EnableMethodSecurity 가 있어서 @PreAuthorize 가 동작함
+	//    아래 principal == null 체크는 혹시 몰라 남겨 둔 것 (지워도 됨)
 	private static final String LOGIN_REDIRECT = "redirect:/login";
 
 	// ===== 과제 =====
@@ -69,6 +69,12 @@ public class HomeworkController {
 		Homework homework = hs.getHomework(id);
 		Users user = us.getUser(principal.getName());
 
+		setDetailModel(model, homework, user, principal);
+		return "homework/detail";
+	}
+
+	// 과제 상세 화면에 필요한 값 담기 (상세 보기 · 제출 실패 시 같이 씀)
+	private void setDetailModel(Model model, Homework homework, Users user, Principal principal) {
 		model.addAttribute("homework", homework);
 		model.addAttribute("isTeacher", isTeacher(principal));
 		model.addAttribute("isOwner", isTeacher(principal) && hs.isOwner(homework, user)); // 수정 · 삭제 · 제출현황 버튼
@@ -79,7 +85,6 @@ public class HomeworkController {
 		LocalDate today = LocalDate.now();
 		model.addAttribute("closed", homework.getHomeworkEndDate().isBefore(today));
 		model.addAttribute("daysLeft", ChronoUnit.DAYS.between(today, homework.getHomeworkEndDate()));
-		return "homework/detail";
 	}
 
 	// 과제 등록 화면  - 교수
@@ -165,8 +170,28 @@ public class HomeworkController {
 	@PostMapping("/submit/create/{id}")
 	public String submitCreate(Model model, @PathVariable("id") Long id,
 			@Valid SubmitForm submitForm, BindingResult bindingResult, Principal principal) {
+		if (principal == null) return LOGIN_REDIRECT;
 
+		// 1. 과제 · 로그인한 학생 찾기
+		Homework homework = hs.getHomework(id);
+		Users student = us.getUser(principal.getName());
 
+		// 2. 마감 지났으면 / 이미 냈으면 제출 불가
+		if (homework.getHomeworkEndDate().isBefore(LocalDate.now())) {
+			bindingResult.reject("closed", "마감된 과제는 제출할 수 없습니다.");
+		}
+		if (hs.getMySubmit(homework, student) != null) {
+			bindingResult.reject("already", "이미 제출한 과제입니다.");
+		}
+
+		// 3. 오류 있으면 상세 화면 다시 (입력한 내용 유지)
+		if (bindingResult.hasErrors()) {
+			setDetailModel(model, homework, student, principal);
+			return "homework/detail";
+		}
+
+		// 4. 저장
+		hs.createSubmit(homework, submitForm.getContent(), student);
 
 		return "redirect:/homework/detail/" + id;
 	}
@@ -197,9 +222,16 @@ public class HomeworkController {
 	// 제출 현황 - 교수
 	@PreAuthorize("hasRole('TEACHER')")
 	@GetMapping("/submit/list/{id}")
-	public String submitList(Model model, @PathVariable("id") Long id) {
+	public String submitList(Model model, @PathVariable("id") Long id, Principal principal) {
+		if (principal == null) return LOGIN_REDIRECT;
 
+		// 1. 과제 찾고, 내가 낸 과제인지 확인
+		Homework homework = hs.getHomework(id);
+		checkOwner(homework, principal);
 
+		// 2. 제출 목록 담기
+		model.addAttribute("homework", homework);
+		model.addAttribute("submitList", hs.getSubmitList(homework));
 
 		return "homework/submit_list";
 	}
@@ -207,9 +239,20 @@ public class HomeworkController {
 	// 제출물 보기 · 채점 화면 - 교수
 	@PreAuthorize("hasRole('TEACHER')")
 	@GetMapping("/submit/detail/{submitId}")
-	public String submitDetail(Model model, @PathVariable("submitId") Long submitId, GradeForm gradeForm) {
+	public String submitDetail(Model model, @PathVariable("submitId") Long submitId, GradeForm gradeForm, Principal principal) {
+		if (principal == null) return LOGIN_REDIRECT;
 
+		// 1. 제출물 찾고, 내가 낸 과제의 제출물인지 확인
+		Submit submit = hs.getSubmit(submitId);
+		checkOwner(submit.getHomework(), principal);
 
+		// 2. 이미 채점했으면 기존 점수 · 피드백 채워서 보여주기 (다시 채점 가능)
+		if ("R".equals(submit.getSubmitIsDone())) {
+			gradeForm.setScore(submit.getSubmitScore());
+			gradeForm.setFeedback(submit.getSubmitFeedback());
+		}
+
+		model.addAttribute("submit", submit);
 		return "homework/submit_detail";
 	}
 
@@ -217,11 +260,23 @@ public class HomeworkController {
 	@PreAuthorize("hasRole('TEACHER')")
 	@PostMapping("/submit/grade/{submitId}")
 	public String submitGrade(Model model, @PathVariable("submitId") Long submitId,
-			@Valid GradeForm gradeForm, BindingResult bindingResult) {
+			@Valid GradeForm gradeForm, BindingResult bindingResult, Principal principal) {
+		if (principal == null) return LOGIN_REDIRECT;
 
+		// 1. 제출물 찾고, 내가 낸 과제의 제출물인지 확인
+		Submit submit = hs.getSubmit(submitId);
+		checkOwner(submit.getHomework(), principal);
 
+		// 2. 점수 범위 오류 등 있으면 채점 화면 다시
+		if (bindingResult.hasErrors()) {
+			model.addAttribute("submit", submit);
+			return "homework/submit_detail";
+		}
 
-		return "redirect:/homework/list"; // TODO: "redirect:/homework/submit/list/" + submit.getHomework().getHomeworkId()
+		// 3. 채점 저장 → 제출 현황으로
+		hs.grade(submit, gradeForm.getScore(), gradeForm.getFeedback());
+
+		return "redirect:/homework/submit/list/" + submit.getHomework().getHomeworkId();
 	}
 
 	// 전체 제출물 내려받기  - 교수, 압축 파일
@@ -249,6 +304,14 @@ public class HomeworkController {
 	private void checkTeacher(Principal principal) {
 		if (!isTeacher(principal)) {
 			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "교수만 사용할 수 있습니다.");
+		}
+	}
+
+	// 이 과제를 낸 교수가 아니면 403 (제출 현황 · 채점)
+	private void checkOwner(Homework homework, Principal principal) {
+		Users user = us.getUser(principal.getName());
+		if (!isTeacher(principal) || !hs.isOwner(homework, user)) {
+			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "이 과제를 낸 교수만 볼 수 있습니다.");
 		}
 	}
 

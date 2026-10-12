@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+
+<head>
+  <title>제출 현황</title>
+  <style>
+    .board-head { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 12px; }
+    .board-head h2 { margin: 0; }
+    .hw-info { color: #666; font-size: 14px; margin: 6px 0 0; }
+    .btn { display: inline-block; padding: 7px 14px; border: 1px solid #1f3a5f; border-radius: 4px;
+           background: #fff; color: #1f3a5f; text-decoration: none; font-size: 14px; cursor: pointer; }
+    .total { color: #666; font-size: 13px; margin: 8px 0; }
+    table.board { width: 100%; border-collapse: collapse; background: #fff; }
+    table.board th, table.board td { padding: 10px 8px; border-bottom: 1px solid #e5e5e5; font-size: 14px; text-align: center; }
+    table.board th { background: #eef2f7; border-top: 2px solid #1f3a5f; }
+    .empty { padding: 40px 0; color: #888; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 12px; }
+    .b-done { background: #e8f0fb; color: #1f3a5f; }   /* 제출완료 */
+    .b-graded { background: #e7f5ec; color: #1e7e46; } /* 채점완료 */
+    .actions { margin-top: 16px; }
+  </style>
+</head>
+
+<body>
+  <div layout:fragment="content">
+
+    <div class="board-head">
+      <div>
+        <h2>제출 현황</h2>
+        <p class="hw-info">
+          <b th:text="${homework.homeworkTitle}">과제 제목</b>
+          (마감 <span th:text="${#temporals.format(homework.homeworkEndDate, 'yyyy-MM-dd')}">2026-10-08</span>)
+        </p>
+      </div>
+    </div>
+
+    <p class="total">제출 <b th:text="${#lists.size(submitList)}">0</b>건</p>
+
+    <table class="board">
+      <thead>
+        <tr>
+          <th style="width:70px">번호</th>
+          <th style="width:120px">학번</th>
+          <th>이름</th>
+          <th style="width:170px">제출일</th>
+          <th style="width:100px">상태</th>
+          <th style="width:80px">점수</th>
+          <th style="width:100px">채점</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:if="${submitList.isEmpty()}">
+          <td colspan="7" class="empty">아직 제출한 학생이 없습니다.</td>
+        </tr>
+        <tr th:each="submit, loop : ${submitList}">
+          <td th:text="${loop.count}">1</td>
+          <td th:text="${submit.student.userId}">2610001</td>
+          <td th:text="${submit.student.userName}">김일학</td>
+          <td th:text="${#temporals.format(submit.submitDate, 'yyyy-MM-dd HH:mm')}">2026-10-05 14:20</td>
+          <td>
+            <span th:if="${submit.submitIsDone == 'R'}" class="badge b-graded">채점완료</span>
+            <span th:unless="${submit.submitIsDone == 'R'}" class="badge b-done">제출완료</span>
+          </td>
+          <td th:text="${submit.submitScore != null} ? |${submit.submitScore}점| : '-'">-</td>
+          <td>
+            <a th:href="@{|/homework/submit/detail/${submit.submitId}|}" class="btn"
+               th:text="${submit.submitIsDone == 'R'} ? '수정' : '채점'">채점</a>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="actions">
+      <a th:href="@{|/homework/detail/${homework.homeworkId}|}" class="btn">과제로 돌아가기</a>
+    </div>
+
+  </div>
+</body>
+
+</html>
