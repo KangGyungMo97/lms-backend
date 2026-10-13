@@ -32,6 +32,7 @@ public class NoticeService {
 	public Page<Notice> getList(int page, String kw) {
 		List<Sort.Order> sorts = new ArrayList<>();
 		sorts.add(Sort.Order.desc("noticeCreateDate"));
+		sorts.add(Sort.Order.desc("noticeId"));
 		Pageable pageable = PageRequest.of(page, 10, Sort.by(sorts));
 		return nr.findAllByKeyword(kw == null ? "" : kw, pageable);
 	}
@@ -94,6 +95,7 @@ public class NoticeService {
 
 	// 작성 - 작성일 now, 작성자 넣고 저장
 	public void create(String title, String content, Users writer) {
+		
 		Notice notice = new Notice();
 		notice.setNoticeTitle(title);
 		notice.setNoticeContent(content);
