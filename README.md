@@ -5,6 +5,146 @@ Spring Boot 4.1.1 · Java 17 · Gradle · JPA · H2 · Spring Security · Thymel
 > 📋 **각자 담당 기능 · 파일 · 우선순위 → [`docs/WORK_ASSIGNMENT.md`](docs/WORK_ASSIGNMENT.md)**
 > 📅 마감 **10/23** · P1 **~10/14** · P2 **~10/19** · 10/20~22 통합 테스트
 
+## 📊 진행 현황 (10/13 · dev PR #26 기준)
+
+- P1 마감: **10/14 (내일)** / P2 마감: 10/19 / 10/20~22 통합 테스트
+- 로그인: `/user/login` (테스트 비밀번호 `1234`)
+
+### 1. 한눈에 보기
+
+| 구분 | 완료 / 전체 | 진행률 |
+|---|:---:|:---:|
+| **P1 전체** | **5 / 10** | 50% |
+| P2 전체 | 3 / 5 | 60% |
+
+| 팀원 | P1 | P2 | 한 줄 요약 |
+|:---:|:---:|:---:|---|
+| 강경모 | 3 / 5 | - | 과제 완료, Q&A 확인 중 |
+| 김경모 | **1 / 4** | 1 / 3 | 공지 완료(PR #26), 과목 PR 완료·화면 0개, 수업 미착수 |
+| 홍승훈 | **1 / 1** | **2 / 2** | P1 · P2 모두 완료 |
+
+### 2. 남은 기능
+
+> 취소선 = 구현 완료
+
+#### 강경모
+
+**공통**
+- ~~로그인(SBB, `/user/login`) · 로그아웃 · 권한별 대시보드~~
+- ~~레이아웃 · SecurityConfig(`@EnableMethodSecurity`) · DataNotFoundException~~
+
+**P1**
+- ~~과제 목록 · 상세 · 등록~~
+- ~~과제 제출 (마감 · 중복 체크)~~
+- ~~제출현황 · 채점 (재채점 가능)~~
+- Q&A 질문 + 답변 등록 → 코드는 반영됨, **동작 확인 필요**
+- 과제 · 제출 · Q&A 수정 · 삭제
+- 첨부파일 업로드 · 다운로드 (`FileService`, 공통)
+
+**P3 (안 해도 됨)**
+- 제출물 zip 다운로드
+- 다시보기 · 이어보기
+
+#### 김경모
+
+**P1**
+- ~~공지 목록 · 상세 · 작성 (화면 포함, PR #26)~~
+- 과목 목록 · 상세 → ~~PR 올리기~~ (PR #21 · #24 merge 완료), **화면(html) 필요** (`templates/subject/` 비어 있음)
+- **수업 목록 · 상세** → 미착수 (Q&A · 과제가 붙어 있어서 **가장 급함**)
+- 계정 등록 · 회원 목록 → 미착수
+
+**P2**
+- ~~공지 수정 · 삭제 (`notice/form.html` 재사용)~~
+- 과목 등록 · 수정 · 삭제 → Java 완료, **화면 필요**
+- 시간표 → 미착수
+
+**P3 (안 해도 됨)**
+- 회원 상태변경
+- 관리자 게시글 목록
+- 학과관리
+
+#### 홍승훈
+
+**P1**
+- ~~자유게시판 목록 · 상세 · 작성 · 수정 · 삭제 (검색, 페이징, 조회수)~~
+
+**P2**
+- ~~정보마당 시스템 공지 목록 · 상세 (이전 · 다음 글)~~
+- ~~기관소개~~
+
+**P3 (안 해도 됨)**
+- 게시판 · 공지 첨부 다운로드 (FileService 완성 후)
+- 댓글 (ERD에 테이블 없음)
+
+#### 공통: 화면 디자인 (HTML 꾸미기)
+
+지금 화면들은 기능 확인용으로 각 html 안에 `<style>`을 따로 넣어 둔 상태라, 디자인이 통일돼 있지 않음.
+**P1 기능을 먼저 끝내고, 10/15 ~ 10/19 (P2 기간)에 진행.**
+
+- 강경모: 공통 디자인 틀 만들기 (피그마 시안 기준)
+  - `static/css/common.css` 새로 만들기 (색상, 버튼, 표, 폼, 페이징, 배지 등 공통 스타일)
+  - `layout.html` 헤더 · 메뉴 · 푸터 디자인
+  - 메인 · 로그인 · 대시보드 화면
+- 각자: 자기 화면에 공통 스타일 적용
+  - 각 html의 `<style>` 블록을 지우고, `common.css`의 공통 클래스(`btn`, `board`, `paging` 등)로 바꾸기
+  - 강경모: homework, qna
+  - 김경모: notice, subject, lesson, admin, timetable
+  - 홍승훈: board, info, about
+
+#### 팀 협의 필요
+- 수강신청(학생-과목) 테이블이 없음 → 지금은 학생이 **전체 과제 · 공지**를 봄
+- 출결 상태 코드(Entity 기준 출석 Y / 미출석 N / 지각 L / 공결 E) · 출석률 계산식 (출석은 보류 상태)
+- 수정 URL `/modify` vs `/update`, 삭제 GET vs POST (URL 설계표 그대로 진행 중)
+
+### 3. 파일 지도
+
+> <del>취소선</del> = 완료 · <b>굵게</b> = 진행중 · 그냥 글자 = 미착수 · (보류) = 안 해도 됨
+> 화면은 기능 기준 (디자인은 전부 미착수)
+
+<pre>
+src/main/java/com/hitech/lms
+├── domain
+│   ├── user     <del>Users · Dept · UserService · UserSecurityService · UserController</del>              (강경모)
+│   ├── main     <del>MainController · DashboardController</del>                                           (강경모)
+│   │            <del>InfoController · InfoService · InfoNoticeRepository</del>                            (홍승훈)
+│   ├── board    <del>BoardController · BoardService · BoardRepository</del>                               (홍승훈)
+│   │            <del>NoticeController · NoticeService</del>                                               (김경모)
+│   ├── course   <b>SubjectController · SubjectService</b> → html 필요                                 (김경모)
+│   │            LessonController · LessonService                                               (김경모)
+│   │            TimetableController · TimetableService                                         (김경모)
+│   │            ReplayController (보류)                                                        (강경모)
+│   ├── study    <del>HomeworkController · HomeworkService</del> → 수정 · 삭제만 남음                      (강경모)
+│   │            AttController · AttService (보류)
+│   ├── qna      <b>QnaController · QnaService</b> → 동작 확인 필요                                    (강경모)
+│   ├── admin    AdminController · AdminService                                                 (김경모)
+│   └── file     FileService                                                                    (강경모)
+└── global
+    ├── config   <del>SecurityConfig</del>                                                                 (강경모)
+    └── error    <del>DataNotFoundException</del>                                                          (강경모)
+
+src/main/resources/templates
+├── <del>layout.html · main.html · login.html · dashboard/</del>                                           (강경모)
+├── <del>homework/  list · detail · form · submit_list · submit_detail</del>                               (강경모)
+├── <b>qna/       list · detail · form</b> → 동작 확인 필요                                            (강경모)
+├── <del>board/     list · detail · form</del>                                                             (홍승훈)
+├── <del>info/      notice_list · notice_detail</del>                                                      (홍승훈)
+├── <del>about/     course</del>                                                                           (홍승훈)
+├── <del>notice/    list · detail · form</del>                                                             (김경모)
+├── subject/   list · detail · form                                                             (김경모)
+├── lesson/    list · detail                                                                    (김경모)
+├── admin/     user_form · user_list                                                            (김경모)
+├── timetable/ list                                                                             (김경모)
+└── replay/ (보류)                                                                              (강경모)
+
+src/main/resources/static
+└── css/common.css → 공통 디자인 (새로 만들 파일)                                               (강경모)
+
+docs
+├── test-data-강경모-과제.sql
+├── test-data-홍승훈.sql
+└── test-data-홍승훈-공지.sql
+</pre>
+
 ---
 
 ## 📌 팀원 참고 사항
@@ -77,20 +217,43 @@ Controller · Service 메서드 틀은 다 만들어 놨으니, **본문 주석 
 ```bash
 # 작업 시작
 git switch dev
-git pull origin dev                       # ① 매일 아침 최신화
-git switch -c feature/(기능명)             # ② 기능 1개 = 브랜치 1개 (예: feature/board)
+git fetch origin --prune                  # ① 지워진 브랜치 정리
+git pull origin dev                       # ② 매일 아침 최신화
+git switch -c feature/(기능명)             # ③ 기능 1개 = 브랜치 1개 (예: feature/board)
 
 # 작업 끝
 git add .
 git commit -m "feat: 게시판 목록 구현"
-git push origin feature/(기능명)           # ③ 작게 자주 push
-# ④ GitHub에서 feature/(기능명) → dev 로 Pull Request → 팀장이 merge
+git push origin feature/(기능명)           # ④ 작게 자주 push
+# ⑤ GitHub에서 feature/(기능명) → dev 로 Pull Request → 팀장이 merge
 ```
 
 - `main`, `dev`에 직접 push 금지
 - `bin/`, `build/`, `.metadata/` 커밋 금지
 - GitHub 이슈에서 브랜치 만들었으면 → `git fetch origin` 후 `git switch feature/(기능명)`
 - 커밋 메시지: `feat:` 기능 추가 / `fix:` 버그 수정 / `docs:` 문서 / `refactor:` 구조 변경
+
+### 🏷 브랜치 이름 규칙
+- **영어 소문자 · 숫자 · `-` 만** 사용 → `feature/notice-create`, `feature/subject-2`, `feature/homework-submit`
+- ❌ 한글 · 공백 · 특수문자(`[ ] · ( )` 등) 금지 → GitHub 경고, Git Extensions/터미널에서 브랜치가 안 지워지는 문제 생김
+- 한글 설명은 **PR 제목**에만 → `[feature/notice-create] 공지 작성 부분`
+- GitHub 이슈에서 브랜치를 만들 때도 자동 생성된 이름(한글 포함)을 **영어로 바꾼 뒤** 만들기
+- 체크아웃 확인 후 작업: 툴바/터미널에서 지금 브랜치가 `dev`가 **아닌지** 꼭 보기
+
+### 🧹 PR merge 후 정리
+- merge된 브랜치는 PR 화면에서 **Delete branch** (작업 내용은 `dev`에 남아 있어서 안전, 필요하면 Restore branch)
+- 각자 PC에서: `git fetch origin --prune` → `git switch dev` → `git pull origin dev`
+- Git Extensions: Pull ▼ **Fetch all and prune** → `dev` 체크아웃 → Pull ▼ **Pull - merge** → 툴바 `0 ↑ ↓` 확인
+
+### 🆘 자주 나는 상황
+| 상황 | 해결 |
+|---|---|
+| Pull 할 때 `Your local changes ... would be overwritten` | 커밋 안 한 수정이 있음 → 필요 없으면 리셋, 필요하면 **Stash → Pull → Stash pop** |
+| 실수로 `dev`에서 커밋함 (`dev` 옆 ↑) | **push 금지!** `git switch feature/(기능명)` → `git cherry-pick (커밋ID)` → push → `git switch dev` → `git reset --hard origin/dev` |
+| PR에 `There are no new commits` | 내 브랜치 커밋이 이미 `dev`에 다 들어가 있음 → 새 커밋을 push 했는지 확인, 없으면 PR 닫기 |
+| 지워진 브랜치가 계속 보임 | `git fetch origin --prune` (안 지워지면 `git update-ref -d "refs/remotes/origin/브랜치이름"`) |
+
+> ⚠️ `git reset --hard` 는 커밋 안 한 수정도 지움 → 실행 전 `git status` 로 확인
 
 ---
 
