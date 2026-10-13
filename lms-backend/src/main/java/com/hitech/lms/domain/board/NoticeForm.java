@@ -14,6 +14,7 @@ public class NoticeForm {
 	private String title;
 
 	@NotBlank(message="내용은 필수항목입니다.")
+	@Size(max=1000)
 	private String content;
 
 	// 첨부파일은 MultipartFile 로 받기 (FileService)

@@ -95,6 +95,7 @@ public class NoticeService {
 
 	// 작성 - 작성일 now, 작성자 넣고 저장
 	public void create(String title, String content, Users writer) {
+		
 		Notice notice = new Notice();
 		notice.setNoticeTitle(title);
 		notice.setNoticeContent(content);
