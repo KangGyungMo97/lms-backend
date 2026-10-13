@@ -1,0 +1,118 @@
+/* =========================================================
+   하이테크 LMS - 레이아웃 (헤더 · 상단 메뉴 · 제목 띠 · 푸터)
+   색은 여기 :root 에서만 바꾸면 전체에 적용됨
+   ========================================================= */
+:root {
+  --navy: #1f3a5f;        /* 메인 색 (로고, 버튼, 메뉴 강조) */
+  --navy-dark: #162b47;
+  --navy-light: #eef2f7;  /* 제목 띠 · 표 머리 배경 */
+  --line: #e3e6eb;        /* 구분선 */
+  --text: #222;
+  --text-sub: #666;
+  --text-muted: #999;
+  --bg: #f7f8fa;          /* 페이지 배경 */
+  --white: #fff;
+  --danger: #c0392b;
+  --inner: 1180px;        /* 내용 최대 폭 */
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  font-family: 'Pretendard', 'Malgun Gothic', '맑은 고딕', sans-serif;
+  color: var(--text);
+  background: var(--bg);
+  font-size: 14px;
+  line-height: 1.5;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+a { color: inherit; }
+.inner { max-width: var(--inner); margin: 0 auto; padding: 0 20px; }
+
+/* ===== 헤더 ===== */
+.site-header {
+  background: var(--white);
+  border-bottom: 1px solid var(--line);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.site-header .inner { display: flex; align-items: center; height: 68px; gap: 24px; }
+
+.logo { display: flex; align-items: center; gap: 8px; text-decoration: none; white-space: nowrap; }
+.logo-mark { width: 32px; height: 32px; border-radius: 6px; display: block; }  /* static/img/logo.png */
+.logo-text { font-size: 18px; font-weight: bold; color: var(--navy); }
+.role-badge {
+  font-size: 11px; color: var(--text-sub);
+  border: 1px solid var(--line); border-radius: 10px; padding: 1px 8px;
+}
+
+/* ===== 상단 메뉴 (GNB) ===== */
+.gnb { flex: 1; display: flex; justify-content: flex-end; }
+.gnb > ul { display: flex; list-style: none; margin: 0; padding: 0; height: 68px; }
+.gnb > ul > li { position: relative; }
+.gnb > ul > li > a {
+  display: flex; align-items: center; height: 68px; padding: 0 18px;
+  text-decoration: none; font-size: 15px; font-weight: 600; color: var(--text);
+  border-bottom: 3px solid transparent;
+}
+.gnb > ul > li:hover > a { color: var(--navy); }
+.gnb > ul > li.active > a { color: var(--navy); border-bottom-color: var(--navy); }
+
+/* 하위 메뉴 (마우스 올리면 펼침) */
+.gnb .sub {
+  display: none;
+  position: absolute; top: 68px; left: 50%; transform: translateX(-50%);
+  min-width: 150px; list-style: none; margin: 0; padding: 8px 0;
+  background: var(--white); border: 1px solid var(--line); border-top: 2px solid var(--navy);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, .08);
+}
+.gnb > ul > li:hover .sub,
+.gnb > ul > li:focus-within .sub { display: block; }
+.gnb .sub a {
+  display: block; padding: 8px 18px; font-size: 14px;
+  text-decoration: none; color: var(--text); white-space: nowrap;
+}
+.gnb .sub a:hover { background: var(--navy-light); color: var(--navy); }
+
+/* 오른쪽 로그인 / 로그아웃 */
+.util { display: flex; align-items: center; gap: 10px; white-space: nowrap; font-size: 13px; }
+.util .user { color: var(--text-sub); }
+.btn-login, .btn-logout {
+  text-decoration: none; padding: 6px 12px; border-radius: 4px; font-size: 13px;
+}
+.btn-login { background: var(--navy); color: var(--white); }
+.btn-logout { border: 1px solid var(--line); color: var(--text-sub); }
+.btn-logout:hover { border-color: var(--navy); color: var(--navy); }
+
+/* ===== 페이지 제목 띠 ===== */
+.page-head { background: var(--navy-light); border-bottom: 1px solid var(--line); }
+.page-head .inner { display: flex; justify-content: space-between; align-items: flex-end; padding-top: 28px; padding-bottom: 24px; }
+.page-head h1 { margin: 0; font-size: 26px; color: var(--navy); }
+.breadcrumb { list-style: none; margin: 0; padding: 0; display: flex; gap: 6px; font-size: 12px; color: var(--text-muted); }
+.breadcrumb li + li::before { content: "›"; margin-right: 6px; }
+.breadcrumb li:last-child { color: var(--navy); font-weight: 600; }
+.breadcrumb a { text-decoration: none; }
+.breadcrumb a:hover { text-decoration: underline; }
+
+/* ===== 내용 ===== */
+.content { flex: 1; width: 100%; max-width: var(--inner); margin: 0 auto; padding: 28px 20px 48px; }
+
+/* ===== 푸터 ===== */
+.site-footer { background: #2b2f36; color: #aab0b9; font-size: 12px; }
+.site-footer .inner { display: flex; gap: 16px; align-items: center; height: 72px; flex-wrap: wrap; }
+.site-footer .f-logo { color: var(--white); font-weight: bold; font-size: 14px; }
+.site-footer .copy { margin-left: auto; }
+
+/* ===== 좁은 화면 ===== */
+@media (max-width: 960px) {
+  .site-header .inner { height: auto; flex-wrap: wrap; padding-top: 10px; gap: 8px; }
+  .gnb { order: 3; width: 100%; justify-content: flex-start; overflow-x: auto; }
+  .gnb > ul, .gnb > ul > li > a { height: 46px; }
+  .gnb > ul > li > a { padding: 0 12px; font-size: 14px; }
+  .gnb .sub { top: 46px; }
+  .util { margin-left: auto; }
+  .page-head .inner { flex-direction: column; align-items: flex-start; gap: 8px; }
+}

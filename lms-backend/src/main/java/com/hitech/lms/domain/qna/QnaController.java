@@ -29,7 +29,7 @@ public class QnaController {
 
 	private final UserService us;
 
-	// Q&A 목록 (CLS-03)
+	// Q&A 목록 (CLS-03)	
 	@PreAuthorize("isAuthenticated()")
 	@GetMapping("/list")
 	public String list(Model model, @RequestParam(value="page", defaultValue = "0") int page,
