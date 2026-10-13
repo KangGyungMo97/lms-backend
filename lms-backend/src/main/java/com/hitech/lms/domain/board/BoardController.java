@@ -59,10 +59,7 @@ public class BoardController {
 
 		Board board = bs.getBoard(id);
 		bs.increaseViewCount(board);
-		model.addAttribute("board", board);
-		model.addAttribute("isWriter", isWriter(board, principal));            // 수정 버튼
-		model.addAttribute("canDelete", isWriter(board, principal) || isAdmin(principal)); // 삭제 버튼
-		return "board/detail";
+		return showDetail(model, board, principal);
 	}
 
 	// 첨부파일 내려받기
@@ -148,26 +145,72 @@ public class BoardController {
 	@PostMapping("/comment/create/{id}")
 	public String commentCreate(Model model, @PathVariable("id") Long id,
 			@Valid CommentForm commentForm, BindingResult bindingResult, Principal principal) {
+		if (principal == null) return LOGIN_REDIRECT;
 
-
-		return "redirect:/board/detail/" + id;
+		Board board = bs.getBoard(id);
+		if (bindingResult.hasErrors()) {
+			// 입력 오류 → 상세 화면을 다시 보여 주면서 오류 메시지 표시 (조회수는 안 올림)
+			return showDetail(model, board, principal);
+		}
+		Users writer = bs.getUser(principal.getName());
+		BoardComment comment = bs.createComment(board, commentForm.getContent(), writer);
+		return "redirect:/board/detail/" + id + "#comment_" + comment.getCommentId();   // 방금 단 댓글 위치로
 	}
 
-	// 댓글 수정
+	// 댓글 수정 화면 (댓글 작성자만)
+	@PreAuthorize("isAuthenticated()")
+	@GetMapping("/comment/modify/{commentId}")
+	public String commentModify(CommentForm commentForm, @PathVariable("commentId") Long commentId, Principal principal) {
+		if (principal == null) return LOGIN_REDIRECT;
+
+		BoardComment comment = bs.getComment(commentId);
+		if (!isCommentWriter(comment, principal)) {
+			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "수정 권한이 없습니다.");
+		}
+		commentForm.setContent(comment.getCommentContent());
+		return "board/comment_form";
+	}
+
+	// 댓글 수정 완료
 	@PreAuthorize("isAuthenticated()")
 	@PostMapping("/comment/modify/{commentId}")
 	public String commentModify(@Valid CommentForm commentForm, BindingResult bindingResult,
 			@PathVariable("commentId") Long commentId, Principal principal) {
-
-		return "redirect:/board/list"; // TODO: "redirect:/board/detail/" + 게시글 id
+		if (principal == null) return LOGIN_REDIRECT;
+		if (bindingResult.hasErrors()) {
+			return "board/comment_form";
+		}
+		BoardComment comment = bs.getComment(commentId);
+		if (!isCommentWriter(comment, principal)) {
+			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "수정 권한이 없습니다.");
+		}
+		bs.modifyComment(comment, commentForm.getContent());
+		return "redirect:/board/detail/" + comment.getBoard().getBoardId() + "#comment_" + commentId;
 	}
 
-	// 댓글 삭제
+	// 댓글 삭제 (댓글 작성자 또는 관리자) - 게시글 삭제와 같은 GET 방식
 	@PreAuthorize("isAuthenticated()")
 	@GetMapping("/comment/delete/{commentId}")
 	public String commentDelete(Principal principal, @PathVariable("commentId") Long commentId) {
+		if (principal == null) return LOGIN_REDIRECT;
 
-		return "redirect:/board/list"; // TODO: "redirect:/board/detail/" + 게시글 id
+		BoardComment comment = bs.getComment(commentId);
+		if (!isCommentWriter(comment, principal) && !isAdmin(principal)) {
+			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "삭제 권한이 없습니다.");
+		}
+		bs.deleteComment(comment);
+		return "redirect:/board/detail/" + comment.getBoard().getBoardId() + "#comments";
+	}
+
+	// 상세 화면에 필요한 값 담기 (상세 보기 · 댓글 입력 오류 때 같이 씀)
+	private String showDetail(Model model, Board board, Principal principal) {
+		model.addAttribute("board", board);
+		model.addAttribute("isWriter", isWriter(board, principal));            // 수정 버튼
+		model.addAttribute("canDelete", isWriter(board, principal) || isAdmin(principal)); // 삭제 버튼
+		model.addAttribute("commentList", bs.getCommentList(board));           // 댓글 목록
+		model.addAttribute("loginId", principal.getName());                    // 댓글 수정 버튼 (내 댓글인지)
+		model.addAttribute("isAdmin", isAdmin(principal));                     // 댓글 삭제 버튼 (관리자)
+		return "board/detail";
 	}
 
 	// ===== 권한 확인 =====
@@ -175,6 +218,11 @@ public class BoardController {
 	// 로그인한 사람이 글 작성자인지
 	private boolean isWriter(Board board, Principal principal) {
 		return principal != null && board.getWriter().getUserId().equals(principal.getName());
+	}
+
+	// 로그인한 사람이 댓글 작성자인지
+	private boolean isCommentWriter(BoardComment comment, Principal principal) {
+		return principal != null && comment.getWriter().getUserId().equals(principal.getName());
 	}
 
 	// 로그인한 사람이 관리자인지 (ROLE_ADMIN)
