@@ -2,6 +2,7 @@ package com.hitech.lms.domain.course;
 
 import java.security.Principal;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.hitech.lms.domain.user.DeptRepository;
 
@@ -102,11 +104,19 @@ public class SubjectController {
 	}
 
 	// 과목 삭제 - 교수 (POST)
+	// [수정] 강좌(Course)가 참조 중인 과목은 FK 때문에 삭제 불가 -> 500 대신 안내 메시지
 	@PreAuthorize("hasRole('TEACHER')")
 	@PostMapping("/delete/{id}")
-	public String subjectDelete(Principal principal, @PathVariable("id") String id) {
+	public String subjectDelete(Principal principal, @PathVariable("id") String id,
+			RedirectAttributes ra) {
 		Subject subject = ss.getSubject(id);
-		ss.delete(subject);
+		try {
+			ss.delete(subject);
+		} catch (DataIntegrityViolationException e) {
+			ra.addFlashAttribute("error", "개설된 강좌가 있는 과목은 삭제할 수 없습니다.");
+			return "redirect:/subject/list";
+		}
+		ra.addFlashAttribute("msg", "과목이 삭제되었습니다.");
 		return "redirect:/subject/list";
 	}
 

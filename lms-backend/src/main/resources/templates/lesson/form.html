@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head>
+  <title th:text="${isUpdate} ? '수업 수정' : '수업 등록'">수업 등록</title>
+</head>
+<body>
+<main layout:fragment="content">
+  <div class="page-head">
+    <h1 th:text="${isUpdate} ? '수업 수정' : '수업 등록'">수업 등록</h1>
+    <div class="breadcrumb">홈 &gt; 수업참여 &gt; <b th:text="${isUpdate} ? '수업 수정' : '수업 등록'">수업 등록</b></div>
+  </div>
+
+  <div class="field-error" th:if="${error}" th:text="${error}" style="margin-bottom:12px;"></div>
+
+  <!-- 등록: /lesson/create , 수정: /lesson/update/{id} -->
+  <form th:action="${isUpdate} ? @{|/lesson/update/${lessonId}|} : @{/lesson/create}" method="post">
+    <table class="form-table">
+      <tr>
+        <th>강좌<span class="req">*</span></th>
+        <td>
+          <!-- 수정: 강좌는 변경 불가, 텍스트로만 표시 -->
+          <span th:if="${isUpdate}"
+                th:text="|[${course.subject.subjectId}] ${course.subject.subjectName} - ${course.courseTitle}|"></span>
+
+          <!-- 등록: 본인 강좌 선택 -->
+          <th:block th:unless="${isUpdate}">
+            <select name="courseId">
+              <option value="">-- 강좌 선택 --</option>
+              <option th:each="c : ${courses}" th:value="${c.courseId}"
+                      th:selected="${c.courseId == selectedCourseId}"
+                      th:text="|[${c.subject.subjectId}] ${c.subject.subjectName} - ${c.courseTitle}|"></option>
+            </select>
+            <div class="hint" th:if="${#lists.isEmpty(courses)}">담당 중인 강좌가 없습니다. 강좌를 먼저 개설하세요.</div>
+          </th:block>
+        </td>
+      </tr>
+      <tr>
+        <th>수업 제목<span class="req">*</span></th>
+        <td>
+          <input type="text" name="lessonTitle" th:value="${lessonTitle}" maxlength="50"
+                 placeholder="예) 1주차 - 오리엔테이션">
+        </td>
+      </tr>
+      <tr>
+        <th>수업 내용<span class="req">*</span></th>
+        <td>
+          <textarea name="lessonContent" maxlength="200" th:text="${lessonContent}"
+                    placeholder="수업 내용을 입력하세요 (200자 이내)"></textarea>
+        </td>
+      </tr>
+    </table>
+
+    <div class="btn-area">
+      <a class="btn btn-gray" th:href="@{/lesson/list}">취소</a>
+      <button type="submit" class="btn btn-primary" th:text="${isUpdate} ? '수정' : '등록'">등록</button>
+    </div>
+  </form>
+</main>
+</body>
+</html>

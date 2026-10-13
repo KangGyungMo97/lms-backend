@@ -5,7 +5,6 @@
       layout:decorate="~{layout}">
 <head>
   <title>과목 목록</title>
-  <link rel="stylesheet" th:href="@{/css/lms.css}">
 </head>
 <body>
 <main layout:fragment="content">
@@ -13,6 +12,10 @@
     <h1>과목 목록</h1>
     <div class="breadcrumb">홈 &gt; 교육안내 &gt; <b>과목 목록</b></div>
   </div>
+
+  <!-- 처리 결과 메시지 (삭제 성공/실패) -->
+  <div class="field-error" th:if="${error}" th:text="${error}" style="margin-bottom:12px;"></div>
+  <div th:if="${msg}" th:text="${msg}" style="margin-bottom:12px; color:#1e7e34; font-size:13px;"></div>
 
   <!-- 검색 / 등록 -->
   <form class="toolbar" th:action="@{/subject/list}" method="get">
@@ -26,10 +29,14 @@
   <!-- 목록 -->
   <table class="list">
     <colgroup>
-      <col style="width:80px"><col style="width:160px"><col><col style="width:220px">
+      <col style="width:70px"><col style="width:140px"><col><col style="width:200px">
+      <col sec:authorize="hasRole('TEACHER')" style="width:130px">
     </colgroup>
     <thead>
-      <tr><th>번호</th><th>과목코드</th><th>과목명</th><th>학과</th></tr>
+      <tr>
+        <th>번호</th><th>과목코드</th><th>과목명</th><th>학과</th>
+        <th sec:authorize="hasRole('TEACHER')">관리</th>
+      </tr>
     </thead>
     <tbody>
       <tr th:each="s, loop : ${paging}">
@@ -39,9 +46,21 @@
           <a th:href="@{|/subject/detail/${s.subjectId}|}" th:text="${s.subjectName}">데이터베이스 설계와 SQL 실무</a>
         </td>
         <td th:text="${s.dept.deptName}">컴퓨터정보과</td>
+
+        <!-- 수정/삭제: 교수만 -->
+        <td sec:authorize="hasRole('TEACHER')">
+          <div style="display:flex; gap:4px; justify-content:center;">
+            <a class="btn" style="height:28px; padding:0 10px; font-size:12px;"
+               th:href="@{|/subject/update/${s.subjectId}|}">수정</a>
+            <form th:action="@{|/subject/delete/${s.subjectId}|}" method="post" style="display:inline;"
+                  onsubmit="return confirm('이 과목을 삭제하시겠습니까?');">
+              <button type="submit" class="btn btn-danger" style="height:28px; padding:0 10px; font-size:12px;">삭제</button>
+            </form>
+          </div>
+        </td>
       </tr>
       <tr th:if="${paging.isEmpty()}">
-        <td colspan="4" class="empty">등록된 과목이 없습니다.</td>
+        <td colspan="5" class="empty">등록된 과목이 없습니다.</td>
       </tr>
     </tbody>
   </table>

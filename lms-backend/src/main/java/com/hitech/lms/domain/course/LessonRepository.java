@@ -10,6 +10,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface LessonRepository extends JpaRepository<Lesson, Long> {
 	
 	List<Lesson> findByCourse_Teacher_UserIdOrderByLessonIdDesc(String userId);
-	@EntityGraph(attributePaths = {"course", "course.teacher"})
+	 
+	// [수정] 목록에 과목명을 표시하므로 "course.subject" 추가
+	@EntityGraph(attributePaths = {"course", "course.teacher", "course.subject"})
 	Page<Lesson> findAll(Pageable pageable);
 }

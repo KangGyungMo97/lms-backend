@@ -14,6 +14,7 @@ public class SubjectForm {
 	private String subjectId;
 
 	@NotBlank(message="과목명은 필수항목입니다.")
+	@Size(max=50, message="과목명은 50자 이내로 입력하세요.")
 	private String subjectName;
 
 	@NotBlank(message="학과는 필수항목입니다.")
