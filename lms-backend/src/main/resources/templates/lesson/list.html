@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+
+<head>
+  <title>수업</title>
+  <style>
+    .board-head { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 12px; }
+    .board-head h2 { margin: 0; }
+    .total { color: #666; font-size: 13px; margin: 8px 0; }
+    table.board { width: 100%; border-collapse: collapse; background: #fff; }
+    table.board th, table.board td { padding: 10px 8px; border-bottom: 1px solid #e5e5e5; font-size: 14px; text-align: center; }
+    table.board th { background: #eef2f7; border-top: 2px solid #1f3a5f; }
+    table.board td.title { text-align: left; }
+    table.board td.title a { color: #222; text-decoration: none; }
+    table.board td.title a:hover { text-decoration: underline; }
+    .empty { padding: 40px 0; color: #888; }
+    .paging { display: flex; justify-content: center; gap: 4px; margin: 20px 0; padding: 0; list-style: none; }
+    .paging a, .paging span { display: block; min-width: 32px; padding: 6px 8px; border: 1px solid #ccc;
+           border-radius: 4px; text-align: center; text-decoration: none; color: #333; font-size: 13px; }
+    .paging .active span { background: #1f3a5f; color: #fff; border-color: #1f3a5f; }
+    .paging .disabled span { color: #bbb; }
+  </style>
+</head>
+
+<body>
+  <div layout:fragment="content">
+
+    <div class="board-head">
+      <h2>수업</h2>
+    </div>
+
+    <p class="total">전체 <b th:text="${paging.totalElements}">0</b>건</p>
+
+    <table class="board">
+      <thead>
+        <tr>
+          <th style="width:80px">번호</th>
+          <th>수업명</th>
+          <th style="width:200px">과정</th>
+          <th style="width:120px">담당 교수</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:if="${paging.totalElements == 0}">
+          <td colspan="4" class="empty">등록된 수업이 없습니다.</td>
+        </tr>
+        <!-- 번호 = 전체 개수 - (현재 페이지 * 10) - 반복 순서  → 최신 수업이 가장 큰 번호 -->
+        <tr th:each="lesson, loop : ${paging}">
+          <td th:text="${paging.totalElements - (paging.number * paging.size) - loop.index}">1</td>
+          <td class="title">
+            <a th:href="@{|/lesson/detail/${lesson.lessonId}|}" th:text="${lesson.lessonTitle}">수업명</a>
+          </td>
+          <td th:text="${lesson.course.courseTitle}">과정명</td>
+          <td th:text="${lesson.course.teacher.userName}">교수</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- 페이징: 현재 페이지 앞뒤로 5페이지씩 표시 -->
+    <ul class="paging" th:if="${paging.totalPages > 0}">
+      <li th:classappend="${!paging.hasPrevious()} ? 'disabled'">
+        <a th:if="${paging.hasPrevious()}" th:href="@{/lesson/list(page=${paging.number - 1})}">이전</a>
+        <span th:unless="${paging.hasPrevious()}">이전</span>
+      </li>
+      <li th:each="page : ${#numbers.sequence(0, paging.totalPages - 1)}"
+          th:if="${page >= paging.number - 5 and page <= paging.number + 5}"
+          th:classappend="${page == paging.number} ? 'active'">
+        <a th:unless="${page == paging.number}" th:href="@{/lesson/list(page=${page})}" th:text="${page + 1}">1</a>
+        <span th:if="${page == paging.number}" th:text="${page + 1}">1</span>
+      </li>
+      <li th:classappend="${!paging.hasNext()} ? 'disabled'">
+        <a th:if="${paging.hasNext()}" th:href="@{/lesson/list(page=${paging.number + 1})}">다음</a>
+        <span th:unless="${paging.hasNext()}">다음</span>
+      </li>
+    </ul>
+
+  </div>
+</body>
+
+</html>
