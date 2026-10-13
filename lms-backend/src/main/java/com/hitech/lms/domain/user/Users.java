@@ -47,4 +47,42 @@ public class Users {
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "dept_id", nullable = false)
 	private Dept dept;
+
+	
+	private LocalDateTime userPwChanged;
+	
+	// 상태 코드 -> 한글
+	public static String statusLabel(String s) {
+		return switch (s) {
+			case "A" -> "정상";
+			case "L" -> "잠금";
+			case "B" -> "차단";
+			case "W" -> "탈퇴";
+			default  -> s;
+		};
+	}
+
+	public String getStatusLabel() {
+		return statusLabel(userStatus);
+	}
+	
+	// 연락처 마스킹 (010-1234-5678 -> 010-****-5678)
+		public String getMaskedTel() {
+			if (userTel == null) return "";
+			return userTel.replaceAll("(\\d{2,3})-?(\\d{3,4})-?(\\d{4})", "$1-****-$3");
+		}
+
+	// 생년월일 마스킹 (20000101 -> 2000-**-**)
+	public String getMaskedBday() {
+		if (userBday == null || userBday.length() != 8) return "";
+		return userBday.substring(0, 4) + "-**-**";
+	}
+
+	// 이메일 마스킹 (kimstudent@domain.com -> kim****@domain.com)
+	public String getMaskedEmail() {
+		if (userEmail == null || !userEmail.contains("@")) return "";
+		int at = userEmail.indexOf('@');
+		String local = userEmail.substring(0, at);
+		return local.substring(0, Math.min(3, local.length())) + "****" + userEmail.substring(at);
+	}
 }
