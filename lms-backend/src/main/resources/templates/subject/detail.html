@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{layout}">
+<head>
+  <title>과목 상세</title>
+  <link rel="stylesheet" th:href="@{/css/lms.css}">
+</head>
+<body>
+<main layout:fragment="content">
+  <div class="page-head">
+    <h1>과목 상세</h1>
+    <div class="breadcrumb">홈 &gt; 교육안내 &gt; <b>과목 상세</b></div>
+  </div>
+
+  <table class="form-table">
+    <tr><th>과목 코드</th><td th:text="${subject.subjectId}">DB101</td></tr>
+    <tr><th>과목명</th><td th:text="${subject.subjectName}">데이터베이스 설계와 SQL 실무</td></tr>
+    <tr><th>학과</th><td th:text="${subject.dept.deptName}">컴퓨터정보과</td></tr>
+  </table>
+
+  <div class="btn-area">
+    <a class="btn btn-gray" th:href="@{/subject/list}">목록</a>
+
+    <th:block sec:authorize="hasRole('TEACHER')">
+      <a class="btn btn-primary" th:href="@{|/subject/update/${subject.subjectId}|}">수정</a>
+      <form th:action="@{|/subject/delete/${subject.subjectId}|}" method="post"
+            onsubmit="return confirm('정말 삭제하시겠습니까?');">
+        <button type="submit" class="btn btn-danger">삭제</button>
+      </form>
+    </th:block>
+  </div>
+</main>
+</body>
+</html>
