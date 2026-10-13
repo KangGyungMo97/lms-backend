@@ -1,5 +1,6 @@
 package com.hitech.lms.domain.course;
 
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,17 +19,17 @@ public class LessonController {
 
 	// 수업 목록 - 전체
 	@GetMapping("/list")
-	public String list(Model model, @RequestParam(value="page", defaultValue = "0") int page) {
-
-
+	public String list(Model model, @RequestParam(value = "page", defaultValue = "0") int page) {
+		Page<Lesson> paging = ls.getList(page);
+		model.addAttribute("paging", paging);
 		return "lesson/list";
 	}
 
 	// 수업 상세 - 전체
 	@GetMapping("/detail/{id}")
 	public String detail(Model model, @PathVariable("id") Long id) {
-
-
+		Lesson lesson = ls.getLesson(id);
+		model.addAttribute("lesson", lesson);
 		return "lesson/detail";
 	}
 

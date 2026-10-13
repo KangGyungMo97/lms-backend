@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.hitech.lms.domain.user.Dept;
 import com.hitech.lms.domain.user.DeptRepository;
+import com.hitech.lms.global.error.DataNotFoundException;
 
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
