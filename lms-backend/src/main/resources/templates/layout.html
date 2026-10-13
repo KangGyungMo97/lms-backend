@@ -6,42 +6,145 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <title layout:title-pattern="$CONTENT_TITLE | $LAYOUT_TITLE">하이테크 LMS</title>
-  <style>
-    * { box-sizing: border-box; }
-    body { margin: 0; font-family: 'Malgun Gothic', sans-serif; color: #222; background: #f7f7f9; }
-    header { background: #1f3a5f; color: #fff; }
-    .bar { max-width: 1100px; margin: 0 auto; padding: 0 16px; height: 56px;
-           display: flex; align-items: center; justify-content: space-between; }
-    .logo { color: #fff; text-decoration: none; font-weight: bold; font-size: 18px; }
-    nav a { color: #dfe7f2; text-decoration: none; margin-left: 16px; font-size: 14px; }
-    nav a:hover { color: #fff; }
-    main { max-width: 1100px; margin: 24px auto; padding: 0 16px; min-height: 60vh; }
-    footer { text-align: center; color: #888; font-size: 12px; padding: 24px 0; }
-  </style>
+  <title layout:title-pattern="$CONTENT_TITLE | $LAYOUT_TITLE">Smart Learning Hub</title>
+  <!-- 레이아웃(헤더 · 메뉴 · 제목 띠 · 푸터) 스타일 -->
+  <link rel="stylesheet" th:href="@{/css/layout.css}">
+  <link rel="icon" type="image/png" th:href="@{/img/favicon.png}">
 </head>
 <body>
-  <header>
-    <div class="bar">
-      <a class="logo" th:href="@{/}">하이테크 LMS</a>
-      <nav>
-        <a th:href="@{/subject/list}">교육안내</a>
-        <a th:href="@{/lesson/list}">수업참여</a>
-        <a th:href="@{/homework/list}">나의 학습</a>
-        <a th:href="@{/info}">정보마당</a>
-        <a th:href="@{/board/list}">자유게시판</a>
-        <a th:href="@{/about}">기관소개</a>
-        <a sec:authorize="isAnonymous()" th:href="@{/user/login}">로그인</a>
-        <a sec:authorize="isAuthenticated()" th:href="@{/dashboard}">대시보드</a>
-        <a sec:authorize="isAuthenticated()" th:href="@{/user/logout}"><span sec:authentication="name"></span> 로그아웃</a>
+
+  <!-- ===== 헤더 ===== -->
+  <header class="site-header">
+    <div class="inner">
+      <a class="logo" th:href="@{/}">
+        <img class="logo-mark" th:src="@{/img/logo.png}" alt="">
+        <span class="logo-text">Smart Learning Hub</span>
+        <!-- 로그인한 권한 표시 -->
+        <span class="role-badge" sec:authorize="hasRole('STUDENT')">학생</span>
+        <span class="role-badge" sec:authorize="hasRole('TEACHER')">교수</span>
+        <span class="role-badge" sec:authorize="hasRole('ADMIN')">관리자</span>
+      </a>
+
+      <!-- 상단 메뉴: 3번째 메뉴만 권한에 따라 바뀜 (학생: 나의 학습 / 교수: 학생 관리 / 관리자: 관리자) -->
+      <nav class="gnb">
+        <ul>
+          <li data-menu="/subject">
+            <a th:href="@{/subject/list}">교육안내</a>
+            <ul class="sub">
+              <li><a th:href="@{/subject/list}">과목 안내</a></li>
+            </ul>
+          </li>
+	  
+	  <!-- 학생, 교수 O / 관리자 X -->  
+          <li data-menu="/course /qna /timetable" sec:authorize="!hasRole('ADMIN')">
+            <a th:href="@{/course/list}">수업참여</a>
+            <ul class="sub">
+              <li><a th:href="@{/course/list}">나의 강의</a></li>
+              <li><a th:href="@{/qna/list}">수업 Q&amp;A</a></li>
+              <li><a th:href="@{/timetable}">시간표</a></li>
+            </ul>
+          </li>
+
+          <!-- 학생 -->
+          <li data-menu="/dashboard/student /homework /notice" sec:authorize="hasRole('STUDENT')">
+            <a th:href="@{/dashboard/student}">나의 학습</a>
+            <ul class="sub">
+              <li><a th:href="@{/dashboard/student}">대시보드</a></li>
+              <li><a th:href="@{/homework/list}">과제</a></li>
+              <li><a th:href="@{/notice/list}">공지사항</a></li>
+              <!-- <li><a th:href="@{/attendance}">출석 현황</a></li>  출석 기능 완성 후 -->
+            </ul>
+          </li>
+
+          <!-- 교수 -->
+          <li data-menu="/dashboard/teacher /homework /notice" sec:authorize="hasRole('TEACHER')">
+            <a th:href="@{/dashboard/teacher}">학생 관리</a>
+            <ul class="sub">
+              <li><a th:href="@{/dashboard/teacher}">대시보드</a></li>
+              <li><a th:href="@{/homework/list}">과제 관리</a></li>
+              <li><a th:href="@{/notice/list}">과목 공지</a></li>
+              <!-- <li><a th:href="@{/attendance}">출석부</a></li>  출석 기능 완성 후 -->
+            </ul>
+          </li>
+
+          <!-- 관리자 -->
+          <li data-menu="/dashboard/admin /admin" sec:authorize="hasRole('ADMIN')">
+            <a th:href="@{/dashboard/admin}">관리자</a>
+            <ul class="sub">
+              <li><a th:href="@{/dashboard/admin}">대시보드</a></li>
+              <li><a th:href="@{/admin/user/create}">계정 등록</a></li>
+              <li><a th:href="@{/admin/user/list}">회원 목록</a></li>
+              <li><a th:href="@{/admin/post/list}">관리자 게시글</a></li>
+            </ul>
+          </li>
+
+          <li data-menu="/info">
+            <a th:href="@{/info/notice/list}">정보마당</a>
+            <ul class="sub">
+              <li><a th:href="@{/info/notice/list}">시스템 공지</a></li>
+            </ul>
+          </li>
+
+          <li data-menu="/board">
+            <a th:href="@{/board/list}">자유게시판</a>
+            <ul class="sub">
+              <li><a th:href="@{/board/list}">게시글 목록</a></li>
+            </ul>
+          </li>
+
+          <li data-menu="/about">
+            <a th:href="@{/about/course}">기관소개</a>
+            <ul class="sub">
+              <li><a th:href="@{/about/course}">과정 소개</a></li>
+            </ul>
+          </li>
+        </ul>
       </nav>
+
+      <!-- 오른쪽: 로그인 / 사용자 · 로그아웃 -->
+      <div class="util">
+        <a sec:authorize="isAnonymous()" class="btn-login" th:href="@{/user/login}">로그인</a>
+        <th:block sec:authorize="isAuthenticated()">
+          <span class="user"><span sec:authentication="name">2610001</span> 님</span>
+          <a class="btn-logout" th:href="@{/user/logout}">로그아웃</a>
+        </th:block>
+      </div>
     </div>
   </header>
 
-  <!-- 각 화면의 내용이 여기에 들어감 -->
-  <main layout:fragment="content"></main>
+  <!-- ===== 페이지 제목 띠 =====
+       각 화면에서 아래처럼 넣으면 '제목 + 홈 › 메뉴 › 하위메뉴' 띠가 나옴 (안 넣으면 띠 없음)
+       <section layout:fragment="page-head">
+         <div th:replace="~{fragments/page_head :: head('강의 등록', '수업참여', '나의 강의')}"></div>
+       </section>
+  -->
+  <!-- (layout:fragment 는 요소가 통째로 바뀌므로 스타일은 바깥 태그에) -->
+  <section layout:fragment="page-head"></section>
 
-  <footer>© 하이테크 LMS</footer>
+  <!-- ===== 각 화면 내용 ===== -->
+  <main class="content">
+    <div layout:fragment="content"></div>
+  </main>
+
+  <!-- ===== 푸터 ===== -->
+  <footer class="site-footer">
+    <div class="inner">
+      <span class="f-logo">Smart Learning Hub</span>
+      <span>스마트소프트웨어과 학습관리시스템</span>
+      <span class="copy">© 2026 하이테크 LMS 팀 프로젝트</span>
+    </div>
+  </footer>
+
+  <!-- 지금 주소에 맞는 상단 메뉴에 표시 (data-menu 에 적힌 주소로 시작하면 active) -->
+  <script>
+    (function () {
+      var path = location.pathname;
+      document.querySelectorAll('.gnb > ul > li[data-menu]').forEach(function (li) {
+        li.getAttribute('data-menu').split(' ').forEach(function (prefix) {
+          if (prefix && path.indexOf(prefix) === 0) li.classList.add('active');
+        });
+      });
+    })();
+  </script>
 </body>
 </html>

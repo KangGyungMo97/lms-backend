@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+
+<head>
+  <title>강의 등록</title>
+  <style>
+    .form-box { background: #fff; border-top: 2px solid #1f3a5f; padding: 8px 16px; }
+    .row { display: flex; align-items: center; padding: 12px 0; border-bottom: 1px solid #eee; }
+    .row:last-child { border-bottom: none; }
+    .row label.head { width: 120px; font-weight: bold; font-size: 14px; }
+    .row label.head .req { color: #c0392b; font-size: 12px; font-weight: normal; }
+    .row .field { flex: 1; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .row input, .row textarea, .row select { padding: 8px 10px; border: 1px solid #ccc; border-radius: 4px;
+           font-family: inherit; font-size: 14px; }
+    .row input.wide, .row textarea { width: 100%; }
+    .row textarea { height: 160px; resize: vertical; }
+    .row select { min-width: 160px; }
+    .row input[type=date] { width: 170px; }
+    .row .readonly { background: #f3f4f6; color: #555; }
+    .hint { color: #888; font-size: 12px; }
+    .errors { background: #fdecea; color: #c0392b; border-radius: 4px; padding: 10px 14px; margin-bottom: 14px; font-size: 14px; }
+    .errors p { margin: 2px 0; }
+    .actions { display: flex; justify-content: space-between; margin-top: 16px; }
+    .btn { display: inline-block; padding: 7px 14px; border: 1px solid #1f3a5f; border-radius: 4px;
+           background: #fff; color: #1f3a5f; text-decoration: none; font-size: 14px; cursor: pointer; }
+    .btn-primary { background: #1f3a5f; color: #fff; }
+  </style>
+</head>
+
+<body>
+  <!-- 페이지 제목 띠 (layout.html 참고) -->
+  <section layout:fragment="page-head">
+    <div th:replace="~{fragments/page_head :: head('강의 등록', '수업참여', '나의 강의')}"></div>
+  </section>
+
+  <div layout:fragment="content">
+
+
+    <form th:action="@{/course/create}" th:object="${courseForm}" method="post">
+      <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+
+      <div class="errors" th:if="${#fields.hasAnyErrors()}">
+        <p th:each="err : ${#fields.allErrors()}" th:text="${err}">오류 메시지</p>
+      </div>
+
+      <div class="form-box">
+
+        <!-- 과목명: 직접 입력 (같은 이름의 과목이 있으면 그 과목으로, 없으면 새 과목으로 저장) -->
+        <div class="row">
+          <label class="head" for="subjectName">과목명 <span class="req">* 필수</span></label>
+          <div class="field">
+            <input type="text" id="subjectName" class="wide" th:field="*{subjectName}" maxlength="50"
+                   placeholder="예) 데이터베이스 설계와 SQL 실무">
+          </div>
+        </div>
+
+        <!-- 분류(학과)는 교수의 학과로 고정, 대상은 1학년 / 2학년 / 하이테크 -->
+        <div class="row">
+          <label class="head" for="target">분류 / 대상 <span class="req">* 필수</span></label>
+          <div class="field">
+            <select class="readonly" disabled>
+              <option th:text="${deptName}">스마트소프트웨어과</option>
+            </select>
+            <select id="target" th:field="*{target}">
+              <option value="">대상 선택</option>
+              <option th:each="t : ${targetCounts}" th:value="${t.key}"
+                      th:text="|${targetLabels[t.key]} (${t.value}명)|">2학년 (28명)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="row">
+          <label class="head" for="startDate">수업 기간 <span class="req">* 필수</span></label>
+          <div class="field">
+            <input type="date" id="startDate" th:field="*{startDate}">
+            ~
+            <input type="date" id="endDate" th:field="*{endDate}">
+            <span class="hint">기간을 주 단위로 나눠 1주차 ~ N주차 수업이 자동으로 만들어집니다.</span>
+          </div>
+        </div>
+
+        <div class="row">
+          <label class="head" for="weekdays">수업 시간 <span class="req">* 필수</span></label>
+          <div class="field">
+            <select id="weekdays" th:field="*{weekdays}">
+              <option value="">요일 선택</option>
+              <option th:each="w : ${weekdayLabels}" th:value="${w.key}" th:text="${w.value}">월·수</option>
+            </select>
+            <select id="startTime" th:field="*{startTime}" style="min-width:120px">
+              <option th:each="p : ${periods}" th:value="${p}" th:text="|${p}교시 ${startLabels[p]}|">2교시 10:00</option>
+            </select>
+            ~
+            <select id="endTime" th:field="*{endTime}" style="min-width:120px">
+              <option th:each="p : ${periods}" th:value="${p}" th:text="|${p}교시 ${endLabels[p]}|">4교시 12:50</option>
+            </select>
+            <span class="hint">시간표에 자동 반영</span>
+          </div>
+        </div>
+
+        <div class="row">
+          <label class="head">수강생 <span class="req">* 필수</span></label>
+          <div class="field">
+            <span>선택한 <b>대상</b>의 학생 전체가 자동으로 수강 등록됩니다.</span>
+            <span class="hint">(개별 선택은 추후 추가)</span>
+          </div>
+        </div>
+
+        <div class="row">
+          <label class="head" for="content">강의 소개 <span class="req">* 필수</span></label>
+          <div class="field">
+            <textarea id="content" th:field="*{content}" maxlength="500"
+                      placeholder="강의 목표, 진행 방식, 평가 방법 등을 입력하세요."></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <a th:href="@{/course/list}" class="btn">취소</a>
+        <button type="submit" class="btn btn-primary">등록</button>
+      </div>
+    </form>
+
+  </div>
+</body>
+
+</html>
