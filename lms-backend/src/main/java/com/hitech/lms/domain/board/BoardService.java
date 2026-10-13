@@ -1,6 +1,7 @@
 package com.hitech.lms.domain.board;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,6 +26,8 @@ public class BoardService {
 	private final BoardRepository br;
 
 	private final UsersRepository ur;
+
+	private final BoardCommentRepository cr;   // 댓글
 
 	// 목록 - 최신순 + 페이징(10개) + 검색
 	public Page<Board> getList(int page, String kw) {
@@ -88,19 +91,48 @@ public class BoardService {
 				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "사용자를 찾을 수 없습니다."));
 	}
 
-	// ===== 댓글 (P3 - 안 해도 OK) =====
-	// ERD 에 댓글 테이블이 없음 -> 엔티티 추가 후 파라미터 / 반환 타입 맞추기
+	// ===== 댓글 =====
 
-	public void createComment(Board board, String content, Users writer) {
-
+	// 이 글의 댓글 목록 (삭제 안 된 것만, 오래된 순)
+	public List<BoardComment> getCommentList(Board board) {
+		return cr.findByBoardAndCommentIsUseOrderByCommentIdAsc(board, "Y");
 	}
 
-	public void modifyComment(Long commentId, String content) {
-
+	// 댓글 하나 찾기 - 없거나 삭제(N)된 댓글이면 404
+	public BoardComment getComment(Long commentId) {
+		BoardComment comment = cr.findById(commentId)
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "댓글을 찾을 수 없습니다."));
+		// 삭제된 댓글이거나, 댓글이 달린 게시글이 삭제된 경우도 없는 댓글로 취급
+		if (!"Y".equals(comment.getCommentIsUse()) || !"Y".equals(comment.getBoard().getBoardIsUse())) {
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND, "댓글을 찾을 수 없습니다.");
+		}
+		return comment;
 	}
 
-	public void deleteComment(Long commentId) {
+	// 댓글 작성 - 작성일 now, 게시글 · 작성자 넣고 저장
+	@Transactional
+	public BoardComment createComment(Board board, String content, Users writer) {
+		BoardComment comment = new BoardComment();
+		comment.setCommentContent(content);
+		comment.setCommentCreateDate(LocalDateTime.now());
+		comment.setBoard(board);
+		comment.setWriter(writer);
+		return cr.save(comment);
+	}
 
+	// 댓글 수정 - 수정일 now
+	@Transactional
+	public void modifyComment(BoardComment comment, String content) {
+		comment.setCommentContent(content);
+		comment.setCommentUpdateDate(LocalDateTime.now());
+		cr.save(comment);
+	}
+
+	// 댓글 삭제 - 게시글과 같은 방식으로 comment_is_use = "N"
+	@Transactional
+	public void deleteComment(BoardComment comment) {
+		comment.setCommentIsUse("N");
+		cr.save(comment);
 	}
 
 }
