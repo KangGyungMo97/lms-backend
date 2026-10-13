@@ -10,6 +10,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface LessonRepository extends JpaRepository<Lesson, Long> {
 	
 	List<Lesson> findByCourse_Teacher_UserIdOrderByLessonIdDesc(String userId);
-	@EntityGraph(attributePaths = "course")
+	@EntityGraph(attributePaths = {"course", "course.teacher"})
 	Page<Lesson> findAll(Pageable pageable);
 }
