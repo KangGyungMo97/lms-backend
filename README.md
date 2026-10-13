@@ -40,6 +40,8 @@ Spring Boot 4.1.1 · Java 17 · Gradle · JPA · H2 · Spring Security · Thymel
 - Q&A 질문 + 답변 등록 → 코드는 반영됨, **동작 확인 필요**
 - 과제 · 제출 · Q&A 수정 · 삭제
 - 첨부파일 업로드 · 다운로드 (`FileService`, 공통)
+- 출결 관련 아이디어 및 구현하기
+- HTML 수정
 
 **P3 (안 해도 됨)**
 - 제출물 zip 다운로드
