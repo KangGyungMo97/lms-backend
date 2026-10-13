@@ -5,22 +5,86 @@
       layout:decorate="~{layout}">
 <head>
   <title>로그인</title>
+  <link rel="stylesheet" th:href="@{/css/login.css}">	 
 </head>
 <body>
-  <div layout:fragment="content" style="max-width:360px; margin:40px auto;">
-    <h2>로그인</h2>
+  <!-- 페이지 제목 띠 -->
+  <section layout:fragment="page-head">
+    <div th:replace="~{fragments/page_head :: head('로그인', null, null)}"></div>
+  </section>
 
-    <p th:if="${param.error}"  style="color:#c0392b;">아이디 또는 비밀번호가 올바르지 않습니다.</p>
-    <p th:if="${param.logout}" style="color:#2e7d32;">로그아웃되었습니다.</p>
+  <div layout:fragment="content">
+    <div class="login-box">
 
-    <form th:action="@{/user/login}" method="post">
-      <p><input type="text"     name="username" placeholder="학번 / 사번" required style="width:100%; padding:8px;"></p>
-      <p><input type="password" name="password" placeholder="비밀번호"     required style="width:100%; padding:8px;"></p>
-      <p><button type="submit" style="width:100%; padding:10px;">로그인</button></p>
-    </form>
-	<p style="text-align:center; font-size:14px;">
-		<a th:href="@{/user/find-id}">아이디(학번/사번) 찾기</a>
-	</p>
+		<!-- 왼쪽: 로그인 폼 (POST /user/login 은 스프링 시큐리티가 처리, th:action 이 CSRF 값도 자동으로 넣어 줌) -->
+		<div class="login-form">
+		  <h3>회원 로그인</h3>
+		  <p class="sub">학번/사번과 비밀번호를 입력해 주세요.</p>
+
+		  <div class="msg error" th:if="${param.error}">학번(사번) 또는 비밀번호가 올바르지 않습니다.</div>
+		  <div class="msg ok" th:if="${param.logout}">로그아웃되었습니다.</div>
+
+		  <form th:action="@{/user/login}" method="post" id="loginForm">
+		    <div class="field">
+		      <label for="username">아이디 (학번/사번)</label>
+		      <input type="text" id="username" name="username" placeholder="예) 2610001" required autofocus autocomplete="username">
+		    </div>
+		    <div class="field">
+		      <label for="password">비밀번호</label>
+		      <input type="password" id="password" name="password" placeholder="비밀번호" required autocomplete="current-password">
+		    </div>
+		    <div class="row">
+		      <label><input type="checkbox" id="saveId"> 학번 저장</label>
+		    </div>
+		    <button type="submit" class="btn-submit">로그인</button>
+			
+			<p style="text-align:center; font-size:14px;">
+				<a th:href="@{/user/find-id}">아이디(학번/사번) 찾기</a>
+			</p>
+			
+		  </form>
+	
+	 <!-- 아이디(학번/사번) 찾기 -->	  
+		  <div class="help">
+		    · 처음 로그인하면 관리자가 알려준 <b>임시 비밀번호</b>를 입력하세요.<br>
+		    · 비밀번호를 잊어버렸다면 학과 사무실(관리자)에 문의하세요.
+		  </div>
+		</div>	
+		
+      <!-- 오른쪽: 사이트 소개 -->
+      <div class="login-intro">
+        <img th:src="@{/img/logo.png}" alt="">
+        <h2>하이테크 LMS</h2>
+        <p>스마트소프트웨어과 학생 · 교수를 위한<br>학습관리시스템입니다.</p>
+        <ul>
+          <li>강의 · 시간표 · 수업 Q&amp;A</li>
+          <li>과제 제출 · 채점 결과 확인</li>
+          <li>과목 공지 · 정보마당 · 자유게시판</li>
+        </ul>
+        <p class="foot">계정은 학과(관리자)에서 발급합니다.</p>
+      </div>
+
+    </div>
+
+    <!-- 학번 저장 (이 브라우저에만 저장, 비밀번호는 저장 안 함) -->
+    <script>
+      (function () {
+        var KEY = 'lms.savedId';
+        var id = document.getElementById('username');
+        var save = document.getElementById('saveId');
+        try {
+          var saved = localStorage.getItem(KEY);
+          if (saved) { id.value = saved; save.checked = true; document.getElementById('password').focus(); }
+        } catch (e) {}
+        document.getElementById('loginForm').addEventListener('submit', function () {
+          try {
+            if (save.checked) localStorage.setItem(KEY, id.value.trim());
+            else localStorage.removeItem(KEY);
+          } catch (e) {}
+        });
+      })();
+    </script>
+	
   </div>
 </body>
 </html>
