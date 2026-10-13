@@ -28,7 +28,7 @@ public class Notice {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long noticeId;
 
-	@Column(length = 50, nullable = false)
+	@Column(length = 200, nullable = false)
 	private String noticeTitle;
 
 	@Column(length = 1000, nullable = false)

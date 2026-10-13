@@ -32,6 +32,7 @@ public class NoticeService {
 	public Page<Notice> getList(int page, String kw) {
 		List<Sort.Order> sorts = new ArrayList<>();
 		sorts.add(Sort.Order.desc("noticeCreateDate"));
+		sorts.add(Sort.Order.desc("noticeId"));
 		Pageable pageable = PageRequest.of(page, 10, Sort.by(sorts));
 		return nr.findAllByKeyword(kw == null ? "" : kw, pageable);
 	}
