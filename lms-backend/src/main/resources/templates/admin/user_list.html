@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head>
+  <title>회원 목록</title>
+</head>
+<body>
+<div layout:fragment="content" style="max-width:1000px; margin:20px auto;">
+
+  <h2>회원 목록</h2>
+
+  <!-- 통계 카드 -->
+  <div style="display:flex; gap:12px; margin-bottom:16px;">
+    <div style="flex:1; border:1px solid #ddd; padding:12px;">전체 회원<br><strong th:text="${#numbers.formatInteger(stats.total, 1, 'COMMA')} + '명'"></strong></div>
+    <div style="flex:1; border:1px solid #ddd; padding:12px;">학생<br><strong th:text="${#numbers.formatInteger(stats.student, 1, 'COMMA')} + '명'"></strong></div>
+    <div style="flex:1; border:1px solid #ddd; padding:12px;">교수<br><strong th:text="${#numbers.formatInteger(stats.teacher, 1, 'COMMA')} + '명'"></strong></div>
+    <div style="flex:1; border:1px solid #ddd; padding:12px;">차단·잠금<br><strong th:text="${#numbers.formatInteger(stats.blocked, 1, 'COMMA')} + '명'"></strong></div>
+  </div>
+
+  <!-- 검색 필터 -->
+  <form th:action="@{/admin/user/list}" method="get" style="display:flex; gap:8px; align-items:flex-end; margin-bottom:16px;">
+    <div>
+      <label>구분</label><br>
+      <select name="role">
+        <option value="">전체</option>
+        <option value="S" th:selected="${role == 'S'}">학생</option>
+        <option value="P" th:selected="${role == 'P'}">교수</option>
+        <option value="A" th:selected="${role == 'A'}">관리자</option>
+      </select>
+    </div>
+    <div>
+      <label>학과</label><br>
+      <select name="deptId">
+        <option value="">전체</option>
+        <option th:each="d : ${deptList}" th:value="${d.deptId}" th:text="${d.deptName}"
+                th:selected="${deptId == d.deptId}"></option>
+      </select>
+    </div>
+    <div>
+      <label>상태</label><br>
+      <select name="status">
+        <option value="">전체</option>
+        <option value="A" th:selected="${status == 'A'}">정상</option>
+        <option value="L" th:selected="${status == 'L'}">잠금</option>
+        <option value="B" th:selected="${status == 'B'}">차단</option>
+        <option value="W" th:selected="${status == 'W'}">탈퇴</option>
+      </select>
+    </div>
+    <div style="flex:1;">
+      <label>검색어</label><br>
+      <input type="text" name="kw" th:value="${kw}" placeholder="이름 또는 학번/사번" style="width:100%;">
+    </div>
+    <button type="submit">검색</button>
+    <a th:href="@{/admin/user/list}">초기화</a>
+  </form>
+
+  <!-- 목록 헤더 -->
+  <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+    <span>검색 결과 <strong th:text="${#numbers.formatInteger(paging.totalElements, 1, 'COMMA')}"></strong>명</span>
+    <a th:href="@{/admin/user/create}">+ 계정 발급</a>
+  </div>
+
+  <!-- 목록 -->
+  <table style="width:100%; border-collapse:collapse; text-align:center;">
+    <thead>
+      <tr style="border-bottom:2px solid #333;">
+        <th><input type="checkbox"></th>
+        <th>학번/사번</th><th>이름</th><th>구분</th><th>학과</th>
+        <th>연락처</th><th>최근 접속</th><th>상태</th><th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr th:each="u : ${paging}" style="border-bottom:1px solid #ddd;">
+        <td><input type="checkbox" th:value="${u.userId}"></td>
+        <td th:text="${u.userId}"></td>
+        <td th:text="${u.userName}"></td>
+        <td th:text="${u.userRole == 'S'} ? '학생' : (${u.userRole == 'P'} ? '교수' : '관리자')"></td>
+        <td th:text="${u.dept.deptName}"></td>
+        <td th:text="${u.maskedTel}"></td>
+        <td th:text="${u.userLastLogin != null} ? ${#temporals.format(u.userLastLogin, 'MM-dd HH:mm')} : '-'"></td>
+        <td th:text="${u.statusLabel}"></td>
+        <td><a th:href="@{/admin/user/{id}(id=${u.userId})}">상세</a></td>
+      </tr>
+      <tr th:if="${paging.empty}">
+        <td colspan="9" style="padding:30px;">검색 결과가 없습니다.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- 페이징 -->
+  <div th:if="${paging.totalPages > 0}" style="text-align:center; margin-top:16px;">
+    <a th:if="${paging.hasPrevious()}"
+       th:href="@{/admin/user/list(page=${paging.number - 1}, kw=${kw}, role=${role}, deptId=${deptId}, status=${status})}">&lt;</a>
+
+    <span th:each="i : ${#numbers.sequence(0, paging.totalPages - 1)}"
+          th:if="${i >= paging.number - 2 and i <= paging.number + 2}">
+      <a th:href="@{/admin/user/list(page=${i}, kw=${kw}, role=${role}, deptId=${deptId}, status=${status})}"
+         th:text="${i + 1}"
+         th:style="${i == paging.number} ? 'font-weight:bold; text-decoration:underline;' : ''"></a>
+    </span>
+
+    <a th:if="${paging.hasNext()}"
+       th:href="@{/admin/user/list(page=${paging.number + 1}, kw=${kw}, role=${role}, deptId=${deptId}, status=${status})}">&gt;</a>
+  </div>
+</div>
+</body>
+</html>

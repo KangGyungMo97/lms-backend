@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head>
+  <title>아이디 찾기</title>
+</head>
+<body>
+  <div layout:fragment="content" style="max-width:360px; margin:40px auto;">
+    <h2>아이디 찾기</h2>
+
+    <!-- 탭 -->
+    <p style="font-size:14px;">
+      <strong>아이디(학번/사번) 찾기</strong> |
+      <a th:href="@{/user/find-pw}">비밀번호 찾기</a>
+    </p>
+
+    <!-- 단계 표시 -->
+    <p style="font-size:14px;">
+      <span th:style="${foundIds == null} ? 'font-weight:bold;' : ''">1. 정보 입력</span> &gt;
+      <span th:style="${foundIds != null} ? 'font-weight:bold;' : ''">2. 결과 확인</span>
+    </p>
+
+    <!-- 1단계: 정보 입력 -->
+    <form th:if="${foundIds == null}" th:action="@{/user/find-id}" method="post">
+      <p style="font-size:13px; color:#666;">등록된 이름과 생년월일을 입력하면 학번/사번을 확인할 수 있습니다.</p>
+
+      <p th:if="${error}" th:text="${error}" style="color:#c0392b;"></p>
+	  
+	  <p style="font-size:14px; font-weight:bold">
+	      이름</p>
+      <p><input type="text" name="userName" placeholder="이름 입력" required style="width:100%; padding:8px;"></p>
+	  <p style="font-size:14px; font-weight:bold">
+	  	  생년월일</p>
+      <p><input type="text" name="userBday" placeholder="예) 20000101 (8자리)"
+                maxlength="8" pattern="\d{8}" required style="width:100%; padding:8px;"></p>
+      <p>
+        <label><input type="radio" name="userRole" value="S" checked> 학생</label>
+        <label><input type="radio" name="userRole" value="P"> 교수</label>
+      </p>
+      <p>
+        <a th:href="@{/user/login}">취소</a>
+        <button type="submit" style="padding:10px 20px;">아이디 찾기</button>
+      </p>
+    </form>
+
+    <!-- 2단계: 결과 확인 -->
+    <div th:if="${foundIds != null}">
+      <p>일치하는 아이디(학번/사번)입니다.</p>
+      <ul>
+        <li th:each="id : ${foundIds}" th:text="${id}"></li>
+      </ul>
+      <p>
+        <a th:href="@{/user/login}">로그인하러 가기</a> |
+        <a th:href="@{/user/find-pw}">비밀번호 찾기</a>
+      </p>
+    </div>
+  </div>
+</body>
+</html>
