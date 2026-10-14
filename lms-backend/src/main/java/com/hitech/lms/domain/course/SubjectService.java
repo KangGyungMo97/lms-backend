@@ -1,7 +1,5 @@
 package com.hitech.lms.domain.course;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -22,21 +20,19 @@ import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
-//아직 작업중!!!
-//DATANOTFOUND파일이 있으면 주석해제해도 무방!
-//DATANOTFOUND파일이 없으면 주석해제하지말것!
 public class SubjectService {
 
 	private final SubjectRepository sr;
 	private final DeptRepository dr;
 
-	// 목록 - 페이징(10개) + 검색  (QuestionService.getList 참고)
+	// 목록 - 페이징(10개) + 검색
 	@Transactional(readOnly = true)
 	public Page<Subject> getList(int page, String kw) {
 		Pageable pageable = PageRequest.of(page, 10, Sort.by("subjectId").ascending());
 		return sr.findAll(search(kw), pageable);
 	}
-	
+
+	// 상세 - findById, 없으면 DataNotFoundException
 	@Transactional(readOnly = true)
 	public Subject getSubject(String id) {
 		Optional<Subject> result = sr.findById(id);
@@ -46,7 +42,7 @@ public class SubjectService {
 			throw new DataNotFoundException("과목을 찾을 수 없습니다!");
 		}
 	}
-	// 상세 - findById, 없으면 DataNotFoundException
+
 	private Specification<Subject> search(String kw) {
 		return (root, query, cb) -> {
 			if (kw == null || kw.isBlank()) {
@@ -57,7 +53,7 @@ public class SubjectService {
 			return cb.or(
 				cb.like(root.get("subjectName"), like),
 				cb.like(root.get("subjectId"), like),
-				cb.like(d.get("deptName"), like)    // Dept의 실제 필드명 확인
+				cb.like(d.get("deptName"), like)
 			);
 		};
 	}
@@ -83,13 +79,13 @@ public class SubjectService {
 		sr.save(subject);
 	}
 
-	// 삭제
+	// 삭제 - [수정] flush 로 FK 위반을 이 메서드 안에서 바로 발생시켜 컨트롤러가 잡을 수 있게 함
 	@Transactional
 	public void delete(Subject subject) {
 		sr.delete(subject);
+		sr.flush();
 	}
-	
-	//DataNotFoundException은 notice생성할때 같이 생성됨
+
 	private Dept findDept(String deptId) {
 		Optional<Dept> result = dr.findById(deptId);
 		if (result.isPresent()) {
@@ -98,7 +94,5 @@ public class SubjectService {
 			throw new DataNotFoundException("학과를 찾을수 없습니다!");
 		}
 	}
-	
-	
 
 }
