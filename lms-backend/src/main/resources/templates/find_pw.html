@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head>
+  <title>비밀번호 찾기</title>
+</head>
+<body>
+  <div layout:fragment="content" style="max-width:480px; margin:40px auto;">
+    <h2>비밀번호 찾기</h2>
+
+    <!-- 탭 -->
+    <p style="font-size:14px;">
+      <a th:href="@{/user/find-id}">아이디(학번/사번) 찾기</a> |
+      <strong>비밀번호 찾기</strong>
+    </p>
+
+    <!-- 단계 표시 -->
+    <p style="font-size:14px;">
+      <span th:style="${state.step == 1} ? 'font-weight:bold;' : ''">1. 학번/사번 입력</span> &gt;
+      <span th:style="${state.step == 2} ? 'font-weight:bold;' : ''">2. 휴대폰 인증</span> &gt;
+      <span th:style="${state.step == 3} ? 'font-weight:bold;' : ''">3. 새 비밀번호 설정</span>
+    </p>
+
+    <p th:if="${msg}" th:text="${msg}" style="color:#2e7d32;"></p>
+    <p th:if="${error}" th:text="${error}" style="color:#c0392b;"></p>
+
+    <!-- ===== 1단계: 학번/사번 입력 ===== -->
+    <form th:if="${state.step == 1}" th:action="@{/user/find-pw/id}" method="post">
+      <p style="font-size:13px; color:#666;">비밀번호를 찾을 학번/사번을 입력해 주세요.</p>
+      <p>아이디 (학번/사번) <span style="color:#c0392b;">*</span><br>
+        <input type="text" name="userId" placeholder="예) 20261234" required style="width:100%; padding:8px;">
+      </p>
+      <p>
+        <a th:href="@{/user/find-pw/cancel}">취소</a>
+        <button type="submit" style="padding:10px 20px;">다음</button>
+      </p>
+    </form>
+
+    <!-- ===== 2단계: 휴대폰 인증 ===== -->
+    <div th:if="${state.step == 2}">
+      <p style="font-size:13px; color:#666;">계정에 등록된 휴대폰 번호로 인증번호를 보냅니다.</p>
+
+      <!-- 인증번호 받기 -->
+      <form th:action="@{/user/find-pw/send}" method="post">
+        <p>휴대폰 번호 <span style="color:#c0392b;">*</span><br>
+          <input type="text" name="phone" th:value="${phone}" placeholder="010-1234-5678"
+                 th:readonly="${state.verified}" required style="width:70%; padding:8px;">
+          <button type="submit" th:disabled="${state.verified}">인증번호 받기</button>
+        </p>
+      </form>
+
+      <!-- 인증번호 확인 -->
+      <form th:action="@{/user/find-pw/verify}" method="post">
+        <input type="hidden" name="phone" th:value="${phone}">
+        <p>인증번호 <span style="color:#c0392b;">*</span><br>
+          <input type="text" name="code" placeholder="인증번호 6자리" maxlength="6"
+                 th:disabled="${state.verified}" required style="width:55%; padding:8px;">
+          <span id="timer" th:if="${state.codeSent and !state.verified}"
+                th:attr="data-remain=${state.remainSeconds}" style="color:#c0392b;"></span>
+          <button type="submit" th:disabled="${state.verified}">확인</button>
+        </p>
+        <p style="font-size:12px; color:#888;">인증번호가 오지 않으면 입력한 번호를 확인한 뒤 다시 요청해 주세요.</p>
+      </form>
+
+      <!-- 이전 / 다음 -->
+      <div style="display:flex; gap:8px;">
+        <form th:action="@{/user/find-pw/prev}" method="post">
+          <button type="submit">이전</button>
+        </form>
+        <form th:action="@{/user/find-pw/next}" method="post">
+          <button type="submit" th:disabled="${!state.verified}">다음</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- ===== 3단계: 새 비밀번호 설정 ===== -->
+    <form th:if="${state.step == 3}" th:action="@{/user/find-pw/reset}" method="post">
+      <p style="color:#2e7d32; background:#eaf6ec; padding:10px;">
+        본인 인증이 완료되었습니다. 새 비밀번호를 설정해 주세요.
+      </p>
+      <p>새 비밀번호 <span style="color:#c0392b;">*</span><br>
+        <input type="password" name="newPassword" placeholder="영문, 숫자, 특수문자 포함 8~16자"
+               minlength="8" maxlength="16" required style="width:100%; padding:8px;">
+      </p>
+      <p>새 비밀번호 확인 <span style="color:#c0392b;">*</span><br>
+        <input type="password" name="newPasswordConfirm" placeholder="비밀번호 다시 입력"
+               minlength="8" maxlength="16" required style="width:100%; padding:8px;">
+      </p>
+      <p style="font-size:12px; color:#888;">이전에 사용한 비밀번호는 사용할 수 없습니다.</p>
+      <p>
+        <a th:href="@{/user/find-pw/cancel}">취소</a>
+        <button type="submit" style="padding:10px 20px;">비밀번호 변경</button>
+      </p>
+    </form>
+  </div>
+
+  <!-- 인증번호 남은 시간 타이머 -->
+  <th:block layout:fragment="script">
+  </th:block>
+  <script>
+    const timer = document.getElementById('timer');
+    if (timer) {
+      let remain = parseInt(timer.dataset.remain, 10);
+      const render = () => {
+        if (remain <= 0) {
+          timer.textContent = '시간 만료';
+          return;
+        }
+        const m = String(Math.floor(remain / 60)).padStart(2, '0');
+        const s = String(remain % 60).padStart(2, '0');
+        timer.textContent = m + ':' + s;
+        remain--;
+        setTimeout(render, 1000);
+      };
+      render();
+    }
+  </script>
+</body>
+</html>

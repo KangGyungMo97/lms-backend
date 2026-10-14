@@ -23,6 +23,7 @@
 
 		  <div class="msg error" th:if="${param.error}">학번(사번) 또는 비밀번호가 올바르지 않습니다.</div>
 		  <div class="msg ok" th:if="${param.logout}">로그아웃되었습니다.</div>
+		  <div class="msg ok" th:if="${param.pwChanged}">비밀번호가 변경되었습니다. 새 비밀번호로 로그인해 주세요.</div>
 
 		  <form th:action="@{/user/login}" method="post" id="loginForm">
 		    <div class="field">
@@ -39,15 +40,15 @@
 		    <button type="submit" class="btn-submit">로그인</button>
 			
 			<p style="text-align:center; font-size:14px;">
-				<a th:href="@{/user/find-id}">아이디(학번/사번) 찾기</a>
+				<a th:href="@{/user/find-id}">아이디(학번/사번) 찾기</a> |
+				<a th:href="@{/user/find-pw}">비밀번호 찾기</a>
 			</p>
 			
 		  </form>
-	
-	 <!-- 아이디(학번/사번) 찾기 -->	  
+		  
 		  <div class="help">
 		    · 처음 로그인하면 관리자가 알려준 <b>임시 비밀번호</b>를 입력하세요.<br>
-		    · 비밀번호를 잊어버렸다면 학과 사무실(관리자)에 문의하세요.
+		    · 비밀번호를 잊어버렸다면 <b>비밀번호 찾기</b>에서 휴대폰 인증 후 다시 설정할 수 있습니다.
 		  </div>
 		</div>	
 		
