@@ -1,26 +1,132 @@
 <!DOCTYPE html>
-<html lang="ko"
-      xmlns:th="http://www.thymeleaf.org"
-      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
-      layout:decorate="~{layout}">
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
-  <title>로그인</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>로그인 | Smart Learning Hub</title>
+  <link rel="icon" type="image/png" th:href="@{/img/favicon.png}">
+  <link rel="stylesheet" th:href="@{/css/login.css}">
 </head>
 <body>
-  <div layout:fragment="content" style="max-width:360px; margin:40px auto;">
-    <h2>로그인</h2>
 
-    <p th:if="${param.error}"  style="color:#c0392b;">아이디 또는 비밀번호가 올바르지 않습니다.</p>
-    <p th:if="${param.logout}" style="color:#2e7d32;">로그아웃되었습니다.</p>
+  <div class="login-wrap">
 
-    <form th:action="@{/user/login}" method="post">
-      <p><input type="text"     name="username" placeholder="학번 / 사번" required style="width:100%; padding:8px;"></p>
-      <p><input type="password" name="password" placeholder="비밀번호"     required style="width:100%; padding:8px;"></p>
-      <p><button type="submit" style="width:100%; padding:10px;">로그인</button></p>
-    </form>
-	<p style="text-align:center; font-size:14px;">
-		<a th:href="@{/user/find-id}">아이디(학번/사번) 찾기</a>
-	</p>
+    <!-- 1. 상단: 학교 캠퍼스 사진 배경 영역 (가로 전체) -->
+    <div class="bg-top" th:style="|background-image: url('@{/img/campus.jpg}');|">
+      <div class="bg-top-overlay"></div>
+    </div>
+
+    <!-- 2. 하단: 단색(네이비) 배경 영역 (가로 전체) -->
+    <div class="bg-bottom"></div>
+
+    <!-- 3. 가운데: 상·하단 경계에 겹쳐서 뜨는 컨테이너 -->
+    <div class="center-container">
+
+      <!-- 카드 위쪽 브랜드 타이틀 -->
+      <div class="brand-header">
+        <p class="slogan">현장 실무형 IT 인재를 키우는 교육</p>
+        <div class="brand-title">
+          <img th:src="@{/img/logo.png}" alt="로고" class="brand-logo">
+          <span class="univ-name">한국폴리텍IV대학</span>
+          <span class="divider"></span>
+          <span class="lms-name">SMART LMS</span>
+          <span class="lms-badge">통합학습 · 실시간수업 · 과제 · 출결관리</span>
+        </div>
+      </div>
+
+      <!-- 흰색 메인 카드 -->
+      <div class="login-card">
+
+        <!-- 카드 왼쪽: 로그인 입력창 -->
+        <div class="card-left">
+          <div class="tab-header">
+            <span class="tab active">회원 로그인 (학번 / 사번)</span>
+          </div>
+
+          <div class="form-body">
+            <div class="msg error" th:if="${param.error}">로그인 정보를 확인해주세요. (학번/사번 또는 비밀번호 불일치)</div>
+            <div class="msg ok" th:if="${param.logout}">안전하게 로그아웃되었습니다.</div>
+
+            <form th:action="@{/user/login}" method="post" id="loginForm">
+              <div class="field">
+                <label for="username">아이디 (학번/사번)</label>
+                <input type="text" id="username" name="username"
+                       placeholder="사용자 ID(학번/교직원 번호)를 입력하세요" required autofocus autocomplete="username">
+              </div>
+
+              <div class="field">
+                <label for="password">비밀번호</label>
+                <input type="password" id="password" name="password"
+                       placeholder="비밀번호를 입력하세요" required autocomplete="current-password">
+              </div>
+
+              <p class="form-note">* 관리자에게 발급받은 학번(학생) 또는 사번(교수)으로 로그인하세요.</p>
+
+              <div class="row">
+                <label><input type="checkbox" id="saveId"> 아이디 저장</label>
+                <a class="find-link" th:href="@{/user/find-id}">아이디(학번/사번) 찾기 ›</a>
+              </div>
+
+              <button type="submit" class="btn-submit">로그인</button>
+            </form>
+          </div>
+        </div>
+
+        <!-- 카드 오른쪽: 계정 안내 & 도움말 -->
+        <div class="card-right">
+
+          <!-- 상단 안내 박스 -->
+          <div class="info-box">
+            <div class="info-head">이용 및 보안 안내</div>
+            <ul class="info-list">
+              <li><span class="tag">필독</span> 별도 회원가입 없이 발급된 학번/사번으로 이용합니다.</li>
+              <li><span class="tag">보안</span> 60분 동안 활동이 없으면 자동으로 로그아웃됩니다.</li>
+              <li><span class="tag">초기</span> 첫 로그인 시 관리자가 안내한 임시 비밀번호를 입력하세요.</li>
+            </ul>
+          </div>
+
+          <!-- 하단 도움말 박스 -->
+          <div class="help-box">
+            <h4>로그인 도움말</h4>
+            <div class="help-item">
+              <b>· 학생 로그인</b>
+              <p>아이디 : 입학 시 부여받은 7자리 학번 (예: 2610001)<br>이용대상 : 정규과정(1·2학년) 및 하이테크 과정 재학생</p>
+            </div>
+            <div class="help-item">
+              <b>· 교수 / 관리자 로그인</b>
+              <p>아이디 : 교직원 사번 (예: 2090001)<br>비밀번호 분실 시 학과 행정실(관리자)로 문의바랍니다.</p>
+            </div>
+          </div>
+
+          <div class="contact-line">
+            <span class="icon">!</span> 학습 지원 문의 : 스마트소프트웨어과 행정실 (평일 09:00~18:00)
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+
   </div>
+
+  <!-- 학번 저장 (이 브라우저에만 저장, 비밀번호는 저장 안 함) -->
+  <script>
+    (function () {
+      var KEY = 'lms.savedId';
+      var id = document.getElementById('username');
+      var save = document.getElementById('saveId');
+      try {
+        var saved = localStorage.getItem(KEY);
+        if (saved) { id.value = saved; save.checked = true; document.getElementById('password').focus(); }
+      } catch (e) {}
+      document.getElementById('loginForm').addEventListener('submit', function () {
+        try {
+          if (save.checked) localStorage.setItem(KEY, id.value.trim());
+          else localStorage.removeItem(KEY);
+        } catch (e) {}
+      });
+    })();
+  </script>
+
 </body>
 </html>
