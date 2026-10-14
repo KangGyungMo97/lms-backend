@@ -67,25 +67,11 @@ public class UserService {
 	            .toList();
 	}
 	/** 임시 비밀번호 발급: 암호화해서 저장하고, 평문은 한 번만 반환 */
-	public String resetPassword(String userId) {
+	public void resetPassword(String userId) {
 		Users user = getUser(userId);
 
-		String temp = generateTempPassword(10);
-		user.setUserPassword(passwordEncoder.encode(temp));
+		user.setUserPassword(passwordEncoder.encode(user.getUserBday()));   // 생년월일을 암호화해서 저장
 		user.setUserPwChanged(LocalDateTime.now());
 		ur.save(user);
-
-		return temp;
-	}
-
-	private String generateTempPassword(int length) {
-		// 헷갈리는 문자(0, O, 1, l, I)는 제외
-		String chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
-		SecureRandom random = new SecureRandom();
-		StringBuilder sb = new StringBuilder();
-		for (int i = 0; i < length; i++) {
-			sb.append(chars.charAt(random.nextInt(chars.length())));
-		}
-		return sb.toString();
 	}
 }
