@@ -1,6 +1,8 @@
 package com.hitech.lms.domain.user;
 
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
+import java.util.List;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -18,6 +20,7 @@ public class UserService {
 	private final PasswordEncoder passwordEncoder;
 
 	/** 관리자 계정 등록: role = S(학생) / P(교수) / A(관리자) */
+	/*계정상태 : status =A(정상)/잠금(L)/차단(B)/탈퇴W */
 	public Users create(String userId, String userName, String tempPassword, String userEmail, String userTel, String userBday, String deptId, String userRole) {
 
 		Dept dept = dr.findById(deptId)
@@ -42,5 +45,33 @@ public class UserService {
 	public Users getUser(String userId) {
 		return ur.findById(userId)
 				.orElseThrow(() -> new DataNotFoundException("사용자를 찾을 수 없습니다."));
+	}
+	
+	/** 아이디(학번/사번) 찾기: 이름 + 생년월일 + 구분(S/P) */
+	public List<String> findUserIds(String userName, String userBday, String userRole) {
+
+	    if (!"S".equals(userRole) && !"P".equals(userRole)) {
+	        throw new IllegalArgumentException("구분 값이 올바르지 않습니다.");
+	    }
+	    if (!userBday.matches("\\d{8}")) {
+	        throw new IllegalArgumentException("생년월일은 8자리 숫자로 입력해 주세요.");
+	    }
+
+	    List<Users> users = ur.findByUserNameAndUserBdayAndUserRole(userName.trim(), userBday, userRole);
+	    if (users.isEmpty()) {
+	        throw new DataNotFoundException("일치하는 계정이 없습니다.");
+	    }
+
+	    return users.stream()
+	    		.map(Users::getUserId)
+	            .toList();
+	}
+	/** 임시 비밀번호 발급: 암호화해서 저장하고, 평문은 한 번만 반환 */
+	public void resetPassword(String userId) {
+		Users user = getUser(userId);
+
+		user.setUserPassword(passwordEncoder.encode(user.getUserBday()));   // 생년월일을 암호화해서 저장
+		user.setUserPwChanged(LocalDateTime.now());
+		ur.save(user);
 	}
 }

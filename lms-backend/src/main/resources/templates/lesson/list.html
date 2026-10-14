@@ -1,83 +1,83 @@
 <!DOCTYPE html>
-<html lang="ko"
-      xmlns:th="http://www.thymeleaf.org"
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
       layout:decorate="~{layout}">
-
 <head>
-  <title>수업</title>
-  <style>
-    .board-head { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 12px; }
-    .board-head h2 { margin: 0; }
-    .total { color: #666; font-size: 13px; margin: 8px 0; }
-    table.board { width: 100%; border-collapse: collapse; background: #fff; }
-    table.board th, table.board td { padding: 10px 8px; border-bottom: 1px solid #e5e5e5; font-size: 14px; text-align: center; }
-    table.board th { background: #eef2f7; border-top: 2px solid #1f3a5f; }
-    table.board td.title { text-align: left; }
-    table.board td.title a { color: #222; text-decoration: none; }
-    table.board td.title a:hover { text-decoration: underline; }
-    .empty { padding: 40px 0; color: #888; }
-    .paging { display: flex; justify-content: center; gap: 4px; margin: 20px 0; padding: 0; list-style: none; }
-    .paging a, .paging span { display: block; min-width: 32px; padding: 6px 8px; border: 1px solid #ccc;
-           border-radius: 4px; text-align: center; text-decoration: none; color: #333; font-size: 13px; }
-    .paging .active span { background: #1f3a5f; color: #fff; border-color: #1f3a5f; }
-    .paging .disabled span { color: #bbb; }
-  </style>
+  <title>수업 목록</title>
 </head>
-
 <body>
-  <div layout:fragment="content">
-
-    <div class="board-head">
-      <h2>수업</h2>
-    </div>
-
-    <p class="total">전체 <b th:text="${paging.totalElements}">0</b>건</p>
-
-    <table class="board">
-      <thead>
-        <tr>
-          <th style="width:80px">번호</th>
-          <th>수업명</th>
-          <th style="width:200px">과정</th>
-          <th style="width:120px">담당 교수</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr th:if="${paging.totalElements == 0}">
-          <td colspan="4" class="empty">등록된 수업이 없습니다.</td>
-        </tr>
-        <!-- 번호 = 전체 개수 - (현재 페이지 * 10) - 반복 순서  → 최신 수업이 가장 큰 번호 -->
-        <tr th:each="lesson, loop : ${paging}">
-          <td th:text="${paging.totalElements - (paging.number * paging.size) - loop.index}">1</td>
-          <td class="title">
-            <a th:href="@{|/lesson/detail/${lesson.lessonId}|}" th:text="${lesson.lessonTitle}">수업명</a>
-          </td>
-          <td th:text="${lesson.course.courseTitle}">과정명</td>
-          <td th:text="${lesson.course.teacher.userName}">교수</td>
-        </tr>
-      </tbody>
-    </table>
-
-    <!-- 페이징: 현재 페이지 앞뒤로 5페이지씩 표시 -->
-    <ul class="paging" th:if="${paging.totalPages > 0}">
-      <li th:classappend="${!paging.hasPrevious()} ? 'disabled'">
-        <a th:if="${paging.hasPrevious()}" th:href="@{/lesson/list(page=${paging.number - 1})}">이전</a>
-        <span th:unless="${paging.hasPrevious()}">이전</span>
-      </li>
-      <li th:each="page : ${#numbers.sequence(0, paging.totalPages - 1)}"
-          th:if="${page >= paging.number - 5 and page <= paging.number + 5}"
-          th:classappend="${page == paging.number} ? 'active'">
-        <a th:unless="${page == paging.number}" th:href="@{/lesson/list(page=${page})}" th:text="${page + 1}">1</a>
-        <span th:if="${page == paging.number}" th:text="${page + 1}">1</span>
-      </li>
-      <li th:classappend="${!paging.hasNext()} ? 'disabled'">
-        <a th:if="${paging.hasNext()}" th:href="@{/lesson/list(page=${paging.number + 1})}">다음</a>
-        <span th:unless="${paging.hasNext()}">다음</span>
-      </li>
-    </ul>
-
+<main layout:fragment="content">
+  <div class="page-head">
+    <h1>수업 목록</h1>
+    <div class="breadcrumb">홈 &gt; 수업참여 &gt; <b>수업 목록</b></div>
   </div>
-</body>
 
+  <!-- 등록 버튼 (교수만) -->
+  <div class="toolbar" sec:authorize="hasRole('TEACHER')">
+    <a class="btn btn-primary" th:href="@{/lesson/create}">+ 수업 등록</a>
+  </div>
+
+  <!-- 목록 -->
+  <table class="list">
+    <colgroup>
+      <col style="width:70px"><col style="width:200px"><col style="width:160px"><col style="width:160px"><col>
+      <col sec:authorize="hasRole('TEACHER')" style="width:130px">
+    </colgroup>
+    <thead>
+      <tr>
+        <th>번호</th><th>수업 제목</th><th>과목</th><th>강좌</th><th>수업 내용</th>
+        <th sec:authorize="hasRole('TEACHER')">관리</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr th:each="l, loop : ${paging}">
+        <td th:text="${paging.totalElements - (paging.number * paging.size) - loop.index}">1</td>
+        <td class="left" th:text="${l.lessonTitle}">1주차 - 오리엔테이션</td>
+        <td th:text="${l.course.subject.subjectName}">데이터베이스 설계와 SQL 실무</td>
+        <td th:text="${l.course.courseTitle}">월 1~3교시</td>
+        <td class="left" th:text="${#strings.abbreviate(l.lessonContent, 50)}">수업 내용</td>
+
+        <!-- 수정/삭제: 교수 + 본인 수업일 때만 -->
+        <td sec:authorize="hasRole('TEACHER')">
+          <div th:if="${#authentication.name == l.course.teacher.userId}"
+               style="display:flex; gap:4px; justify-content:center;">
+            <a class="btn" style="height:28px; padding:0 10px; font-size:12px;"
+               th:href="@{|/lesson/update/${l.lessonId}|}">수정</a>
+            <form th:action="@{|/lesson/delete/${l.lessonId}|}" method="post" style="display:inline;"
+                  onsubmit="return confirm('이 수업을 삭제하시겠습니까?');">
+              <button type="submit" class="btn btn-danger" style="height:28px; padding:0 10px; font-size:12px;">삭제</button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      <tr th:if="${paging.isEmpty()}">
+        <td colspan="6" class="empty">등록된 수업이 없습니다.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- 페이징 -->
+  <div class="pagination" th:if="${paging.totalPages > 0}">
+    <a th:if="${paging.hasPrevious()}" th:href="@{/lesson/list(page=0)}">&laquo;</a>
+    <span th:unless="${paging.hasPrevious()}" class="disabled">&laquo;</span>
+
+    <a th:if="${paging.hasPrevious()}" th:href="@{/lesson/list(page=${paging.number - 1})}">&lsaquo;</a>
+    <span th:unless="${paging.hasPrevious()}" class="disabled">&lsaquo;</span>
+
+    <th:block th:each="i : ${#numbers.sequence(0, paging.totalPages - 1)}">
+      <th:block th:if="${i >= paging.number - 2 and i <= paging.number + 2}">
+        <span th:if="${i == paging.number}" class="current" th:text="${i + 1}">1</span>
+        <a th:unless="${i == paging.number}" th:href="@{/lesson/list(page=${i})}" th:text="${i + 1}">2</a>
+      </th:block>
+    </th:block>
+
+    <a th:if="${paging.hasNext()}" th:href="@{/lesson/list(page=${paging.number + 1})}">&rsaquo;</a>
+    <span th:unless="${paging.hasNext()}" class="disabled">&rsaquo;</span>
+
+    <a th:if="${paging.hasNext()}" th:href="@{/lesson/list(page=${paging.totalPages - 1})}">&raquo;</a>
+    <span th:unless="${paging.hasNext()}" class="disabled">&raquo;</span>
+  </div>
+</main>
+</body>
 </html>

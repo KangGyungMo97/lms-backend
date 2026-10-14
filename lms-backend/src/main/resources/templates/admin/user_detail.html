@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head>
+  <title>회원 상세</title>
+</head>
+<body>
+<div layout:fragment="content" style="max-width:1000px; margin:20px auto;">
+
+  <h2>회원 상세</h2>
+
+  <p th:if="${msg}" th:text="${msg}" style="color:#2e7d32;"></p>
+  <p th:if="${error}" th:text="${error}" style="color:#c0392b;"></p>
+
+  <div style="display:flex; gap:16px; align-items:flex-start;">
+
+    <!-- 왼쪽: 기본 정보 -->
+    <div style="flex:1; border:1px solid #ddd; padding:16px;">
+      <h3>기본 정보 <span th:text="${user.statusLabel}" style="font-size:13px;"></span></h3>
+      <table style="width:100%;">
+        <tr><th style="text-align:left; width:30%;">학번/사번</th><td th:text="${user.userId}"></td></tr>
+        <tr><th style="text-align:left;">이름</th><td th:text="${user.userName}"></td></tr>
+        <tr><th style="text-align:left;">구분</th>
+            <td th:text="${user.userRole == 'S'} ? '학생' : (${user.userRole == 'P'} ? '교수' : '관리자')"></td></tr>
+        <tr><th style="text-align:left;">학과 / 학년</th>
+            <td th:text="${user.dept.deptName} + (${user.userGrade != null} ? ' ' + ${user.userGrade} + '학년' : '')"></td></tr>
+        <tr><th style="text-align:left;">생년월일</th><td th:text="${user.maskedBday}"></td></tr>
+        <tr><th style="text-align:left;">휴대폰</th><td th:text="${user.maskedTel}"></td></tr>
+        <tr><th style="text-align:left;">이메일</th><td th:text="${user.maskedEmail}"></td></tr>
+        <tr><th style="text-align:left;">계정 발급일</th>
+            <td th:text="${#temporals.format(user.userCreated, 'yyyy-MM-dd')}"></td></tr>
+        <tr><th style="text-align:left;">최근 접속</th>
+            <td th:text="${user.userLastLogin != null} ? ${#temporals.format(user.userLastLogin, 'yyyy-MM-dd HH:mm')} : '-'"></td></tr>
+        <tr><th style="text-align:left;">비밀번호 변경</th>
+            <td th:text="${user.userPwChanged != null} ? ${#temporals.format(user.userPwChanged, 'yyyy-MM-dd')} : '-'"></td></tr>
+      </table>
+      <p style="font-size:12px; color:#888;">※ 회원의 개인정보는 관리자가 임의로 수정할 수 없습니다. (본인 요청 시 1대1 문의로 처리)</p>
+    </div>
+
+    <!-- 오른쪽: 상태 관리 + 이력 -->
+    <div style="flex:1;">
+
+      <div style="border:1px solid #ddd; padding:16px; margin-bottom:16px;">
+        <h3>계정 상태 관리</h3>
+
+        <form id="statusForm" th:action="@{/admin/user/status/{id}(id=${user.userId})}" method="post"
+              onsubmit="return confirm('계정 상태를 변경하시겠습니까?');">
+          <p>상태 변경<br>
+            <label><input type="radio" name="status" value="A" th:checked="${user.userStatus == 'A'}" required> 정상 / 잠금 해제</label>
+            <label><input type="radio" name="status" value="B" th:checked="${user.userStatus == 'B'}"> 차단</label>
+            <label><input type="radio" name="status" value="W" th:checked="${user.userStatus == 'W'}"> 탈퇴 처리</label>
+          </p>
+
+          <p>사유 <span style="color:#c0392b;">*</span><br>
+            <textarea name="reason" rows="4" required style="width:100%;" placeholder="변경 사유를 입력하세요."></textarea>
+          </p>
+
+          <div id="blockPeriod" style="display:none;">
+            <p>차단 기간<br>
+              <input type="date" name="blockStart"> ~ <input type="date" name="blockEnd">
+            </p>
+          </div>
+
+          <p id="withdrawWarn" style="display:none; color:#c0392b; background:#fdecea; padding:8px;">
+            탈퇴 처리 시 로그인이 불가하며 되돌릴 수 없습니다.
+          </p>
+          <p id="blockWarn" style="display:none; color:#c0392b; background:#fdecea; padding:8px;">
+            차단 처리 시 해당 기간 동안 로그인이 불가합니다.
+          </p>
+        </form>
+
+        <div style="display:flex; justify-content:flex-end; gap:8px;">
+			<form th:action="@{/admin/user/{id}/temp-password(id=${user.userId})}" method="post"
+			        onsubmit="return confirm('비밀번호를 생년월일(8자리)로 초기화하시겠습니까?');">
+			    <button type="submit">비밀번호 초기화</button>
+			  </form>
+          <button type="submit" form="statusForm">적용</button>
+        </div>
+      </div>
+
+      <div style="border:1px solid #ddd; padding:16px;">
+        <h3>상태 변경 이력</h3>
+        <table style="width:100%; text-align:center;">
+          <thead>
+            <tr><th>일시</th><th>변경</th><th>처리자</th></tr>
+          </thead>
+          <tbody>
+            <tr th:each="l : ${logs}">
+              <td th:text="${#temporals.format(l.changedAt, 'MM-dd HH:mm')}"></td>
+              <td>
+                <span th:text="${l.beforeLabel} + ' → ' + ${l.afterLabel}"></span>
+                <span th:if="${l.reason != null}" th:text="'(' + ${l.reason} + ')'" style="font-size:12px; color:#666;"></span>
+              </td>
+              <td th:text="${l.changedBy == 'SYSTEM'} ? '시스템' : ${l.changedBy}"></td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(logs)}">
+              <td colspan="3" style="padding:16px;">변경 이력이 없습니다.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <p><a th:href="@{/admin/user/list}"><button type="button">목록</button></a></p>
+</div>
+
+<script>
+  // 선택한 상태에 따라 차단 기간 / 경고 문구 표시
+  const radios = document.querySelectorAll('input[name=status]');
+  const blockBox = document.getElementById('blockPeriod');
+  const blockWarn = document.getElementById('blockWarn');
+  const withdrawWarn = document.getElementById('withdrawWarn');
+  const startInput = document.querySelector('[name=blockStart]');
+  const endInput = document.querySelector('[name=blockEnd]');
+
+  function toggle() {
+    const checked = document.querySelector('input[name=status]:checked');
+    const v = checked ? checked.value : '';
+    blockBox.style.display = (v === 'B') ? 'block' : 'none';
+    blockWarn.style.display = (v === 'B') ? 'block' : 'none';
+    withdrawWarn.style.display = (v === 'W') ? 'block' : 'none';
+    startInput.required = endInput.required = (v === 'B');
+  }
+  radios.forEach(r => r.addEventListener('change', toggle));
+  toggle();
+</script>
+</body>
+</html>
