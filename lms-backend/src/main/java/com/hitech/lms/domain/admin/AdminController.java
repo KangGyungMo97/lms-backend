@@ -97,7 +97,8 @@ public class AdminController {
 		// 임시 비밀번호 발급
 		@PostMapping("/user/{id}/temp-password")
 		public String tempPassword(@PathVariable("id") String id, RedirectAttributes ra) {
-			ra.addFlashAttribute("tempPassword", us.resetPassword(id));
+			us.resetPassword(id);
+			ra.addFlashAttribute("msg", "비밀번호가 사용자의 생년월일(8자리)로 초기화되었습니다.");
 			return "redirect:/admin/user/" + id;
 		}
 
