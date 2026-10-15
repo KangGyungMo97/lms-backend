@@ -14,12 +14,6 @@
   <p th:if="${msg}" th:text="${msg}" style="color:#2e7d32;"></p>
   <p th:if="${error}" th:text="${error}" style="color:#c0392b;"></p>
 
-  <!-- 임시 비밀번호 (발급 직후 한 번만 표시) -->
-  <div th:if="${tempPassword}" style="border:2px solid #e67e22; padding:12px; margin-bottom:16px;">
-    임시 비밀번호가 발급되었습니다. <strong>이 화면을 벗어나면 다시 확인할 수 없습니다.</strong><br>
-    임시 비밀번호: <strong th:text="${tempPassword}" style="font-size:18px;"></strong>
-  </div>
-
   <div style="display:flex; gap:16px; align-items:flex-start;">
 
     <!-- 왼쪽: 기본 정보 -->
@@ -78,10 +72,10 @@
         </form>
 
         <div style="display:flex; justify-content:flex-end; gap:8px;">
-          <form th:action="@{/admin/user/{id}/temp-password(id=${user.userId})}" method="post"
-                onsubmit="return confirm('임시 비밀번호를 발급하시겠습니까?\n기존 비밀번호는 즉시 사용할 수 없게 됩니다.');">
-            <button type="submit">임시 비밀번호 발급</button>
-          </form>
+			<form th:action="@{/admin/user/{id}/temp-password(id=${user.userId})}" method="post"
+			        onsubmit="return confirm('비밀번호를 생년월일(8자리)로 초기화하시겠습니까?');">
+			    <button type="submit">비밀번호 초기화</button>
+			  </form>
           <button type="submit" form="statusForm">적용</button>
         </div>
       </div>
