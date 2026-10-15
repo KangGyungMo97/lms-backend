@@ -18,4 +18,7 @@ public interface CourseRepository extends JpaRepository<Course, Long> {
 
 	@EntityGraph(attributePaths = {"subject", "teacher"})
 	Optional<Course> findByCourseId(Long courseId);
+	
+	@EntityGraph(attributePaths = {"subject", "teacher"})
+	List<Course> findByCourseIsUse(String courseIsUse);
 }

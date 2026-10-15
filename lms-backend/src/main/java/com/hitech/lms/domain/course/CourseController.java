@@ -29,10 +29,10 @@ public class CourseController {
 
 	// ---------- 공통 라벨 (교시 시각은 실제 교시표로 교체) ----------
 	// ---------- 공통 라벨 (교시 시각은 실제 교시표로 교체) ----------
-	private static final Map<Integer, String> TARGET = new LinkedHashMap<>();
-	private static final Map<Integer, String> START = new LinkedHashMap<>();
-	private static final Map<Integer, String> END = new LinkedHashMap<>();
-	private static final Map<String, String> WEEKDAY = new LinkedHashMap<>();
+	public static final Map<Integer, String> TARGET = new LinkedHashMap<>();
+	public static final Map<Integer, String> START = new LinkedHashMap<>();
+	public static final Map<Integer, String> END = new LinkedHashMap<>();
+	public static final Map<String, String> WEEKDAY = new LinkedHashMap<>();
 
 	static {
 		for (int i = 1; i <= 4; i++) TARGET.put(i, i + "학년");

@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+
+<head>
+  <title>시간표</title>
+  <style>
+    .btn { display: inline-block; padding: 7px 14px; border: 1px solid #1f3a5f; border-radius: 4px;
+           background: #fff; color: #1f3a5f; text-decoration: none; font-size: 14px; cursor: pointer; }
+
+    .tt-toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+    .tt-filters { display: flex; gap: 8px; }
+    .tt-filters select { min-width: 180px; padding: 8px 10px; border: 1px solid #ccc; border-radius: 4px;
+                         font-size: 14px; background: #fff; }
+
+    table.tt { width: 100%; table-layout: fixed; border-collapse: collapse; background: #fff; }
+    table.tt thead th { padding: 10px 0; border-top: 2px solid #1f3a5f; border-bottom: 1px solid #ccc;
+                        background: #fff; font-size: 14px; }
+    table.tt th.corner, table.tt th.period { width: 90px; }
+    table.tt tbody th.period { background: #f2f4f7; font-size: 12px; font-weight: 400; color: #666;
+                               border: 1px solid #e5e5e5; padding: 6px 0; }
+    table.tt tbody th.period b { display: block; color: #333; font-size: 13px; }
+    table.tt td { height: 52px; border: 1px solid #e5e5e5; vertical-align: top; padding: 0; }
+
+    table.tt td.filled { border-color: #fff; }
+    .blk { display: block; padding: 8px 10px; text-decoration: none; color: #222; }
+    .blk + .blk { border-top: 1px dashed rgba(0, 0, 0, .25); }   /* 시간이 겹치는 강의 구분 */
+    .blk strong { display: block; font-size: 13px; line-height: 1.35; }
+    .blk small { display: block; margin-top: 3px; font-size: 12px; color: #666; }
+    .blk:hover strong { text-decoration: underline; }
+
+    td.c0 { background: #e3ebf7; }
+    td.c1 { background: #e6f2e3; }
+    td.c2 { background: #fdeede; }
+    td.c3 { background: #efe6f6; }
+
+    .tt-empty { margin: 14px 0; color: #888; font-size: 13px; }
+
+    @media print {
+      .tt-toolbar { display: none; }
+    }
+  </style>
+</head>
+
+<body>
+  <section layout:fragment="page-head">
+    <div th:replace="~{fragments/page_head :: head('시간표', '교육안내', null)}"></div>
+  </section>
+
+  <div layout:fragment="content">
+
+    <!-- ①②: 학기/과목 선택, 인쇄 -->
+	<!-- ①②: 학기/학년 선택, 인쇄 -->
+	    <form class="tt-toolbar" method="get" th:action="@{/timetable}">
+	      <!-- 학년/학기를 바꿨을 때 '전체 강의' 상태가 풀리지 않도록 hidden 필드 보완 -->
+	      <input type="hidden" name="scope" th:value="${scope}">
+	      
+	      <div class="tt-filters">
+	        <!-- 학기 선택 드롭다운 -->
+	        <select name="semester" onchange="this.form.submit()">
+	          <option th:each="s : ${semesters}" th:value="${s.key}" th:text="${s.value}"
+	                  th:selected="${s.key == semester}"></option>
+	        </select>
+	        
+	        <!-- 학년 선택 드롭다운 -->
+	        <select name="grade" onchange="this.form.submit()">
+	          <option value="" th:selected="${grade == null or grade == ''}">전체 학년</option>
+	          <option value="1" th:selected="${grade == '1'}">1학년</option>
+	          <option value="2" th:selected="${grade == '2'}">2학년</option>
+	          <option value="3" th:selected="${grade == '3'}">3학년</option>
+	          <option value="4" th:selected="${grade == '4'}">4학년</option>
+	        </select>
+	      </div>
+	      <button type="button" class="btn" onclick="window.print()">인쇄</button>
+	    </form>
+
+    <!-- ③④: 시간표 -->
+    <table class="tt">
+      <thead>
+        <tr>
+          <th class="corner"></th>
+          <th th:each="d : ${grid.weekdays}" th:text="${weekdayLabels[d]}">월</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:each="p : ${#numbers.sequence(1, grid.maxPeriod)}">
+          <th class="period">
+            <b th:text="|${p}교시|">1교시</b>
+            <span th:text="${startLabels[p]}">09:00</span>
+          </th>
+
+          <th:block th:each="d : ${grid.weekdays}">
+            <td th:if="${!grid.isSkipped(d, p)}"
+                th:with="cell=${grid.cell(d, p)}"
+                th:rowspan="${cell != null} ? ${cell.rowspan} : 1"
+                th:classappend="${cell != null} ? ('filled c' + ${cell.blocks[0].color}) : ''">
+              <th:block th:if="${cell != null}">
+                <a class="blk" th:each="b : ${cell.blocks}"
+                   th:href="@{|/course/detail/${b.courseId}|}">
+                  <strong th:text="${b.title}">과목명</strong>
+                  <small th:text="|${b.teacherName} · ${b.subjectName}|">교수 · 분류</small>
+                </a>
+              </th:block>
+            </td>
+          </th:block>
+        </tr>
+      </tbody>
+    </table>
+
+    <p class="tt-empty" th:if="${#maps.isEmpty(grid.cells)}"
+       th:text="${isTeacher} ? '이 학기에 등록된 강의가 없습니다.' : '수강 중인 강의가 표시됩니다. (수강 신청 연동 후 반영)'">
+      등록된 강의가 없습니다.</p>
+
+  </div>
+</body>
+</html>
