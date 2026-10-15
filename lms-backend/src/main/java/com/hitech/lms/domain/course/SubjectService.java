@@ -1,5 +1,6 @@
 package com.hitech.lms.domain.course;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -93,6 +94,10 @@ public class SubjectService {
 		} else {
 			throw new DataNotFoundException("학과를 찾을수 없습니다!");
 		}
+	}
+	
+	public List<Subject> getList() {
+	    return sr.findAll();
 	}
 
 }
