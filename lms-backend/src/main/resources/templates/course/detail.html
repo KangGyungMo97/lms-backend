@@ -1,106 +1,102 @@
 <!DOCTYPE html>
 <html lang="ko"
       xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{layout}">
 
 <head>
   <title>강의 상세</title>
   <style>
-    .post { background: #fff; border-top: 2px solid #1f3a5f; border-bottom: 1px solid #e5e5e5; }
-    .post-title { margin: 0; padding: 16px; font-size: 20px; border-bottom: 1px solid #e5e5e5; }
-    .info { display: grid; grid-template-columns: 110px 1fr; margin: 0; }
-    .info dt, .info dd { padding: 10px 16px; border-bottom: 1px solid #eee; margin: 0; font-size: 14px; }
-    .info dt { background: #f7f8fa; color: #555; font-weight: bold; }
-    .post-content { padding: 20px 16px; line-height: 1.7; white-space: pre-wrap; }
-    h3 { margin: 28px 0 10px; font-size: 16px; }
-    table.board { width: 100%; border-collapse: collapse; background: #fff; }
-    table.board th, table.board td { padding: 8px; border-bottom: 1px solid #e5e5e5; font-size: 13px; text-align: center; }
-    table.board th { background: #eef2f7; border-top: 2px solid #1f3a5f; }
-    .chips { display: flex; flex-wrap: wrap; gap: 6px; }
-    .chip { background: #eef2f7; color: #1f3a5f; border-radius: 12px; padding: 3px 10px; font-size: 12px; }
-    .empty { padding: 20px 0; color: #888; }
-    .actions { display: flex; justify-content: space-between; margin-top: 20px; }
     .btn { display: inline-block; padding: 7px 14px; border: 1px solid #1f3a5f; border-radius: 4px;
-           background: #fff; color: #1f3a5f; text-decoration: none; font-size: 14px; }
+           background: #fff; color: #1f3a5f; text-decoration: none; font-size: 14px; cursor: pointer; }
+    .btn-danger { border-color: #c0392b; color: #c0392b; }
+
+    .view-box { background: #fff; border-top: 2px solid #1f3a5f; }
+    .view-title { margin: 0; padding: 18px 16px; font-size: 20px; font-weight: 700;
+                  border-bottom: 1px solid #e5e5e5; }
+    .view-meta { display: flex; gap: 0; padding: 12px 16px; font-size: 13px; color: #666;
+                 border-bottom: 1px solid #e5e5e5; flex-wrap: wrap; }
+    .view-meta span + span::before { content: "|"; margin: 0 10px; color: #ccc; }
+    .view-meta b { color: #333; }
+
+    .view-body { padding: 20px 16px; min-height: 160px; font-size: 14px; line-height: 1.7; }
+    .view-body dl { display: flex; margin: 0 0 14px; }
+    .view-body dt { width: 100px; flex-shrink: 0; color: #666; font-weight: 600; }
+    .view-body dd { margin: 0; }
+    .view-body ul { margin: 0; padding: 0; list-style: none; }
+
+    .view-actions { display: flex; justify-content: space-between; margin: 16px 0 24px;
+                    border-top: 1px solid #e5e5e5; padding-top: 16px; }
+    .view-actions .right { display: flex; gap: 6px; }
+    .view-actions form { margin: 0; }
   </style>
 </head>
 
 <body>
-  <!-- 페이지 제목 띠 (layout.html 참고) -->
   <section layout:fragment="page-head">
-    <div th:replace="~{fragments/page_head :: head('강의 상세', '수업참여', '나의 강의')}"></div>
+    <div th:replace="~{fragments/page_head :: head('강의 상세', '수업참여', null)}"></div>
   </section>
 
   <div layout:fragment="content">
 
+    <div class="view-box">
+      <!-- 제목 -->
+      <h3 class="view-title" th:text="${course.courseTitle}">과목명</h3>
 
-    <div class="post">
-      <h3 class="post-title" th:text="${course.courseTitle}">데이터베이스 설계와 SQL 실무</h3>
-      <dl class="info">
-        <dt>과목</dt>
-        <dd><span th:text="${course.subject.subjectName}">과목명</span>
-            (<span th:text="${course.subject.subjectId}">SUB0001</span>)</dd>
-        <dt>담당 교수</dt>
-        <dd th:text="${course.teacher.userName}">교수</dd>
-        <dt>대상</dt>
-        <dd th:text="${course.courseTarget != null} ? ${targetLabels[course.courseTarget]} : '-'">2학년</dd>
-        <dt>수업 기간</dt>
-        <dd>
-          <th:block th:if="${course.courseStartDate != null}">
-            <span th:text="${#temporals.format(course.courseStartDate, 'yyyy-MM-dd')}">2026-09-01</span>
-            ~ <span th:text="${#temporals.format(course.courseEndDate, 'yyyy-MM-dd')}">2026-12-19</span>
-          </th:block>
-          <span th:if="${course.courseStartDate == null}">-</span>
-        </dd>
-        <dt>수업 시간</dt>
-        <dd>
-          <!-- 시간표 행이 있으면 요일마다, 없으면(예전 데이터) Course 의 대표 요일 -->
-          <th:block th:if="${!#lists.isEmpty(timetables)}">
-            <span th:each="t, s : ${timetables}"
-                  th:text="|${weekdayLabels[t.timetableWeekday]} ${startLabels[t.timetableStartTime]}~${endLabels[t.timetableEndTime]}${s.last ? '' : ' / '}|">월 10:00~12:50</span>
-          </th:block>
-          <span th:if="${#lists.isEmpty(timetables)}"
-                th:text="|${weekdayLabels[course.courseWeekday]} ${startLabels[course.courseStartTime]}~${endLabels[course.courseEndTime]}|">월 10:00~12:50</span>
-        </dd>
-      </dl>
-      <div class="post-content" th:text="${course.courseContent}">강의 소개</div>
+      <!-- 메타 줄 -->
+      <div class="view-meta">
+        <span>분류 <b th:text="${course.subject.subjectName}">분류</b></span>
+        <span>대상 <b th:text="${course.courseTarget != null} ? ${targetLabels[course.courseTarget]} : '-'">1학년</b></span>
+        <span>담당 교수 <b th:text="${course.teacher.userName}">교수</b></span>
+      </div>
+
+      <!-- 본문 -->
+      <div class="view-body">
+        <dl>
+          <dt>수업 기간</dt>
+          <dd>
+            <span th:if="${course.courseStartDate != null}"
+                  th:text="|${course.courseStartDate} ~ ${course.courseEndDate}|">2026-10-01 ~ 2026-10-30</span>
+            <span th:if="${course.courseStartDate == null}">-</span>
+          </dd>
+        </dl>
+
+        <dl>
+          <dt>수업 시간</dt>
+          <dd>
+            <ul>
+              <li th:each="t : ${course.times}"
+                  th:text="|${weekdayLabels[t.weekday]}요일 ${t.startTime}~${t.endTime}교시 (${startLabels[t.startTime]} ~ ${endLabels[t.endTime]})|">월요일 2~3교시</li>
+              <!-- 이전 방식으로 등록된 강의 -->
+              <li th:if="${#lists.isEmpty(course.times)}"
+                  th:text="|${weekdayLabels[course.courseWeekday]}요일 ${course.courseStartTime}~${course.courseEndTime}교시|"></li>
+            </ul>
+          </dd>
+        </dl>
+
+        <dl th:if="${course.courseCriteria != null and !#strings.isEmpty(course.courseCriteria)}">
+          <dt>수료 기준</dt>
+          <dd th:text="${course.courseCriteria}">출석 80% 이상</dd>
+        </dl>
+      </div>
     </div>
 
-    <!-- 주차 (수업 회차) : 과제 · Q&A 를 등록할 때 이 주차를 선택함 -->
-    <h3>주차 (<span th:text="${#lists.size(lessons)}">16</span>)</h3>
-    <div class="chips" th:if="${!#lists.isEmpty(lessons)}">
-      <span class="chip" th:each="l : ${lessons}" th:text="${l.lessonTitle}" th:title="${l.lessonContent}">1주차</span>
-    </div>
-    <p class="empty" th:if="${#lists.isEmpty(lessons)}">등록된 주차가 없습니다.</p>
-
-    <!-- 수강생 명단 : 담당 교수에게만 -->
-    <th:block th:if="${isOwner}">
-      <h3>수강생 (<span th:text="${#lists.size(enrolls)}">28</span>명)</h3>
-      <table class="board">
-        <thead>
-          <tr><th style="width:70px">번호</th><th style="width:140px">학번</th><th>이름</th><th style="width:100px">학년</th></tr>
-        </thead>
-        <tbody>
-          <tr th:if="${#lists.isEmpty(enrolls)}">
-            <td colspan="4" class="empty">수강생이 없습니다.</td>
-          </tr>
-          <tr th:each="e, loop : ${enrolls}">
-            <td th:text="${loop.count}">1</td>
-            <td th:text="${e.student.userId}">2510001</td>
-            <td th:text="${e.student.userName}">이름</td>
-            <td th:text="${e.student.userGrade != null} ? |${e.student.userGrade}학년| : '하이테크'">2학년</td>
-          </tr>
-        </tbody>
-      </table>
-    </th:block>
-
-    <div class="actions">
+    <!-- 하단 버튼 -->
+    <div class="view-actions">
       <a th:href="@{/course/list}" class="btn">목록</a>
-      <!-- TODO: 담당 교수에게 수정 · 삭제 버튼 (기능 만들 때 추가) -->
+
+      <div class="right"
+           sec:authorize="hasRole('TEACHER')"
+           th:if="${#authentication.name == course.teacher.userId}">
+        <a th:href="@{|/course/modify/${course.courseId}|}" class="btn">수정</a>
+        <form th:action="@{|/course/delete/${course.courseId}|}" method="post"
+              onsubmit="return confirm('이 강의를 삭제할까요?');">
+          <button type="submit" class="btn btn-danger">삭제</button>
+        </form>
+      </div>
     </div>
 
   </div>
 </body>
-
 </html>

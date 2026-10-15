@@ -12,6 +12,8 @@
     .btn { display: inline-block; padding: 7px 14px; border: 1px solid #1f3a5f; border-radius: 4px;
            background: #fff; color: #1f3a5f; text-decoration: none; font-size: 14px; cursor: pointer; }
     .btn-primary { background: #1f3a5f; color: #fff; }
+    .btn-sm { padding: 4px 10px; font-size: 13px; }
+    .btn-danger { border-color: #c0392b; color: #c0392b; }
     .total { color: #666; font-size: 13px; margin: 8px 0; }
     table.board { width: 100%; border-collapse: collapse; background: #fff; }
     table.board th, table.board td { padding: 10px 8px; border-bottom: 1px solid #e5e5e5; font-size: 14px; text-align: center; }
@@ -19,6 +21,8 @@
     table.board td.title { text-align: left; }
     table.board td.title a { color: #222; text-decoration: none; }
     table.board td.title a:hover { text-decoration: underline; }
+    table.board td.manage { white-space: nowrap; }
+    table.board td.manage form { display: inline; margin: 0; }
     .empty { padding: 40px 0; color: #888; }
     .paging { display: flex; justify-content: center; gap: 4px; margin: 20px 0; padding: 0; list-style: none; }
     .paging a, .paging span { display: block; min-width: 32px; padding: 6px 8px; border: 1px solid #ccc;
@@ -36,7 +40,6 @@
 
   <div layout:fragment="content">
 
-
     <div class="board-head">
       <p class="total">전체 <b th:text="${paging.totalElements}">0</b>건</p>
       <a th:if="${isTeacher}" th:href="@{/course/create}" class="btn btn-primary">강의 등록</a>
@@ -49,13 +52,15 @@
           <th>과목명</th>
           <th style="width:110px">대상</th>
           <th style="width:200px">수업 기간</th>
-          <th style="width:150px">시간</th>
+          <th style="width:200px">시간</th>   <!-- 변경: 150px → 200px -->
           <th style="width:100px">교수</th>
+          <th th:if="${isTeacher}" style="width:130px">관리</th>
         </tr>
       </thead>
       <tbody>
         <tr th:if="${paging.totalElements == 0}">
-          <td colspan="6" class="empty" th:text="${isTeacher} ? '담당하는 강의가 없습니다.' : '수강 중인 강의가 없습니다.'">강의가 없습니다.</td>
+          <td th:colspan="${isTeacher} ? 7 : 6" class="empty"
+              th:text="${isTeacher} ? '담당하는 강의가 없습니다.' : '수강 중인 강의가 없습니다.'">강의가 없습니다.</td>
         </tr>
         <tr th:each="c, loop : ${paging}">
           <td th:text="${paging.totalElements - (paging.number * paging.size) - loop.index}">1</td>
@@ -70,8 +75,21 @@
             </th:block>
             <span th:if="${c.courseStartDate == null}">-</span>
           </td>
-          <td th:text="|${startLabels[c.courseStartTime]} ~ ${endLabels[c.courseEndTime]}|">10:00 ~ 12:50</td>
+          <!-- 변경: 수업 시간 여러 줄 표시 -->
+          <td>
+            <div th:each="t : ${c.times}"
+                 th:text="|${weekdayLabels[t.weekday]} ${startLabels[t.startTime]}~${endLabels[t.endTime]}|">월 09:00~11:50</div>
+            <div th:if="${#lists.isEmpty(c.times)}"
+                 th:text="|${weekdayLabels[c.courseWeekday]} ${startLabels[c.courseStartTime]}~${endLabels[c.courseEndTime]}|">월 09:00~11:50</div>
+          </td>
           <td th:text="${c.teacher.userName}">교수</td>
+          <td class="manage" th:if="${isTeacher}">
+            <a th:href="@{|/course/modify/${c.courseId}|}" class="btn btn-sm">수정</a>
+            <form th:action="@{|/course/delete/${c.courseId}|}" method="post"
+                  onsubmit="return confirm('이 강의를 삭제할까요?');">
+              <button type="submit" class="btn btn-sm btn-danger">삭제</button>
+            </form>
+          </td>
         </tr>
       </tbody>
     </table>
