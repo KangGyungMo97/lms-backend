@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{layout}">
+<head>
+  <title>과목 목록</title>
+</head>
+<body>
+<main layout:fragment="content">
+  <div class="page-head">
+    <h1>과목 목록</h1>
+    <div class="breadcrumb">홈 &gt; 교육안내 &gt; <b>과목 목록</b></div>
+  </div>
+
+  <!-- 처리 결과 메시지 (삭제 성공/실패) -->
+  <div class="field-error" th:if="${error}" th:text="${error}" style="margin-bottom:12px;"></div>
+  <div th:if="${msg}" th:text="${msg}" style="margin-bottom:12px; color:#1e7e34; font-size:13px;"></div>
+
+  <!-- 검색 / 등록 -->
+  <form class="toolbar" th:action="@{/subject/list}" method="get">
+    <div class="toolbar-right">
+      <input type="text" name="kw" th:value="${kw}" placeholder="과목코드 / 과목명 / 학과">
+      <button type="submit" class="btn">검색</button>
+      <a sec:authorize="hasRole('TEACHER')" class="btn btn-primary" th:href="@{/subject/create}">+ 과목 등록</a>
+    </div>
+  </form>
+
+  <!-- 목록 -->
+  <table class="list">
+    <colgroup>
+      <col style="width:70px"><col style="width:140px"><col><col style="width:200px">
+      <col sec:authorize="hasRole('TEACHER')" style="width:130px">
+    </colgroup>
+    <thead>
+      <tr>
+        <th>번호</th><th>과목코드</th><th>과목명</th><th>학과</th>
+        <th sec:authorize="hasRole('TEACHER')">관리</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr th:each="s, loop : ${paging}">
+        <td th:text="${paging.totalElements - (paging.number * paging.size) - loop.index}">1</td>
+        <td th:text="${s.subjectId}">DB101</td>
+        <td class="left">
+          <a th:href="@{|/subject/detail/${s.subjectId}|}" th:text="${s.subjectName}">데이터베이스 설계와 SQL 실무</a>
+        </td>
+        <td th:text="${s.dept.deptName}">컴퓨터정보과</td>
+
+        <!-- 수정/삭제: 교수만 -->
+        <td sec:authorize="hasRole('TEACHER')">
+          <div style="display:flex; gap:4px; justify-content:center;">
+            <a class="btn" style="height:28px; padding:0 10px; font-size:12px;"
+               th:href="@{|/subject/update/${s.subjectId}|}">수정</a>
+            <form th:action="@{|/subject/delete/${s.subjectId}|}" method="post" style="display:inline;"
+                  onsubmit="return confirm('이 과목을 삭제하시겠습니까?');">
+              <button type="submit" class="btn btn-danger" style="height:28px; padding:0 10px; font-size:12px;">삭제</button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      <tr th:if="${paging.isEmpty()}">
+        <td colspan="5" class="empty">등록된 과목이 없습니다.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- 페이징 -->
+  <div class="pagination" th:if="${paging.totalPages > 0}">
+    <a th:if="${paging.hasPrevious()}" th:href="@{/subject/list(page=0, kw=${kw})}">&laquo;</a>
+    <span th:unless="${paging.hasPrevious()}" class="disabled">&laquo;</span>
+
+    <a th:if="${paging.hasPrevious()}" th:href="@{/subject/list(page=${paging.number - 1}, kw=${kw})}">&lsaquo;</a>
+    <span th:unless="${paging.hasPrevious()}" class="disabled">&lsaquo;</span>
+
+    <th:block th:each="i : ${#numbers.sequence(0, paging.totalPages - 1)}">
+      <th:block th:if="${i >= paging.number - 2 and i <= paging.number + 2}">
+        <span th:if="${i == paging.number}" class="current" th:text="${i + 1}">1</span>
+        <a th:unless="${i == paging.number}" th:href="@{/subject/list(page=${i}, kw=${kw})}" th:text="${i + 1}">2</a>
+      </th:block>
+    </th:block>
+
+    <a th:if="${paging.hasNext()}" th:href="@{/subject/list(page=${paging.number + 1}, kw=${kw})}">&rsaquo;</a>
+    <span th:unless="${paging.hasNext()}" class="disabled">&rsaquo;</span>
+
+    <a th:if="${paging.hasNext()}" th:href="@{/subject/list(page=${paging.totalPages - 1}, kw=${kw})}">&raquo;</a>
+    <span th:unless="${paging.hasNext()}" class="disabled">&raquo;</span>
+  </div>
+</main>
+</body>
+</html>
