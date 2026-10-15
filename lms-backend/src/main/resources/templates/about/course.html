@@ -6,103 +6,86 @@
 
 <head>
   <title>과정 소개</title>
-  <style>
-    .intro { background: #fff; border-top: 2px solid #1f3a5f; padding: 24px; margin-bottom: 24px; }
-    .intro h3 { margin-top: 0; color: #1f3a5f; }
-    .intro p { line-height: 1.7; margin: 0; }
-    .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 32px; }
-    .feature { background: #fff; border: 1px solid #e5e5e5; border-radius: 6px; padding: 18px; }
-    .feature h4 { margin: 0 0 8px; color: #1f3a5f; }
-    .feature p { margin: 0; font-size: 14px; color: #555; line-height: 1.6; }
-    .tabs { display: flex; gap: 8px; margin-bottom: 12px; }
-    .tab { padding: 8px 16px; border: 1px solid #1f3a5f; border-radius: 4px; background: #fff; color: #1f3a5f;
-           cursor: pointer; font-size: 14px; font-family: inherit; }
-    .tab.active { background: #1f3a5f; color: #fff; }
-    .flow { display: none; background: #fff; border: 1px solid #e5e5e5; border-radius: 6px; padding: 20px; }
-    .flow.active { display: block; }
-    .steps { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 0; padding: 0; list-style: none; }
-    .steps li { background: #eef2f7; border-radius: 6px; padding: 12px 16px; font-size: 14px; }
-    .steps li b { display: block; color: #1f3a5f; margin-bottom: 4px; }
-    .steps .arrow { background: none; padding: 0; color: #999; }
-    @media (max-width: 800px) { .features { grid-template-columns: 1fr; } }
-  </style>
+  <link rel="stylesheet" th:href="@{/css/about.css}">
 </head>
 
 <body>
+  <section layout:fragment="page-head">
+    <div th:replace="~{fragments/page_head :: head('과정 소개', '학과 안내', null)}"></div>
+  </section>
+
+  <!-- 과정 소개 (ABT-01) - 정적 화면 -->
   <div layout:fragment="content">
 
-    <h2>과정 소개</h2>
-
-    <!-- ① 단순 정보 확인 (ABT-01) - 문구는 팀 확인 후 실제 과정 정보로 바꾸기 -->
-    <div class="intro">
-      <h3>하이테크 과정</h3>
-      <p>
-        하이테크 과정은 현장에서 바로 쓰는 소프트웨어 개발 역량을 기르는 실무 중심 교육 과정입니다.<br>
-        실시간 수업과 과제, 출석, 다시보기를 하이테크 LMS 한 곳에서 관리하며 학습합니다.
-      </p>
-    </div>
-
-    <div class="features">
-      <div class="feature">
-        <h4>실무 중심 교육</h4>
-        <p>현업에서 쓰는 언어와 도구로 프로젝트를 직접 만들어 봅니다.</p>
+    <div class="ab-hero">
+      <div>
+        <span class="ab-tag">하이테크 과정</span>
+        <h2>현장 실무형 IT 인재를 키우는<br>스마트 하이테크 과정</h2>
+        <p>하이테크 과정은 4년제 대학 졸업(예정)자를 대상으로 1년간 산업 현장에서 바로 쓰이는 기술을
+           집중 교육하는 과정입니다. 실시간 온라인 수업과 프로젝트 실습을 병행합니다.</p>
       </div>
-      <div class="feature">
-        <h4>팀 프로젝트</h4>
-        <p>기획부터 설계, 구현, 발표까지 팀 단위로 진행합니다.</p>
+      <div class="ab-img">캠퍼스 / 과정 대표 이미지</div>
+    </div>
+
+    <div class="ab-stats">
+      <div class="ab-stat"><div class="label">교육 기간</div><div class="num">1<small>년</small></div></div>
+      <div class="ab-stat"><div class="label">운영 학과</div><div class="num">4<small>개</small></div></div>
+      <div class="ab-stat"><div class="label">취업률</div><div class="num">87<small>%</small></div></div>
+      <div class="ab-stat"><div class="label">협약 기업</div><div class="num">120<small>곳</small></div></div>
+    </div>
+
+    <section class="ab-sec">
+      <h3 class="ab-title">운영 학과</h3>
+      <table class="ab-table">
+        <thead>
+          <tr><th style="width:160px">학과</th><th>주요 교육 내용</th><th style="width:100px">정원</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>정보기술과</td><td class="left">DB, 백엔드(Spring), 프론트엔드, 클라우드</td><td>28명</td></tr>
+          <tr><td>데이터분석과</td><td class="left">Python, 통계, 머신러닝, 시각화</td><td>24명</td></tr>
+          <tr><td>디자인과</td><td class="left">UI/UX, 공공 웹 접근성, 화면설계</td><td>20명</td></tr>
+          <tr><td>경영회계과</td><td class="left">ERP, 직무 데이터 분석, 회계 실무</td><td>24명</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="ab-sec">
+      <h3 class="ab-title">교육 과정 흐름</h3>
+      <ul class="ab-flow" id="flow">
+        <li><button type="button" class="active" data-desc="서류 · 면접 전형으로 선발하고, 학과별 오리엔테이션과 기초 역량 진단을 진행합니다.">입학</button></li>
+        <li><button type="button" data-desc="프로그래밍 · 데이터베이스 · 협업 도구 등 모든 학과 공통 기초를 다집니다.">기초 역량</button></li>
+        <li><button type="button" data-desc="학과별 핵심 기술을 실시간 수업과 실습 과제로 깊이 있게 학습합니다.">전공 심화</button></li>
+        <li><button type="button" data-desc="팀을 꾸려 기업 연계 과제를 기획 · 개발 · 발표합니다.">프로젝트</button></li>
+        <li><button type="button" data-desc="협약 기업 채용 연계, 이력서 · 포트폴리오 · 면접 코칭을 지원합니다.">취업 연계</button></li>
+      </ul>
+      <div class="ab-flow-desc" id="flowDesc"><b>입학</b> · 서류 · 면접 전형으로 선발하고, 학과별 오리엔테이션과 기초 역량 진단을 진행합니다.</div>
+    </section>
+
+    <section class="ab-sec ab-visit">
+      <div class="box">
+        <h4>찾아오시는 길</h4>
+        <p>(00000) ○○특별자치시 ○○대로 000<br>대표전화 044-000-0000</p>
       </div>
-      <div class="feature">
-        <h4>온라인 학습 지원</h4>
-        <p>실시간 수업, 과제 제출, 출석, 다시보기를 LMS에서 이용합니다.</p>
-      </div>
-    </div>
+      <div class="ab-img">지도 영역</div>
+    </section>
 
-    <!-- ② 버튼 클릭 시 해당 과정 흐름 정보 확인 (ABT-01) -->
-    <h3>과정 흐름</h3>
-    <div class="tabs">
-      <button type="button" class="tab active" data-target="flow-apply">입학 과정</button>
-      <button type="button" class="tab" data-target="flow-study">교육 과정</button>
-      <button type="button" class="tab" data-target="flow-finish">수료 이후</button>
-    </div>
-
-    <div class="flow active" id="flow-apply">
-      <ul class="steps">
-        <li><b>STEP 1</b>모집 공고 확인</li><li class="arrow">→</li>
-        <li><b>STEP 2</b>지원서 접수</li><li class="arrow">→</li>
-        <li><b>STEP 3</b>면접 · 선발</li><li class="arrow">→</li>
-        <li><b>STEP 4</b>계정 발급 (학번)</li>
-      </ul>
-    </div>
-
-    <div class="flow" id="flow-study">
-      <ul class="steps">
-        <li><b>STEP 1</b>기초 이론 수업</li><li class="arrow">→</li>
-        <li><b>STEP 2</b>실습 · 과제</li><li class="arrow">→</li>
-        <li><b>STEP 3</b>팀 프로젝트</li><li class="arrow">→</li>
-        <li><b>STEP 4</b>프로젝트 발표</li>
-      </ul>
-    </div>
-
-    <div class="flow" id="flow-finish">
-      <ul class="steps">
-        <li><b>STEP 1</b>수료 심사</li><li class="arrow">→</li>
-        <li><b>STEP 2</b>수료</li><li class="arrow">→</li>
-        <li><b>STEP 3</b>취업 연계 지원</li>
-      </ul>
-    </div>
-
+    <!-- 교육 과정 흐름 단계 클릭 → 설명 바꾸기 (레이아웃 병합 때문에 content 안에 둠) -->
     <script>
-      // 버튼을 누르면 해당 흐름만 보이게
-      document.querySelectorAll('.tab').forEach(function (tab) {
-        tab.addEventListener('click', function () {
-          document.querySelectorAll('.tab').forEach(function (t) { t.classList.remove('active'); });
-          document.querySelectorAll('.flow').forEach(function (f) { f.classList.remove('active'); });
-          tab.classList.add('active');
-          document.getElementById(tab.dataset.target).classList.add('active');
+      (function () {
+        var buttons = document.querySelectorAll('#flow button');
+        var desc = document.getElementById('flowDesc');
+        buttons.forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            buttons.forEach(function (b) { b.classList.remove('active'); });
+            btn.classList.add('active');
+            var b = document.createElement('b');
+            b.textContent = btn.textContent;
+            desc.textContent = ' · ' + btn.getAttribute('data-desc');
+            desc.insertBefore(b, desc.firstChild);
+          });
         });
-      });
+      })();
     </script>
-
   </div>
 </body>
 

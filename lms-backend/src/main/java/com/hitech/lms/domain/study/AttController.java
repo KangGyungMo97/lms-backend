@@ -6,7 +6,6 @@ import java.time.YearMonth;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
@@ -41,7 +40,9 @@ public class AttController {
 	// SecurityConfig 의 로그인 페이지 주소와 같게 (/user/login)
 	private static final String LOGIN_REDIRECT = "redirect:/user/login";
 
-	// 출석 첫 화면 - 학생: 지금 출석 가능한 수업 + 내 기록 / 교수: 출석부 바로가기 + 내 수업(출석 시작)
+	// 출석 첫 화면
+	//   학생: 오늘의 수업(수업 참여) + 내 출석 기록
+	//   교수: 오늘의 수업(수업 시작) + 과정별 출석부 + 차시별 출석 기록
 	@PreAuthorize("hasAnyRole('STUDENT', 'TEACHER')")
 	@GetMapping("/list")
 	public String list(Model model, Principal principal) {
@@ -51,48 +52,63 @@ public class AttController {
 
 		// 교수
 		if (isTeacher(principal)) {
+			List<Course> courses = as.getTeacherCourses(user);
 			List<Lesson> lessonList = as.getMyLessons(user);
+			model.addAttribute("todayList", as.getTodayClasses(courses, null));
+			model.addAttribute("courseList", courses);                        // 출석부 바로가기
 			model.addAttribute("lessonList", lessonList);
-			model.addAttribute("courseList", as.getMyCourses(lessonList));    // 출석부 바로가기
 			model.addAttribute("sessionMap", as.getSessionMap(lessonList));   // { 수업번호 : 세션 }
 			return "attendance/teacher";
 		}
 
 		// 학생
-		List<AttSession> openSessions = as.getOpenSessions();
-		List<Att> myAtts = as.getMyAtts(user);
-		// { 수업번호 : 내 상태 } - Y 출석 / L 지각 / E 공결 / N 결석 (기록 없으면 키 없음)
-		Map<Long, String> myStatus = myAtts.stream()
-				.collect(Collectors.toMap(a -> a.getLesson().getLessonId(), Att::getAttStatus, (a, b) -> a));
-
-		model.addAttribute("openSessions", openSessions);
-		model.addAttribute("myStatus", myStatus);
-		model.addAttribute("failCount", as.getFailCountMap(user, openSessions));       // { 세션번호 : 틀린 횟수 }
-		model.addAttribute("maxFail", AttService.MAX_FAIL);
-		model.addAttribute("myAtts", myAtts);
+		model.addAttribute("todayList", as.getTodayClasses(as.getStudentCourses(user), user));
+		model.addAttribute("myAtts", as.getMyAtts(user));
 		return "attendance/student";
 	}
 
-	// ===== 교수: 출석 시작 =====
+	// ===== 교수: 수업 시작 =====
 
-	// 출석 시작 - 코드를 만들고 코드 화면으로
+	// 수업 시작 - 오늘 수업 시간에만. 다음 차시의 출석이 열리고 출석 현황 화면으로
 	@PreAuthorize("hasRole('TEACHER')")
-	@PostMapping("/start/{lessonId}")
-	public String start(@PathVariable("lessonId") Long lessonId, Principal principal) {
+	@PostMapping("/start/{courseId}")
+	public String start(@PathVariable("courseId") Long courseId,
+			@RequestParam(value = "back", defaultValue = "") String back,
+			Principal principal, RedirectAttributes ra) {
 		if (principal == null) return LOGIN_REDIRECT;
 
-		Lesson lesson = as.getLesson(lessonId);
-		checkOwner(lesson, principal);
-
-		try {
-			as.start(lesson);
-		} catch (DataIntegrityViolationException e) {
-			// 버튼을 동시에 두 번 눌러 이미 만들어진 경우 → 그대로 코드 화면으로
+		Course course = as.getCourse(courseId);
+		Users user = us.getUser(principal.getName());
+		if (!as.isCourseOwner(course, user)) {
+			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "이 과정을 맡은 교수만 사용할 수 있습니다.");
 		}
-		return "redirect:/attendance/session/" + lessonId;
+
+		AttResult result;
+		try {
+			result = as.start(course);
+		} catch (DataIntegrityViolationException e) {
+			// 버튼을 동시에 두 번 눌러 이미 만들어진 경우 → 만들어진 세션으로
+			result = as.findTodaySession(course)
+					.map(s -> AttResult.of(AttResult.Status.STARTED, s.getLesson().getLessonId()))
+					.orElse(AttResult.of(AttResult.Status.NOT_STARTED));
+		}
+
+		if (result.status() == AttResult.Status.STARTED) {
+			return "redirect:/attendance/session/" + result.lessonId();
+		}
+		String msg = switch (result.status()) {
+			case NO_CLASS  -> "오늘은 이 과정의 수업이 없습니다.";
+			case TOO_EARLY -> "수업 시작 " + AttService.ENTER_BEFORE_MINUTES + "분 전부터 시작할 수 있습니다.";
+			case CLOSED    -> "오늘 수업 시간이 끝났습니다.";
+			case NO_LESSON -> "진행할 차시가 없습니다. 먼저 차시를 등록해 주세요.";
+			default        -> "수업을 시작하지 못했습니다.";
+		};
+		ra.addFlashAttribute("flashMsg", msg);
+		ra.addFlashAttribute("flashOk", false);
+		return "redirect:" + backUrl(back);
 	}
 
-	// 출석 코드 · 출석한 학생 화면 - 이 수업을 맡은 교수
+	// 출석 현황 - 이 차시에 들어온 학생 (이 수업을 맡은 교수)
 	@PreAuthorize("hasRole('TEACHER')")
 	@GetMapping("/session/{lessonId}")
 	public String session(Model model, @PathVariable("lessonId") Long lessonId, Principal principal) {
@@ -109,6 +125,8 @@ public class AttController {
 		model.addAttribute("lesson", lesson);
 		model.addAttribute("attSession", session);
 		model.addAttribute("attList", as.getLessonAtts(lesson));
+		model.addAttribute("rosterCount", as.getRoster(lesson.getCourse()).size());
+		model.addAttribute("lateMinutes", AttService.LATE_MINUTES);
 		return "attendance/session";
 	}
 
@@ -224,49 +242,52 @@ public class AttController {
 		return "redirect:" + target + "#u-" + userId;
 	}
 
-	// ===== 학생 =====
+	// ===== 학생: 수업 참여 =====
 
-	// 코드 입력 - 맞으면 출석, 틀리면 다시 (5회까지)
+	// 수업 참여 - 들어온 시각으로 출석 / 지각이 자동 기록되고, 그 차시 화면으로 입장
 	@PreAuthorize("hasRole('STUDENT')")
-	@PostMapping("/check/{lessonId}")
-	public String check(@PathVariable("lessonId") Long lessonId,
-			@RequestParam(value = "code", defaultValue = "") String code,
+	@PostMapping("/enter/{courseId}")
+	public String enter(@PathVariable("courseId") Long courseId,
+			@RequestParam(value = "back", defaultValue = "") String back,
 			Principal principal, RedirectAttributes ra) {
 		if (principal == null) return LOGIN_REDIRECT;
 
-		// 6자리 숫자가 아니면 틀린 횟수에 넣지 않고 안내만
-		code = code.trim();
-		if (!code.matches("\\d{6}")) {
-			return flash(ra, false, "6자리 숫자를 입력해 주세요.");
-		}
-
-		Lesson lesson = as.getLesson(lessonId);
+		Course course = as.getCourse(courseId);
 		Users student = us.getUser(principal.getName());
 
 		AttResult result;
 		try {
-			result = as.check(lesson, student, code);
+			result = as.enter(course, student);
 		} catch (DataIntegrityViolationException e) {
-			// 같은 요청이 동시에 두 번 들어와 먼저 처리된 경우
-			result = AttResult.of(AttResult.Status.ALREADY);
+			// 같은 요청이 동시에 두 번 들어와 먼저 처리된 경우 → 그냥 입장
+			result = as.findTodaySession(course)
+					.map(s -> AttResult.of(AttResult.Status.ALREADY, s.getLesson().getLessonId()))
+					.orElse(AttResult.of(AttResult.Status.NOT_STARTED));
 		}
 
-		return switch (result.status()) {
-			case SUCCESS     -> flash(ra, true, "출석이 완료되었습니다.");
-			case WRONG       -> flash(ra, false, "틀렸습니다. 다시 입력해 주세요. (남은 기회 " + result.remaining() + "회)");
-			case LOCKED      -> flash(ra, false, AttService.MAX_FAIL + "회 모두 틀려서 이번 수업은 더 이상 입력할 수 없습니다.");
-			case CLOSED      -> flash(ra, false, "출석 시간이 지났습니다.");
-			case ALREADY     -> flash(ra, true, "이미 출석했습니다.");
-			case PROCESSED   -> flash(ra, false, "교수님이 이미 출석 상태를 처리한 수업입니다.");
-			case NOT_STARTED -> flash(ra, false, "아직 출석이 시작되지 않은 수업입니다.");
+		String msg = switch (result.status()) {
+			case PRESENT     -> "출석 처리되었습니다.";
+			case LATE        -> "지각 처리되었습니다. (수업 시작 " + AttService.LATE_MINUTES + "분 이후 입장)";
+			case ALREADY     -> "이미 출석한 수업입니다.";
+			case PROCESSED   -> "교수님이 출석 상태를 처리한 수업입니다.";
+			case NOT_STARTED -> "교수님이 아직 수업을 시작하지 않았습니다. 잠시 후 다시 참여해 주세요.";
+			case NO_CLASS    -> "오늘은 이 과정의 수업이 없습니다.";
+			case TOO_EARLY   -> "수업 시작 " + AttService.ENTER_BEFORE_MINUTES + "분 전부터 참여할 수 있습니다.";
+			case CLOSED      -> "오늘 수업 시간이 끝났습니다.";
+			case NOT_MINE    -> "수강 대상이 아닌 과정입니다.";
+			default          -> "수업에 참여하지 못했습니다.";
 		};
+		boolean ok = result.lessonId() != null;
+		ra.addFlashAttribute("flashMsg", msg);
+		ra.addFlashAttribute("flashOk", ok);
+
+		// 들어갈 차시가 있으면 차시 화면으로, 아니면 원래 화면으로
+		return ok ? "redirect:/lesson/detail/" + result.lessonId() : "redirect:" + backUrl(back);
 	}
 
-	// 결과 메시지를 담아 출석 화면으로 (새로고침해도 다시 제출되지 않게 redirect)
-	private String flash(RedirectAttributes ra, boolean ok, String message) {
-		ra.addFlashAttribute("resultOk", ok);
-		ra.addFlashAttribute("resultMsg", message);
-		return "redirect:/attendance/list";
+	// 돌아갈 화면 - 대시보드에서 왔으면 대시보드, 아니면 출석 화면
+	private String backUrl(String back) {
+		return "dashboard".equals(back) ? "/dashboard" : "/attendance/list";
 	}
 
 	// 상태 코드 → 글자

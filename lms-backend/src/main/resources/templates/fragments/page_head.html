@@ -6,9 +6,9 @@
   페이지 제목 띠 (제목 + 경로)
   사용법 (각 화면의 content 밖, body 안에):
     <section layout:fragment="page-head">
-      <div th:replace="~{fragments/page_head :: head('강의 등록', '수업참여', '나의 강의')}"></div>
+      <div th:replace="~{fragments/page_head :: head('강의 등록', '수업', '나의 강의')}"></div>
     </section>
-  - menu  : 상단 메뉴 이름 (예: '수업참여')
+  - menu  : 상단 메뉴 이름 (예: '수업')
   - sub   : 하위 메뉴 이름, 없으면 null  (예: head('과제', '나의 학습', null))
   - title : 화면 제목 → 경로 맨 끝에도 나옴 (sub 와 같으면 한 번만 표시)
 -->

@@ -45,41 +45,55 @@ a { color: inherit; }
 .logo-mark { width: 32px; height: 32px; border-radius: 6px; display: block; }  /* static/img/logo.png */
 .logo-text { font-size: 18px; font-weight: bold; color: var(--navy); }
 .role-badge {
-  font-size: 11px; color: var(--text-sub);
-  border: 1px solid var(--line); border-radius: 10px; padding: 1px 8px;
+  font-size: 11px; font-weight: 600; color: var(--navy); background: var(--navy-light);
+  border: 1px solid #d5dde8; border-radius: 10px; padding: 1px 8px;
 }
 
 /* ===== 상단 메뉴 (GNB) ===== */
 .gnb { flex: 1; display: flex; justify-content: flex-end; }
 .gnb > ul { display: flex; list-style: none; margin: 0; padding: 0; height: 68px; }
-.gnb > ul > li { position: relative; }
+.gnb > ul > li { position: relative; width: 124px; }   /* 칸 폭을 같게 해야 펼친 하위 메뉴가 줄 맞춰 보임 */
 .gnb > ul > li > a {
-  display: flex; align-items: center; height: 68px; padding: 0 18px;
+  display: flex; align-items: center; justify-content: center; height: 68px; padding: 0 8px;
   text-decoration: none; font-size: 15px; font-weight: 600; color: var(--text);
-  border-bottom: 3px solid transparent;
+  border-bottom: 3px solid transparent; white-space: nowrap;
 }
 .gnb > ul > li:hover > a { color: var(--navy); }
 .gnb > ul > li.active > a { color: var(--navy); border-bottom-color: var(--navy); }
 
-/* 하위 메뉴 (마우스 올리면 펼침) */
+/* 하위 메뉴 - 메뉴 아무 곳에나 마우스를 올리면 전체 하위 메뉴가 한 번에 펼쳐짐
+   (layout.html 스크립트가 헤더에 menu-open 클래스를 붙이고, 펼침 높이 --panel-h 를 계산) */
+.site-header::after {
+  content: ""; position: absolute; left: 0; right: 0; top: 68px; height: 0;
+  background: var(--white); box-shadow: 0 8px 16px rgba(0, 0, 0, .06);
+  border-top: 1px solid var(--line);
+  opacity: 0; pointer-events: none; transition: height .15s ease, opacity .15s ease;
+}
+.site-header.menu-open::after { height: var(--panel-h, 160px); opacity: 1; pointer-events: auto; }
+
 .gnb .sub {
   display: none;
-  position: absolute; top: 68px; left: 50%; transform: translateX(-50%);
-  min-width: 150px; list-style: none; margin: 0; padding: 8px 0;
-  background: var(--white); border: 1px solid var(--line); border-top: 2px solid var(--navy);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, .08);
+  position: absolute; top: 68px; left: 0; right: 0; z-index: 1;
+  list-style: none; margin: 0; padding: 14px 0;
+  text-align: center;
 }
-.gnb > ul > li:hover .sub,
-.gnb > ul > li:focus-within .sub { display: block; }
+.site-header.menu-open .gnb .sub { display: block; min-height: var(--panel-h, 0); }   /* 칸 높이를 맞춰 구분선이 끝까지 */
 .gnb .sub a {
-  display: block; padding: 8px 18px; font-size: 14px;
-  text-decoration: none; color: var(--text); white-space: nowrap;
+  display: block; padding: 7px 4px; font-size: 14px;
+  text-decoration: none; color: var(--text-sub); white-space: nowrap;
 }
-.gnb .sub a:hover { background: var(--navy-light); color: var(--navy); }
+.gnb .sub a:hover { color: var(--navy); font-weight: 600; text-decoration: underline; }
+/* 마우스를 올린 칸 강조 - 위 메뉴 글자 · 밑줄 + 그 칸 하위 메뉴 배경 */
+.gnb > ul > li:hover > a { color: var(--navy); border-bottom-color: var(--navy); }
+.site-header.menu-open .gnb > ul > li:hover .sub { background: var(--navy-light); }
+.site-header.menu-open .gnb > ul > li:hover .sub a { color: var(--navy); }
+/* 펼쳐졌을 때 메뉴 칸 사이 세로 구분선 */
+.site-header.menu-open .gnb > ul > li + li .sub { border-left: 1px solid var(--line); }
 
 /* 오른쪽 로그인 / 로그아웃 */
 .util { display: flex; align-items: center; gap: 10px; white-space: nowrap; font-size: 13px; }
 .util .user { color: var(--text-sub); }
+.util .user b { color: var(--text); }
 .btn-login, .btn-logout {
   text-decoration: none; padding: 6px 12px; border-radius: 4px; font-size: 13px;
 }
@@ -111,8 +125,14 @@ a { color: inherit; }
   .site-header .inner { height: auto; flex-wrap: wrap; padding-top: 10px; gap: 8px; }
   .gnb { order: 3; width: 100%; justify-content: flex-start; overflow-x: auto; }
   .gnb > ul, .gnb > ul > li > a { height: 46px; }
+  .gnb > ul > li { width: auto; }
   .gnb > ul > li > a { padding: 0 12px; font-size: 14px; }
-  .gnb .sub { top: 46px; }
+  .gnb .sub, .site-header::after { display: none !important; }   /* 좁은 화면은 펼침 없이 메뉴 이동만 */
   .util { margin-left: auto; }
   .page-head .inner { flex-direction: column; align-items: flex-start; gap: 8px; }
 }
+
+/* ===== 처리 결과 안내 (flashMsg) ===== */
+.flash { margin: 0 0 16px; padding: 11px 16px; border-radius: 4px; font-size: 14px; border: 1px solid; }
+.flash.ok { background: #e8f5e9; border-color: #c8e6c9; color: #2e7d32; }
+.flash.fail { background: #fdecea; border-color: #f5c6c0; color: var(--danger); }

@@ -19,51 +19,50 @@
       <a class="logo" th:href="@{/}">
         <img class="logo-mark" th:src="@{/img/logo.png}" alt="">
         <span class="logo-text">Smart Learning Hub</span>
-        <!-- 로그인한 권한 표시 -->
-        <span class="role-badge" sec:authorize="hasRole('STUDENT')">학생</span>
-        <span class="role-badge" sec:authorize="hasRole('TEACHER')">교수</span>
-        <span class="role-badge" sec:authorize="hasRole('ADMIN')">관리자</span>
       </a>
 
-      <!-- 상단 메뉴: 3번째 메뉴만 권한에 따라 바뀜 (학생: 나의 학습 / 교수: 학생 관리 / 관리자: 관리자) -->
+      <!-- 상단 메뉴: 학과 안내 / 수업 / 나의 학습(학생) · 학생 관리(교수) / 커뮤니티 (+ 관리자)
+           수업 = 수업 정보(강의 · 시간표 · 공지 · Q&A) / 나의 학습 = 내 활동(대시보드 · 과제 · 출석)
+           출석 체크는 메뉴가 아니라 '오늘의 수업' 카드의 [수업 참여] 로 함 (출석 현황은 기록 조회) -->
       <nav class="gnb">
         <ul>
-          <li data-menu="/subject">
-            <a th:href="@{/subject/list}">교육안내</a>
+          <!-- 교육안내 + 기관소개 -->
+          <li data-menu="/about /subject">
+            <a th:href="@{/about/course}">학과 안내</a>
             <ul class="sub">
-              <li><a th:href="@{/subject/list}">과목 안내</a></li>
+              <li><a th:href="@{/about/course}">과정 소개</a></li>
+              <li><a th:href="@{/about/curriculum}">교육과정 안내</a></li>
             </ul>
           </li>
-	  
-	  <!-- 학생, 교수 O / 관리자 X -->  
-          <li data-menu="/course /qna /timetable" sec:authorize="!hasRole('ADMIN')">
-            <a th:href="@{/course/list}">수업참여</a>
+
+          <!-- 학생, 교수 O / 관리자 X -->
+          <li data-menu="/course /timetable /notice /qna /lesson" sec:authorize="!hasRole('ADMIN')">
+            <a th:href="@{/course/list}">수업</a>
             <ul class="sub">
               <li><a th:href="@{/course/list}">나의 강의</a></li>
-              <li><a th:href="@{/qna/list}">수업 Q&amp;A</a></li>
               <li><a th:href="@{/timetable}">시간표</a></li>
+              <li><a th:href="@{/notice/list}">과목 공지</a></li>
+              <li><a th:href="@{/qna/list}">수업 Q&amp;A</a></li>
             </ul>
           </li>
 
           <!-- 학생 -->
-          <li data-menu="/dashboard/student /homework /notice" sec:authorize="hasRole('STUDENT')">
-            <a th:href="@{/dashboard/student}">나의 학습</a>
+          <li data-menu="/dashboard/student /homework /attendance" sec:authorize="hasRole('STUDENT')">
+            <a th:href="@{/dashboard}">나의 학습</a>
             <ul class="sub">
-              <li><a th:href="@{/dashboard/student}">대시보드</a></li>
+              <li><a th:href="@{/dashboard}">대시보드</a></li>
               <li><a th:href="@{/homework/list}">과제</a></li>
-              <li><a th:href="@{/notice/list}">공지사항</a></li>
-              <!-- <li><a th:href="@{/attendance}">출석 현황</a></li>  출석 기능 완성 후 -->
+              <li><a th:href="@{/attendance/list}">출석 현황</a></li>
             </ul>
           </li>
 
           <!-- 교수 -->
-          <li data-menu="/dashboard/teacher /homework /notice" sec:authorize="hasRole('TEACHER')">
-            <a th:href="@{/dashboard/teacher}">학생 관리</a>
+          <li data-menu="/dashboard/teacher /homework /attendance" sec:authorize="hasRole('TEACHER')">
+            <a th:href="@{/dashboard}">학생 관리</a>
             <ul class="sub">
-              <li><a th:href="@{/dashboard/teacher}">대시보드</a></li>
-              <li><a th:href="@{/homework/list}">과제 관리</a></li>
-              <li><a th:href="@{/notice/list}">과목 공지</a></li>
-              <!-- <li><a th:href="@{/attendance}">출석부</a></li>  출석 기능 완성 후 -->
+              <li><a th:href="@{/dashboard}">대시보드</a></li>
+              <li><a th:href="@{/homework/list}">과제 · 채점</a></li>
+              <li><a th:href="@{/attendance/list}">출석부</a></li>
             </ul>
           </li>
 
@@ -78,24 +77,12 @@
             </ul>
           </li>
 
-          <li data-menu="/info">
-            <a th:href="@{/info/notice/list}">정보마당</a>
+          <!-- 정보마당 + 자유게시판 -->
+          <li data-menu="/info /board">
+            <a th:href="@{/info/notice/list}">커뮤니티</a>
             <ul class="sub">
-              <li><a th:href="@{/info/notice/list}">시스템 공지</a></li>
-            </ul>
-          </li>
-
-          <li data-menu="/board">
-            <a th:href="@{/board/list}">자유게시판</a>
-            <ul class="sub">
-              <li><a th:href="@{/board/list}">게시글 목록</a></li>
-            </ul>
-          </li>
-
-          <li data-menu="/about">
-            <a th:href="@{/about/course}">기관소개</a>
-            <ul class="sub">
-              <li><a th:href="@{/about/course}">과정 소개</a></li>
+              <li><a th:href="@{/info/notice/list}">학교 공지</a></li>
+              <li><a th:href="@{/board/list}">자유게시판</a></li>
             </ul>
           </li>
         </ul>
@@ -105,7 +92,11 @@
       <div class="util">
         <a sec:authorize="isAnonymous()" class="btn-login" th:href="@{/user/login}">로그인</a>
         <th:block sec:authorize="isAuthenticated()">
-          <span class="user"><span sec:authentication="name">2610001</span> 님</span>
+          <!-- 권한 표시 + 이름 (이름은 LoginUserAdvice 가 넣어 줌, 없으면 학번) -->
+          <span class="role-badge" sec:authorize="hasRole('STUDENT')">학생</span>
+          <span class="role-badge" sec:authorize="hasRole('TEACHER')">교수</span>
+          <span class="role-badge" sec:authorize="hasRole('ADMIN')">관리자</span>
+          <span class="user"><b th:text="${loginName != null} ? ${loginName} : ${#authentication.name}">강경모</b> 님</span>
           <a class="btn-logout" th:href="@{/user/logout}">로그아웃</a>
         </th:block>
       </div>
@@ -115,7 +106,7 @@
   <!-- ===== 페이지 제목 띠 =====
        각 화면에서 아래처럼 넣으면 '제목 + 홈 › 메뉴 › 하위메뉴' 띠가 나옴 (안 넣으면 띠 없음)
        <section layout:fragment="page-head">
-         <div th:replace="~{fragments/page_head :: head('강의 등록', '수업참여', '나의 강의')}"></div>
+         <div th:replace="~{fragments/page_head :: head('강의 등록', '수업', '나의 강의')}"></div>
        </section>
   -->
   <!-- (layout:fragment 는 요소가 통째로 바뀌므로 스타일은 바깥 태그에) -->
@@ -123,6 +114,8 @@
 
   <!-- ===== 각 화면 내용 ===== -->
   <main class="content">
+    <!-- 처리 결과 안내 (컨트롤러에서 ra.addFlashAttribute("flashMsg", ...) / ("flashOk", true·false)) -->
+    <div class="flash" th:if="${flashMsg != null}" th:classappend="${flashOk} ? 'ok' : 'fail'" th:text="${flashMsg}">안내 문구</div>
     <div layout:fragment="content"></div>
   </main>
 
@@ -143,6 +136,24 @@
         li.getAttribute('data-menu').split(' ').forEach(function (prefix) {
           if (prefix && path.indexOf(prefix) === 0) li.classList.add('active');
         });
+      });
+
+      // 메뉴에 마우스를 올리면 전체 하위 메뉴 펼침 (가장 긴 하위 메뉴 높이에 맞춤)
+      var header = document.querySelector('.site-header');
+      var gnb = header.querySelector('.gnb');
+      function openMenu() {
+        header.style.removeProperty('--panel-h');                      // 원래 높이로 재기
+        header.classList.add('menu-open');
+        var h = 0;
+        gnb.querySelectorAll('.sub').forEach(function (sub) { h = Math.max(h, sub.offsetHeight); });
+        header.style.setProperty('--panel-h', h + 'px');
+      }
+      function closeMenu() { header.classList.remove('menu-open'); }
+      gnb.addEventListener('mouseenter', openMenu);
+      header.addEventListener('mouseleave', closeMenu);
+      gnb.addEventListener('focusin', openMenu);                       // 키보드(Tab) 이동
+      gnb.addEventListener('focusout', function (e) {
+        if (!gnb.contains(e.relatedTarget)) closeMenu();
       });
     })();
   </script>

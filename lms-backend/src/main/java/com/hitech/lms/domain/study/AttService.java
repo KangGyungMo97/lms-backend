@@ -1,7 +1,5 @@
 package com.hitech.lms.domain.study;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -19,6 +17,7 @@ import java.util.TreeMap;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.hitech.lms.domain.course.ClassClock;
 import com.hitech.lms.domain.course.Course;
 import com.hitech.lms.domain.course.CourseRepository;
 import com.hitech.lms.domain.course.Lesson;
@@ -28,21 +27,24 @@ import com.hitech.lms.global.error.DataNotFoundException;
 
 import lombok.RequiredArgsConstructor;
 
+// 출석 = '수업 시간에 강의실에 들어오면 자동 기록'
+//   1) 교수가 수업 시간에 [수업 시작] → 오늘 진행할 차시의 출석 세션이 열림 (수업 끝나는 시각까지)
+//   2) 학생이 수업 시간에 [수업 참여] → 들어온 시각으로 출석(Y) / 지각(L) 자동 기록 후 차시 화면으로
+//      시작 후 10분까지 출석, 그 뒤로는 지각, 수업이 끝나면 참여 불가 (기록 없으면 출석부에서 결석)
+//   ※ 교수가 늦게 시작하면 '교수가 시작한 시각' 기준으로 10분
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class AttService {
 
-	public static final int OPEN_MINUTES = 10;   // 시작 후 10분 동안만 입력 가능
-	public static final int MAX_FAIL = 5;        // 틀릴 수 있는 횟수
+	public static final int ENTER_BEFORE_MINUTES = 10;   // 수업 시작 10분 전부터 입장 가능
+	public static final int LATE_MINUTES = 10;           // 시작 후 10분이 지나면 지각
 
-	private static final SecureRandom RANDOM = new SecureRandom();   // 예측하기 어려운 난수
+	private static final SecureRandom RANDOM = new SecureRandom();
 
 	private final AttRepository ar;
 
 	private final AttSessionRepository sr;
-
-	private final AttFailRepository fr;
 
 	private final LessonRepository lr;
 
@@ -61,19 +63,134 @@ public class AttService {
 		return lesson.getCourse().getTeacher().getUserId().equals(user.getUserId());
 	}
 
-	// ===== 교수: 출석 시작 =====
-
-	// 내가 담당하는 수업 목록 (출석 시작 버튼이 붙는 목록)
-	public List<Lesson> getMyLessons(Users teacher) {
-		return lr.findByCourse_Teacher_UserIdOrderByLessonIdDesc(teacher.getUserId());
+	// 수강 대상 학생 - 과목의 학과 + 대상 학년 (대상 학년이 비어 있으면 학과 전체)
+	// TODO: 수강신청 테이블이 생기면 '이 과정을 신청한 학생' 으로 바꾸기
+	public List<Users> getRoster(Course course) {
+		String grade = course.getCourseTarget() == null ? null : String.valueOf(course.getCourseTarget());
+		return ar.findStudentsOf(course.getSubject().getDept(), grade);
 	}
 
-	// 이 수업의 출석 세션 - 아직 시작 안 했으면 비어 있음
-	public Optional<AttSession> findSession(Lesson lesson) {
-		return sr.findByLesson(lesson);
+	// 이 학생이 듣는 강의인지 (학과 + 학년)
+	public boolean isTarget(Course course, Users student) {
+		if (!"S".equals(student.getUserRole())) return false;
+		if (!course.getSubject().getDept().getDeptId().equals(student.getDept().getDeptId())) return false;
+		return course.getCourseTarget() == null
+				|| String.valueOf(course.getCourseTarget()).equals(student.getUserGrade());
 	}
 
-	// 수업 목록의 세션 { 수업번호 : 세션 } - 목록에서 '미시작 / 진행중 / 마감' 표시용
+	// 학생이 듣는 강의 목록
+	public List<Course> getStudentCourses(Users student) {
+		Integer grade = null;
+		try {
+			grade = Integer.valueOf(student.getUserGrade());
+		} catch (NumberFormatException | NullPointerException e) {
+			// 학년이 없으면 '대상 학년 없음' 강의만
+		}
+		return ar.findCoursesOf(student.getDept(), grade);
+	}
+
+	// 교수가 맡은 강의 목록
+	public List<Course> getTeacherCourses(Users teacher) {
+		return cr.findByTeacher_UserIdAndCourseIsUseOrderByCourseIdDesc(teacher.getUserId(), "Y");
+	}
+
+	// ===== 오늘의 수업 =====
+
+	// 이 강의의 오늘 출석 세션 (교수가 오늘 '수업 시작'을 눌렀으면 있음)
+	public Optional<AttSession> findTodaySession(Course course) {
+		LocalDate today = LocalDate.now();
+		return sr.findByLesson_Course(course).stream()
+				.filter(s -> s.getOpenedAt().toLocalDate().equals(today))
+				.findFirst();
+	}
+
+	// 오늘의 수업 카드 목록 - 오늘 수업이 있는 강의만, 시작 시각 순
+	//   student 가 있으면 내 출석 기록을, 없으면(교수) 출석 인원을 채움
+	public List<TodayClass> getTodayClasses(List<Course> courses, Users student) {
+		List<TodayClass> list = new ArrayList<>();
+		for (Course c : courses) {
+			Optional<ClassClock.Slot> slot = ClassClock.today(c);
+			if (slot.isEmpty()) continue;
+
+			List<Lesson> lessons = ar.findLessonsOfCourse(c);
+			List<AttSession> sessions = sr.findByLesson_Course(c);
+			AttSession todaySession = sessions.stream()
+					.filter(s -> s.getOpenedAt().toLocalDate().equals(LocalDate.now()))
+					.findFirst().orElse(null);
+
+			// 시작했으면 그 차시, 아니면 아직 세션이 없는 첫 차시
+			Lesson lesson = (todaySession != null) ? todaySession.getLesson() : nextLesson(lessons, sessions);
+			int lessonNo = (lesson == null) ? 0 : indexOf(lessons, lesson) + 1;
+
+			Att myAtt = null;
+			int attendCount = 0, rosterCount = 0;
+			if (student != null) {
+				if (todaySession != null) {
+					myAtt = ar.findByStudentAndLesson(student, todaySession.getLesson()).orElse(null);
+				}
+			} else {
+				rosterCount = getRoster(c).size();
+				if (todaySession != null) {
+					attendCount = (int) ar.findByLessonOrderByAttDateAsc(todaySession.getLesson()).stream()
+							.filter(a -> "Y".equals(a.getAttStatus()) || "L".equals(a.getAttStatus()))
+							.count();
+				}
+			}
+			list.add(new TodayClass(c, slot.get(), lesson, lessonNo, todaySession, myAtt, attendCount, rosterCount));
+		}
+		list.sort((a, b) -> a.getSlot().start().compareTo(b.getSlot().start()));
+		return list;
+	}
+
+	// 아직 출석 세션이 없는 첫 차시 (모두 진행했으면 null)
+	private Lesson nextLesson(List<Lesson> lessons, List<AttSession> sessions) {
+		Set<Long> done = new HashSet<>();
+		for (AttSession s : sessions) done.add(s.getLesson().getLessonId());
+		for (Lesson l : lessons) {
+			if (!done.contains(l.getLessonId())) return l;
+		}
+		return null;
+	}
+
+	private int indexOf(List<Lesson> lessons, Lesson lesson) {
+		for (int i = 0; i < lessons.size(); i++) {
+			if (lessons.get(i).getLessonId().equals(lesson.getLessonId())) return i;
+		}
+		return -1;
+	}
+
+	// ===== 교수: 수업 시작 =====
+
+	// 수업 시작 - 오늘 수업 시간(시작 10분 전 ~ 끝)에만, 다음 차시의 출석 세션을 엶 (끝나는 시각까지)
+	//   이미 오늘 시작했으면 새로 만들지 않고 그 차시를 돌려줌
+	@Transactional
+	public AttResult start(Course course) {
+		Optional<ClassClock.Slot> slot = ClassClock.today(course);
+		if (slot.isEmpty()) return AttResult.of(AttResult.Status.NO_CLASS);
+
+		LocalDateTime now = LocalDateTime.now();
+		if (now.isBefore(slot.get().start().minusMinutes(ENTER_BEFORE_MINUTES))) return AttResult.of(AttResult.Status.TOO_EARLY);
+		if (!now.isBefore(slot.get().end())) return AttResult.of(AttResult.Status.CLOSED);
+
+		Optional<AttSession> today = findTodaySession(course);
+		if (today.isPresent()) {
+			return AttResult.of(AttResult.Status.STARTED, today.get().getLesson().getLessonId());
+		}
+
+		Lesson lesson = nextLesson(ar.findLessonsOfCourse(course), sr.findByLesson_Course(course));
+		if (lesson == null) return AttResult.of(AttResult.Status.NO_LESSON);
+
+		AttSession session = new AttSession();
+		session.setLesson(lesson);
+		session.setCode(String.format("%06d", RANDOM.nextInt(1_000_000)));   // 코드 입력은 안 쓰지만 컬럼이 NOT NULL
+		session.setOpenedAt(now);
+		session.setExpiresAt(slot.get().end());                              // 수업 끝나는 시각까지 참여 가능
+		sr.save(session);
+
+		return AttResult.of(AttResult.Status.STARTED, lesson.getLessonId());
+	}
+
+	// 수업 기록 화면용 - 차시별 세션 { 수업번호 : 세션 }
 	public Map<Long, AttSession> getSessionMap(List<Lesson> lessons) {
 		Map<Long, AttSession> map = new HashMap<>();
 		if (lessons.isEmpty()) return map;
@@ -83,29 +200,19 @@ public class AttService {
 		return map;
 	}
 
-	// 이 수업에 출석한 학생 목록 (먼저 입력한 순서)
-	public List<Att> getLessonAtts(Lesson lesson) {
-		return ar.findByLessonOrderByAttDateAsc(lesson);
+	// 내가 담당하는 차시 목록 (최근 순)
+	public List<Lesson> getMyLessons(Users teacher) {
+		return lr.findByCourse_Teacher_UserIdOrderByLessonIdDesc(teacher.getUserId());
 	}
 
-	// 출석 시작 - 6자리 코드 만들고, 마감은 지금 + 10분
-	// 이미 시작한 수업이면 새로 만들지 않고 있던 걸 돌려줌 (코드가 바뀌면 안 되니까)
-	@Transactional
-	public AttSession start(Lesson lesson) {
-		Optional<AttSession> old = sr.findByLesson(lesson);
-		if (old.isPresent()) {
-			return old.get();
-		}
+	// 이 차시의 출석 세션
+	public Optional<AttSession> findSession(Lesson lesson) {
+		return sr.findByLesson(lesson);
+	}
 
-		LocalDateTime now = LocalDateTime.now();
-
-		AttSession session = new AttSession();
-		session.setLesson(lesson);
-		session.setCode(String.format("%06d", RANDOM.nextInt(1_000_000)));   // 000000 ~ 999999
-		session.setOpenedAt(now);
-		session.setExpiresAt(now.plusMinutes(OPEN_MINUTES));
-
-		return sr.save(session);
+	// 이 차시에 들어온 학생 (먼저 들어온 순서)
+	public List<Att> getLessonAtts(Lesson lesson) {
+		return ar.findByLessonOrderByAttDateAsc(lesson);
 	}
 
 	// ===== 교수: 출석부 · 수정 =====
@@ -136,7 +243,7 @@ public class AttService {
 	}
 
 	// 출석부 - 학생 한 줄마다 수업별 상태 + 출석/지각/공결/결석 횟수
-	//   학생 명단 = 과목의 학과와 같은 학과 학생 + 이 과정에 출석 기록이 있는 학생
+	//   학생 명단 = 수강 대상 학생(학과 + 대상 학년) + 이 과정에 출석 기록이 있는 학생
 	//   칸의 상태 = 기록이 있으면 그 상태 / 기록이 없는데 수업을 진행했으면 결석(N) / 진행 전이면 -
 	public List<AttBookRow> getBook(Course course, List<Lesson> lessons) {
 
@@ -150,7 +257,7 @@ public class AttService {
 
 		// 학생 명단 (학번 순)
 		Map<String, Users> roster = new TreeMap<>();
-		for (Users student : ar.findStudentsOfDept(course.getSubject().getDept())) {
+		for (Users student : getRoster(course)) {
 			roster.put(student.getUserId(), student);
 		}
 		for (Att att : atts) {
@@ -268,86 +375,51 @@ public class AttService {
 		ar.save(att);
 	}
 
-	// ===== 학생 =====
+	// ===== 학생: 수업 참여 =====
 
-	// 지금 열려 있는 출석 세션 (마감 전)
-	// TODO: ERD 에 수강신청 테이블이 없음 → 생기면 '내가 듣는 과정의 세션만' 으로 좁히기
-	public List<AttSession> getOpenSessions() {
-		return sr.findByExpiresAtAfterOrderByOpenedAtDesc(LocalDateTime.now());
+	// 수업 참여 → 들어온 시각으로 출석 / 지각 자동 기록
+	//   순서: 내 강의인가 → 오늘 수업 있나 → 입장 시간인가 → 교수가 시작했나 → 이미 기록 있나 → 출석/지각 저장
+	@Transactional
+	public AttResult enter(Course course, Users student) {
+		if (!isTarget(course, student)) return AttResult.of(AttResult.Status.NOT_MINE);
+
+		Optional<ClassClock.Slot> slot = ClassClock.today(course);
+		if (slot.isEmpty()) return AttResult.of(AttResult.Status.NO_CLASS);
+
+		LocalDateTime now = LocalDateTime.now();
+		if (now.isBefore(slot.get().start().minusMinutes(ENTER_BEFORE_MINUTES))) return AttResult.of(AttResult.Status.TOO_EARLY);
+
+		AttSession session = findTodaySession(course).orElse(null);
+		if (session == null) {
+			return AttResult.of(now.isBefore(slot.get().end()) ? AttResult.Status.NOT_STARTED : AttResult.Status.CLOSED);
+		}
+		Lesson lesson = session.getLesson();
+
+		// 이미 기록이 있으면 다시 쓰지 않음 (교수가 수정한 기록을 덮어쓰지 않게) → 그냥 입장
+		Att old = ar.findByStudentAndLesson(student, lesson).orElse(null);
+		if (old != null) {
+			boolean attended = "Y".equals(old.getAttStatus()) || "L".equals(old.getAttStatus());
+			return AttResult.of(attended ? AttResult.Status.ALREADY : AttResult.Status.PROCESSED, lesson.getLessonId());
+		}
+
+		if (!now.isBefore(slot.get().end())) return AttResult.of(AttResult.Status.CLOSED);
+
+		// 출석 기준 = 수업 시작 시각과 교수가 시작한 시각 중 늦은 쪽 + 10분
+		LocalDateTime base = session.getOpenedAt().isAfter(slot.get().start()) ? session.getOpenedAt() : slot.get().start();
+		boolean late = now.isAfter(base.plusMinutes(LATE_MINUTES));
+
+		Att att = new Att();
+		att.setStudent(student);
+		att.setLesson(lesson);
+		att.setAttStatus(late ? "L" : "Y");
+		att.setAttDate(now);
+		ar.save(att);
+
+		return AttResult.of(late ? AttResult.Status.LATE : AttResult.Status.PRESENT, lesson.getLessonId());
 	}
 
 	// 내 출석 기록 (최근 순)
 	public List<Att> getMyAtts(Users student) {
 		return ar.findByStudentOrderByAttDateDesc(student);
-	}
-
-	// 세션별 내가 틀린 횟수 { 세션번호 : 횟수 } - 한 번도 안 틀렸으면 키가 없음
-	public Map<Long, Integer> getFailCountMap(Users student, List<AttSession> sessions) {
-		Map<Long, Integer> map = new HashMap<>();
-		if (sessions.isEmpty()) return map;
-		for (AttFail fail : fr.findByStudentAndSessionIn(student, sessions)) {
-			map.put(fail.getSession().getSessionId(), fail.getFailCount());
-		}
-		return map;
-	}
-
-	// 코드 입력 → 출석 처리
-	//   순서: 시작했나 → 이미 기록이 있나 → 닫혔나 → 잠겼나 → 코드 비교
-	//   맞으면 Att(Y) 저장 / 틀리면 틀린 횟수 +1 (5회가 되면 이번 수업은 잠김)
-	@Transactional
-	public AttResult check(Lesson lesson, Users student, String input) {
-
-		AttSession session = sr.findByLesson(lesson).orElse(null);
-		if (session == null) {
-			return AttResult.of(AttResult.Status.NOT_STARTED);
-		}
-
-		// 이미 기록이 있으면 코드는 받지 않음 (교수가 수정한 기록을 학생이 덮어쓰지 못하게)
-		Att old = ar.findByStudentAndLesson(student, lesson).orElse(null);
-		if (old != null) {
-			boolean attended = "Y".equals(old.getAttStatus()) || "L".equals(old.getAttStatus());
-			return AttResult.of(attended ? AttResult.Status.ALREADY : AttResult.Status.PROCESSED);
-		}
-
-		LocalDateTime now = LocalDateTime.now();
-		if (!now.isBefore(session.getExpiresAt())) {
-			return AttResult.of(AttResult.Status.CLOSED);
-		}
-
-		AttFail fail = fr.findBySessionAndStudent(session, student).orElse(null);
-		int failCount = (fail == null) ? 0 : fail.getFailCount();
-		if (failCount >= MAX_FAIL) {
-			return AttResult.of(AttResult.Status.LOCKED);   // 코드가 맞아도 잠긴 뒤에는 출석 불가
-		}
-
-		// 코드 비교 (글자 수가 같을 때 걸리는 시간이 일정한 비교)
-		boolean match = MessageDigest.isEqual(
-				session.getCode().getBytes(StandardCharsets.UTF_8),
-				input.getBytes(StandardCharsets.UTF_8));
-
-		if (match) {
-			Att att = new Att();
-			att.setStudent(student);
-			att.setLesson(lesson);
-			att.setAttStatus("Y");          // 출석 (10분 안에만 입력할 수 있으므로 코드로는 지각 L 이 없음)
-			att.setAttDate(now);
-			ar.save(att);
-			return AttResult.of(AttResult.Status.SUCCESS);
-		}
-
-		// 틀림 → 횟수 +1
-		if (fail == null) {
-			fail = new AttFail();
-			fail.setSession(session);
-			fail.setStudent(student);
-		}
-		fail.setFailCount(failCount + 1);
-		fr.save(fail);
-
-		int remaining = MAX_FAIL - fail.getFailCount();
-		if (remaining <= 0) {
-			return AttResult.of(AttResult.Status.LOCKED);
-		}
-		return new AttResult(AttResult.Status.WRONG, remaining);
 	}
 }
