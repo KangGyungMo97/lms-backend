@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+
+<head>
+  <title>출석부</title>
+  <style>
+    .board-head { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 12px; }
+    .board-head h2 { margin: 0; }
+    .hint { color: #666; font-size: 13px; margin: 8px 0; }
+    table.board { width: 100%; border-collapse: collapse; background: #fff; }
+    table.board th, table.board td { padding: 10px 8px; border-bottom: 1px solid #e5e5e5; font-size: 14px; text-align: center; }
+    table.board th { background: #eef2f7; border-top: 2px solid #1f3a5f; }
+    table.board td.title { text-align: left; }
+    table.board td.title a { color: #222; text-decoration: none; }
+    table.board td.title a:hover { text-decoration: underline; }
+    .empty { padding: 40px 0; color: #888; }
+    .st-open { color: #2e7d32; font-weight: bold; }
+    .st-closed { color: #777; }
+    .btn { display: inline-block; padding: 6px 12px; border: 1px solid #1f3a5f; border-radius: 4px;
+           background: #fff; color: #1f3a5f; text-decoration: none; font-size: 13px; cursor: pointer; }
+    .btn-primary { background: #1f3a5f; color: #fff; }
+    h3 { margin: 24px 0 10px; }
+    .course-links { display: flex; flex-wrap: wrap; gap: 8px; }
+    form.inline { display: inline; margin: 0; }
+  </style>
+</head>
+
+<body>
+  <div layout:fragment="content">
+
+    <div class="board-head">
+      <h2>출석</h2>
+    </div>
+
+    <h3>출석 관리 (과정별)</h3>
+    <p class="hint" th:if="${#lists.isEmpty(courseList)}">담당하는 과정이 없습니다.</p>
+    <div class="course-links">
+      <span th:each="c : ${courseList}">
+        <a class="btn btn-primary" th:href="@{|/attendance/calendar/${c.courseId}|}"
+           th:text="|${c.courseTitle} 출석 달력|">과정명 출석 달력</a>
+        <a class="btn" th:href="@{|/attendance/book/${c.courseId}|}">표로 보기</a>
+      </span>
+    </div>
+
+    <h3>수업별 출석 시작</h3>
+    <p class="hint">수업마다 '출석 시작'은 한 번만 누를 수 있습니다. 시작하면 6자리 코드가 나오고, 시작 후 10분 동안만 학생이 입력할 수 있습니다.</p>
+
+    <table class="board">
+      <thead>
+        <tr>
+          <th>수업명</th>
+          <th style="width:200px">과정</th>
+          <th style="width:220px">출석 상태</th>
+          <th style="width:120px"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:if="${#lists.isEmpty(lessonList)}">
+          <td colspan="4" class="empty">담당하는 수업이 없습니다.</td>
+        </tr>
+        <tr th:each="lesson : ${lessonList}" th:with="attSession=${sessionMap[lesson.lessonId]}">
+          <td class="title">
+            <a th:href="@{|/lesson/detail/${lesson.lessonId}|}" th:text="${lesson.lessonTitle}">수업명</a>
+          </td>
+          <td th:text="${lesson.course.courseTitle}">과정명</td>
+
+          <!-- 미시작 / 진행 중 / 마감 -->
+          <td>
+            <span th:if="${attSession == null}">미시작</span>
+            <span th:if="${attSession != null and attSession.open}" class="st-open"
+                  th:text="|진행 중 (${#temporals.format(attSession.expiresAt, 'HH:mm:ss')} 마감)|">진행 중</span>
+            <span th:if="${attSession != null and !attSession.open}" class="st-closed"
+                  th:text="|마감 (${#temporals.format(attSession.openedAt, 'yyyy-MM-dd HH:mm')} 시작)|">마감</span>
+          </td>
+
+          <td>
+            <form class="inline" method="post" th:if="${attSession == null}"
+                  th:action="@{|/attendance/start/${lesson.lessonId}|}">
+              <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+              <button type="submit" class="btn btn-primary">출석 시작</button>
+            </form>
+            <a th:if="${attSession != null}" class="btn"
+               th:href="@{|/attendance/session/${lesson.lessonId}|}">출석 현황</a>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+  </div>
+</body>
+
+</html>
