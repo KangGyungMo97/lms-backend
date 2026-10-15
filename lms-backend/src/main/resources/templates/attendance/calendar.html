@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+
+<head>
+  <title>출석 달력</title>
+  <style>
+    .cal-head { display: flex; justify-content: space-between; align-items: center; margin: 8px 0 12px; }
+    .cal-title { font-size: 22px; font-weight: bold; }
+    .cal-nav { display: flex; gap: 6px; }
+    .btn { display: inline-block; padding: 6px 12px; border: 1px solid #1f3a5f; border-radius: 4px;
+           background: #fff; color: #1f3a5f; text-decoration: none; font-size: 13px; }
+    .btn-primary { background: #1f3a5f; color: #fff; }
+    .meta { color: #666; font-size: 13px; margin: 0 0 4px; }
+    .hint { color: #888; font-size: 12px; margin: 0 0 12px; }
+    .legend { font-size: 12px; margin: 0 0 10px; }
+    .legend span { display: inline-block; padding: 1px 6px; border-radius: 3px; margin-right: 4px; }
+
+    /* 달력: 7칸 x 주 */
+    .cal { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); border-top: 2px solid #1f3a5f;
+           border-left: 1px solid #e5e5e5; background: #fff; }
+    .cal .dow { padding: 8px 0; text-align: center; font-size: 13px; font-weight: bold; background: #eef2f7;
+                border-right: 1px solid #e5e5e5; border-bottom: 1px solid #e5e5e5; }
+    .cal .day { min-height: 96px; padding: 4px 5px; border-right: 1px solid #e5e5e5; border-bottom: 1px solid #e5e5e5; }
+    .cal .day .num { font-size: 12px; color: #444; margin-bottom: 3px; }
+    .cal .day.other { background: #fafafa; }
+    .cal .day.other .num { color: #bbb; }
+    .cal .day.sun .num, .cal .dow.sun { color: #c0392b; }
+    .cal .day.sat .num, .cal .dow.sat { color: #1565c0; }
+    .cal .day.today { background: #fffbe6; }
+    .cal .day.today .num { font-weight: bold; }
+
+    /* 날짜 칸 안의 수업 */
+    a.lesson { display: block; margin-top: 3px; padding: 3px 5px; border: 1px solid #c9d6e6; border-left: 3px solid #1f3a5f;
+               border-radius: 3px; background: #f4f8fd; color: #222; text-decoration: none; font-size: 12px; }
+    a.lesson:hover { background: #e6eef9; }
+    a.lesson .t { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: bold; }
+    a.lesson .c { display: block; margin-top: 1px; font-size: 11px; white-space: nowrap; }
+    .c .y { color: #2e7d32; } .c .l { color: #e65100; } .c .e { color: #1565c0; } .c .n { color: #c0392b; }
+
+    h3 { margin: 24px 0 8px; font-size: 15px; }
+    .undated a { display: inline-block; margin: 0 6px 6px 0; }
+    @media (max-width: 720px) { .cal .day { min-height: 70px; } }
+  </style>
+</head>
+
+<body>
+  <div layout:fragment="content">
+
+    <h2 th:text="|${course.courseTitle} 출석 달력|">과정명 출석 달력</h2>
+    <p class="meta" th:text="|${course.subject.subjectName} · 학생 ${studentCount}명|">과목 · 학생</p>
+    <p class="hint">수업이 있는 날짜에 그날 출석 현황이 표시됩니다. 수업을 누르면 학생별로 출석 상태를 바꿀 수 있습니다. (날짜는 출석을 시작한 날 기준)</p>
+
+    <div class="cal-head">
+      <div class="cal-title" th:text="${monthLabel}">2026년 10월</div>
+      <div class="cal-nav">
+        <a class="btn" th:href="@{/attendance/calendar/{id}(id=${course.courseId}, month=${prevMonth})}">‹ 이전 달</a>
+        <a class="btn" th:href="@{/attendance/calendar/{id}(id=${course.courseId})}">이번 달</a>
+        <a class="btn" th:href="@{/attendance/calendar/{id}(id=${course.courseId}, month=${nextMonth})}">다음 달 ›</a>
+      </div>
+    </div>
+
+    <p class="legend">
+      <span style="background:#e8f5e9;color:#2e7d32">출 출석</span>
+      <span style="background:#fff3e0;color:#e65100">지 지각</span>
+      <span style="background:#e3f2fd;color:#1565c0">공 공결</span>
+      <span style="background:#fdecea;color:#c0392b">결 결석</span>
+    </p>
+
+    <div class="cal">
+      <div class="dow sun">일</div>
+      <div class="dow">월</div>
+      <div class="dow">화</div>
+      <div class="dow">수</div>
+      <div class="dow">목</div>
+      <div class="dow">금</div>
+      <div class="dow sat">토</div>
+
+      <div class="day" th:each="d : ${days}"
+           th:classappend="${(d.inMonth ? '' : 'other ') + (d.today ? 'today ' : '') + (d.date.dayOfWeek.value == 7 ? 'sun' : d.date.dayOfWeek.value == 6 ? 'sat' : '')}">
+        <div class="num" th:text="${d.date.dayOfMonth}">1</div>
+        <a class="lesson" th:each="l : ${d.lessons}" th:href="@{|/attendance/day/${l.lessonId}|}">
+          <span class="t" th:text="${l.title}">5주차 정규화</span>
+          <span class="c">
+            <span class="y" th:text="|출 ${l.present}|">출 0</span>
+            <span class="l" th:text="|지 ${l.late}|">지 0</span>
+            <span class="e" th:text="|공 ${l.excused}|">공 0</span>
+            <span class="n" th:text="|결 ${l.absent}|">결 0</span>
+          </span>
+        </a>
+      </div>
+    </div>
+
+    <div class="undated" th:if="${!#lists.isEmpty(undated)}">
+      <h3>아직 진행하지 않은 수업</h3>
+      <p class="hint">출석을 시작하지 않아 날짜가 없는 수업입니다. 눌러서 미리 상태를 입력할 수도 있습니다.</p>
+      <a class="btn" th:each="l : ${undated}" th:href="@{|/attendance/day/${l.lessonId}|}" th:text="${l.lessonTitle}">6주차 조인</a>
+    </div>
+
+    <div style="margin-top:20px;display:flex;gap:6px">
+      <a th:href="@{/attendance/list}" class="btn">목록</a>
+      <a th:href="@{|/attendance/book/${course.courseId}|}" class="btn">전체 표로 보기</a>
+    </div>
+
+  </div>
+</body>
+
+</html>

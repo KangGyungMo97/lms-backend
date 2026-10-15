@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+
+<head>
+  <title>수업 출석 관리</title>
+  <style>
+    .msg { padding: 10px 14px; border-radius: 4px; margin-bottom: 14px; font-size: 14px; background: #e8f5e9; color: #2e7d32; }
+    .meta { color: #666; font-size: 13px; margin: 6px 0 4px; }
+    .hint { color: #888; font-size: 12px; margin: 0 0 12px; }
+    .sum { display: flex; gap: 8px; margin: 0 0 14px; }
+    .sum div { flex: 1; padding: 10px; text-align: center; border-radius: 4px; background: #fff; border: 1px solid #e5e5e5; }
+    .sum b { display: block; font-size: 22px; }
+    .sum .y b { color: #2e7d32; } .sum .l b { color: #e65100; } .sum .e b { color: #1565c0; } .sum .n b { color: #c0392b; }
+    table.board { width: 100%; border-collapse: collapse; background: #fff; }
+    table.board th, table.board td { padding: 9px 8px; border-bottom: 1px solid #e5e5e5; font-size: 14px; text-align: center; }
+    table.board th { background: #eef2f7; border-top: 2px solid #1f3a5f; }
+    table.board tr:target td { background: #fffbe6; }
+    select.st { padding: 4px 6px; border: 1px solid #ccc; border-radius: 3px; font-size: 14px; cursor: pointer; }
+    select.st-Y { background: #e8f5e9; color: #2e7d32; }
+    select.st-L { background: #fff3e0; color: #e65100; }
+    select.st-E { background: #e3f2fd; color: #1565c0; }
+    select.st-N { background: #fdecea; color: #c0392b; }
+    select.st-none { background: #f5f5f5; color: #999; }
+    .empty { padding: 40px 0; color: #888; text-align: center; }
+    .btn { display: inline-block; padding: 7px 14px; border: 1px solid #1f3a5f; border-radius: 4px;
+           background: #fff; color: #1f3a5f; text-decoration: none; font-size: 14px; }
+  </style>
+</head>
+
+<body>
+  <div layout:fragment="content">
+
+    <h2 th:text="${lesson.lessonTitle}">수업명</h2>
+
+    <div class="msg" th:if="${bookMsg != null}" th:text="${bookMsg}">변경했습니다.</div>
+
+    <p class="meta"
+       th:text="|${course.courseTitle} · ${date != null ? #temporals.format(date, 'yyyy-MM-dd') : '아직 진행하지 않은 수업'}|">과정 · 날짜</p>
+    <p class="hint">상태를 바꾸면 확인 후 바로 저장됩니다. 학생 명단은 같은 학과 학생을 기준으로 합니다.</p>
+
+    <div class="sum">
+      <div class="y"><b th:text="${present}">0</b>출석</div>
+      <div class="l"><b th:text="${late}">0</b>지각</div>
+      <div class="e"><b th:text="${excused}">0</b>공결</div>
+      <div class="n"><b th:text="${absent}">0</b>결석</div>
+    </div>
+
+    <p class="empty" th:if="${#lists.isEmpty(rows)}">표시할 학생이 없습니다.</p>
+
+    <table class="board" th:if="${!#lists.isEmpty(rows)}">
+      <thead>
+        <tr>
+          <th style="width:70px">번호</th>
+          <th style="width:140px">학번</th>
+          <th>이름</th>
+          <th style="width:140px">출석 상태</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:each="r, loop : ${rows}" th:id="|u-${r.student.userId}|" th:with="st=${r.cells[lesson.lessonId]}">
+          <td th:text="${loop.count}">1</td>
+          <td th:text="${r.student.userId}">2610001</td>
+          <td th:text="${r.student.userName}">학생</td>
+          <td>
+            <select class="st" th:classappend="${st == '-'} ? 'st-none' : |st-${st}|"
+                    onchange="changeAtt(this)"
+                    th:attr="data-orig=${st == '-' ? '' : st}, data-user=${r.student.userId}, data-name=${r.student.userName}">
+              <option value="" th:selected="${st == '-'}">-</option>
+              <option value="Y" th:selected="${st == 'Y'}">출석</option>
+              <option value="L" th:selected="${st == 'L'}">지각</option>
+              <option value="E" th:selected="${st == 'E'}">공결</option>
+              <option value="N" th:selected="${st == 'N'}">결석</option>
+            </select>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div style="margin-top:16px;display:flex;gap:6px">
+      <a class="btn" th:href="${date != null}
+                 ? @{/attendance/calendar/{id}(id=${course.courseId}, month=${#temporals.format(date, 'yyyy-MM')})}
+                 : @{/attendance/calendar/{id}(id=${course.courseId})}">달력으로</a>
+      <a class="btn" th:href="@{|/attendance/book/${course.courseId}|}">전체 표로 보기</a>
+    </div>
+
+    <!-- 상태 변경 전송용 폼 (back=day → 저장 후 이 화면으로 돌아옴) -->
+    <form id="modify-form" method="post" style="display:none"
+          th:action="@{|/attendance/modify/${lesson.lessonId}|}">
+      <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+      <input type="hidden" name="back" value="day">
+      <input type="hidden" name="userId" id="f-user">
+      <input type="hidden" name="status" id="f-status">
+    </form>
+
+    <!-- 레이아웃 병합 때문에 content 안에 둠 -->
+    <script>
+      function changeAtt(sel) {
+        var orig = sel.getAttribute('data-orig');
+        if (!sel.value) { sel.value = orig; return; }          // '-' 로는 못 바꿈
+        var label = sel.options[sel.selectedIndex].text;
+        var msg = sel.getAttribute('data-name') + ' 학생의 출석을 "' + label + '"(으)로 변경할까요?';
+        if (!confirm(msg)) { sel.value = orig; return; }       // 취소하면 원래대로
+        document.getElementById('f-user').value = sel.getAttribute('data-user');
+        document.getElementById('f-status').value = sel.value;
+        document.getElementById('modify-form').submit();
+      }
+    </script>
+
+  </div>
+</body>
+
+</html>

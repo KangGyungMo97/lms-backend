@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+
+<head>
+  <title>출석 현황</title>
+  <style>
+    .code-box { background: #fff; border: 1px solid #e5e5e5; border-top: 2px solid #1f3a5f; padding: 28px 16px; text-align: center; }
+    .code-label { color: #666; font-size: 14px; margin-bottom: 8px; }
+    .code { font-size: 64px; font-weight: bold; letter-spacing: 14px; color: #1f3a5f; font-family: Consolas, monospace; }
+    .code.closed { color: #bbb; }
+    .timer { margin-top: 10px; font-size: 15px; color: #c0392b; font-weight: bold; }
+    .timer.closed { color: #777; }
+    .sub { color: #666; font-size: 13px; margin-top: 6px; }
+    h3 { margin: 28px 0 10px; }
+    table.board { width: 100%; border-collapse: collapse; background: #fff; }
+    table.board th, table.board td { padding: 10px 8px; border-bottom: 1px solid #e5e5e5; font-size: 14px; text-align: center; }
+    table.board th { background: #eef2f7; border-top: 2px solid #1f3a5f; }
+    .empty { padding: 30px 0; color: #888; }
+    .actions { display: flex; justify-content: space-between; margin-top: 16px; }
+    .btn { display: inline-block; padding: 7px 14px; border: 1px solid #1f3a5f; border-radius: 4px;
+           background: #fff; color: #1f3a5f; text-decoration: none; font-size: 14px; }
+  </style>
+</head>
+
+<body>
+  <div layout:fragment="content">
+
+    <h2 th:text="${lesson.lessonTitle}">수업명</h2>
+
+    <div class="code-box">
+      <div class="code-label">학생에게 아래 코드를 알려 주세요</div>
+      <!-- 마감 뒤에는 코드를 가림 -->
+      <div id="code" class="code" th:classappend="${!attSession.open} ? 'closed'"
+           th:text="${attSession.open} ? ${attSession.code} : '------'">048213</div>
+      <div id="timer" class="timer" th:classappend="${!attSession.open} ? 'closed'"
+           th:text="${attSession.open} ? '' : '출석이 마감되었습니다.'"></div>
+      <div class="sub"
+           th:text="|시작 ${#temporals.format(attSession.openedAt, 'HH:mm:ss')} · 마감 ${#temporals.format(attSession.expiresAt, 'HH:mm:ss')}|">시작 · 마감</div>
+    </div>
+
+    <h3>출석한 학생 (<span th:text="${#lists.size(attList)}">0</span>명)</h3>
+
+    <table class="board">
+      <thead>
+        <tr>
+          <th style="width:70px">번호</th>
+          <th style="width:150px">학번</th>
+          <th>이름</th>
+          <th style="width:90px">상태</th>
+          <th style="width:180px">출석 시각</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:if="${#lists.isEmpty(attList)}">
+          <td colspan="5" class="empty">아직 출석한 학생이 없습니다.</td>
+        </tr>
+        <tr th:each="a, loop : ${attList}">
+          <td th:text="${loop.count}">1</td>
+          <td th:text="${a.student.userId}">2610001</td>
+          <td th:text="${a.student.userName}">학생</td>
+          <td th:text="${a.attStatus == 'Y' ? '출석' : a.attStatus == 'L' ? '지각' : a.attStatus == 'E' ? '공결' : '미출석'}">출석</td>
+          <td th:text="${#temporals.format(a.attDate, 'HH:mm:ss')}">09:05:12</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="actions">
+      <a th:href="@{/attendance/list}" class="btn">목록</a>
+      <a th:href="@{|/attendance/session/${lesson.lessonId}|}" class="btn">새로고침</a>
+    </div>
+
+    <!-- 마감까지 남은 시간 카운트다운 (마감되면 코드를 가림) - 레이아웃 병합 때문에 content 안에 둠 -->
+    <script th:if="${attSession.open}" th:inline="javascript">
+      (function () {
+        var left = [[${attSession.remainingSeconds}]];
+        var timer = document.getElementById('timer');
+        var code = document.getElementById('code');
+        function show() {
+          if (left <= 0) {
+            code.textContent = '------';
+            code.classList.add('closed');
+            timer.textContent = '출석이 마감되었습니다.';
+            timer.classList.add('closed');
+            return false;
+          }
+          var m = Math.floor(left / 60), s = left % 60;
+          timer.textContent = '마감까지 ' + m + ':' + (s < 10 ? '0' : '') + s;
+          return true;
+        }
+        if (show()) {
+          var id = setInterval(function () { left--; if (!show()) clearInterval(id); }, 1000);
+        }
+      })();
+    </script>
+
+  </div>
+</body>
+
+</html>
