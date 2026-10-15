@@ -29,7 +29,7 @@
 
 <body>
   <section layout:fragment="page-head">
-    <div th:replace="~{fragments/page_head :: head(${courseId != null} ? '강의 수정' : '강의 등록', '수업참여', null)}"></div>
+    <div th:replace="~{fragments/page_head :: head(${courseId != null} ? '강의 수정' : '강의 등록', '수업', null)}"></div>
   </section>
 
   <div layout:fragment="content">

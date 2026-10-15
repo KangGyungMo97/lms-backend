@@ -37,8 +37,16 @@ public interface AttRepository extends JpaRepository<Att, Long> {
 	@Query("select l from Lesson l where l.course = :course order by l.lessonId asc")
 	List<Lesson> findLessonsOfCourse(@Param("course") Course course);
 
-	// 이 학과 학생들 - 학번 순 (출석부의 세로 줄)
-	// TODO: 수강신청 테이블이 생기면 '이 과정을 듣는 학생' 으로 바꾸기
-	@Query("select u from Users u where u.userRole = 'S' and u.dept = :dept order by u.userId asc")
-	List<Users> findStudentsOfDept(@Param("dept") Dept dept);
+	// 수강 대상 학생 - 학과 + 대상 학년, 학번 순 (출석부의 세로 줄 · 수강 인원)
+	//   grade 가 null 이면 학과 전체
+	// TODO: 수강신청 테이블이 생기면 '이 과정을 신청한 학생' 으로 바꾸기
+	@Query("select u from Users u where u.userRole = 'S' and u.dept = :dept "
+			+ "and (:grade is null or u.userGrade = :grade) order by u.userId asc")
+	List<Users> findStudentsOf(@Param("dept") Dept dept, @Param("grade") String grade);
+
+	// 학생이 듣는 강의 - 같은 학과 과목 중 대상 학년이 내 학년인 것 (대상 학년이 비어 있으면 학과 전체 대상)
+	@Query("select c from Course c join fetch c.subject s join fetch c.teacher "
+			+ "where c.courseIsUse = 'Y' and s.dept = :dept "
+			+ "and (c.courseTarget is null or c.courseTarget = :grade) order by c.courseId asc")
+	List<Course> findCoursesOf(@Param("dept") Dept dept, @Param("grade") Integer grade);
 }
