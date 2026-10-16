@@ -30,7 +30,7 @@ public class MyPageService {
 			throw new IllegalArgumentException("이미 사용 중인 이메일입니다.");
 		}
 
-		u.setUserTel(normalizeTel(f.getUserTel()));
+		u.setUserTel(normalizeTel(f.getUserTel().trim()));
 		u.setUserEmail(email);
 		ur.save(u);
 	}
@@ -46,7 +46,7 @@ public class MyPageService {
 		if (f.getNewPassword().equals(f.getCurrentPassword())) {
 			throw new IllegalArgumentException("현재 비밀번호와 다른 비밀번호를 입력하세요.");
 		}
-		if (f.getNewPassword().equals(u.getUserBday())) {   // 초기 비밀번호(생년월일)는 사용 불가
+		if (f.getNewPassword().equals(u.getUserBday())) {   // 생년월일은 비밀번호로 사용 불가
 			throw new IllegalArgumentException("생년월일은 비밀번호로 사용할 수 없습니다.");
 		}
 

@@ -9,8 +9,8 @@
   <style>
     .mp-wrap { display: flex; gap: 20px; align-items: flex-start; }
     .mp-col { flex: 1; min-width: 0; }
-    .mp-card { background: #fff; border-top: 2px solid #1f3a5f; border: 1px solid #e0e4ea; border-top-width: 2px;
-               border-top-color: #1f3a5f; padding: 20px; margin-bottom: 20px; }
+    .mp-card { background: #fff; border: 1px solid #e0e4ea; border-top: 2px solid #1f3a5f;
+               padding: 20px; margin-bottom: 20px; }
     .mp-card h3 { margin: 0 0 14px; font-size: 16px; }
     table.mp-info { width: 100%; border-collapse: collapse; }
     table.mp-info th { width: 120px; text-align: left; padding: 9px 0; font-size: 14px; color: #555; font-weight: 600; }
@@ -53,7 +53,7 @@
             <tr><th>비밀번호 변경일</th>
                 <td th:text="${me.userPwChanged != null} ? ${#temporals.format(me.userPwChanged, 'yyyy-MM-dd')} : '변경 이력 없음'">-</td></tr>
           </table>
-          <p class="mp-note">※ 학번/사번, 이름, 생년월일, 학과·학년은 직접 수정할 수 없습니다.
+          <p class="mp-note">※ 학번/사번, 이름, 구분, 생년월일, 학과·학년은 직접 수정할 수 없습니다.
             변경이 필요하면 1대1 문의로 요청해 주세요.</p>
         </div>
       </div>
