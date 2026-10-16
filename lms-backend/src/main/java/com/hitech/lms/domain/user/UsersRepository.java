@@ -12,6 +12,10 @@ import org.springframework.data.repository.query.Param;
 public interface UsersRepository extends JpaRepository<Users, String> {
 	// 아이디 찾기용
 	List<Users> findByUserNameAndUserBdayAndUserRole(String userName, String userBday, String userRole);
+	// 계정 등록 시 이메일 중복 확인
+	boolean existsByUserEmail(String userEmail);
+	// 관리자 계정이 하나라도 있는지 (처음 실행 시 기본 관리자 만들기)
+	boolean existsByUserRole(String userRole);
 	// 통계 카드용
 	long countByUserRole(String userRole);
 	long countByUserStatusIn(List<String> statuses);

@@ -21,6 +21,7 @@
     table.board td.title { text-align: left; }
     table.board td.title a { color: #222; text-decoration: none; }
     table.board td.title a:hover { text-decoration: underline; }
+    .cmt-count { margin-left: 4px; color: #c0392b; font-size: 13px; font-weight: bold; }
     table.board td { text-align: center; }
     .empty { padding: 40px 0; color: #888; }
     .paging { display: flex; justify-content: center; gap: 4px; margin: 20px 0; padding: 0; list-style: none; }
@@ -67,6 +68,9 @@
           <td th:text="${paging.totalElements - (paging.number * paging.size) - loop.index}">1</td>
           <td class="title">
             <a th:href="@{|/board/detail/${board.boardId}|}" th:text="${board.boardTitle}">제목</a>
+            <!-- 댓글이 있으면 제목 옆에 (댓글 수) -->
+            <span class="cmt-count" th:if="${commentCounts[board.boardId] != null}"
+                  th:text="|(${commentCounts[board.boardId]})|">(3)</span>
           </td>
           <td th:text="${board.writer.userName}">작성자</td>
           <td th:text="${#temporals.format(board.boardCreateDate, 'yyyy-MM-dd')}">2026-10-11</td>

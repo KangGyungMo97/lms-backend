@@ -3,7 +3,9 @@ package com.hitech.lms.domain.board;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -36,6 +38,17 @@ public class BoardService {
 		sorts.add(Sort.Order.desc("boardId"));   // 작성일이 날짜(LocalDate)라 같은 날 글 순서를 위해 id 로 정렬
 		Pageable pageable = PageRequest.of(page, 10, Sort.by(sorts));
 		return br.findAllByKeyword(kw, pageable);
+	}
+
+	// 목록 화면용 - 이 페이지 게시글들의 댓글 수 { 게시글ID : 댓글 수 } (댓글 없는 글은 빠짐)
+	public Map<Long, Long> getCommentCounts(Page<Board> paging) {
+		Map<Long, Long> counts = new HashMap<>();
+		List<Long> ids = paging.getContent().stream().map(Board::getBoardId).toList();
+		if (ids.isEmpty()) return counts;
+		for (Object[] row : cr.countByBoardIds(ids)) {
+			counts.put((Long) row[0], (Long) row[1]);
+		}
+		return counts;
 	}
 
 	// 상세 - findById, 없으면 DataNotFoundException
