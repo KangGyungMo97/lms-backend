@@ -6,7 +6,9 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -87,10 +89,17 @@ public class CourseController {
 	// ---------- 목록 / 상세 ----------
 	@GetMapping("/list")
 	public String list(@RequestParam(name = "page", defaultValue = "0") int page,
-	                   Principal principal, Model model) {
-		Page<Course> paging = cs.getTeacherCourses(principal.getName(), page);
+	                   Authentication auth, Model model) {
+
+		boolean teacher = auth.getAuthorities().stream()
+				.anyMatch(a -> a.getAuthority().equals("ROLE_TEACHER"));
+
+		Page<Course> paging = teacher
+				? cs.getTeacherCourses(auth.getName(), page)
+				: Page.empty(PageRequest.of(page, 10));   // 학생: 수강 관계 테이블 연결 전까지 빈 목록
+
 		model.addAttribute("paging", paging);
-		model.addAttribute("isTeacher", true);   // 임시: 실제로는 권한/역할로 판단
+		model.addAttribute("isTeacher", teacher);
 		addLabels(model);
 		return "course/list";
 	}
