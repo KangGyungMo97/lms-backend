@@ -36,7 +36,7 @@ public class AdminController {
 	@GetMapping("/user/create")
 	public String userCreate(Model model, UserCreateForm userCreateForm) {
 		if (userCreateForm.getUserRole() == null) userCreateForm.setUserRole("S");   // 기본: 학생
-		model.addAttribute("deptList", as.getDeptList());
+		model.addAttribute("deptName", as.getFixedDeptName());
 		return "admin/user_form";
 	}
 
@@ -47,16 +47,16 @@ public class AdminController {
 		if (!bindingResult.hasErrors()) {
 			try {
 				Users user = as.createUser(userCreateForm);
-				ra.addFlashAttribute("msg", "계정이 등록되었습니다. 이 학번/사번과 임시 비밀번호로 로그인할 수 있습니다.");
+				ra.addFlashAttribute("msg", "계정이 등록되었습니다. 임시 비밀번호는 사용자 휴대폰(" + user.getMaskedTel() + ")으로 발송되었습니다.");
 				return "redirect:/admin/user/" + user.getUserId();
-			} catch (IllegalStateException e) {            // 학번 · 이메일 중복 등
+			} catch (IllegalStateException e) {            // 임시 비밀번호 미발급 · 학년 · 학번/이메일 중복
 				String[] err = e.getMessage().split(":", 2);
 				bindingResult.rejectValue(err[0], "duplicate", err[1]);
-			} catch (IllegalArgumentException e) {         // 없는 학과
-				bindingResult.rejectValue("deptId", "invalid", e.getMessage());
+			} catch (IllegalArgumentException e) {         // 학과(D001)가 DB 에 없을 때
+				bindingResult.reject("noDept", e.getMessage());
 			}
 		}
-		model.addAttribute("deptList", as.getDeptList());
+		model.addAttribute("deptName", as.getFixedDeptName());
 		return "admin/user_form";
 	}
 

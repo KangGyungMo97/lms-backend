@@ -1,5 +1,6 @@
 package com.hitech.lms.domain.user;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.data.domain.Page;
@@ -16,6 +17,10 @@ public interface UsersRepository extends JpaRepository<Users, String> {
 	boolean existsByUserEmail(String userEmail);
 	// 관리자 계정이 하나라도 있는지 (처음 실행 시 기본 관리자 만들기)
 	boolean existsByUserRole(String userRole);
+	// 관리자 대시보드 - 오늘 등록한 계정 수, 최근 등록 계정 5명 (홍승훈)
+	long countByUserCreatedGreaterThanEqual(LocalDateTime from);
+	@EntityGraph(attributePaths = "dept")
+	List<Users> findTop5ByOrderByUserCreatedDesc();
 	// 통계 카드용
 	long countByUserRole(String userRole);
 	long countByUserStatusIn(List<String> statuses);
