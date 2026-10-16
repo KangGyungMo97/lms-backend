@@ -21,7 +21,7 @@ public class UserCreateForm {
 	private String userName;
 
 	// 비밀번호는 관리자가 입력하지 않음 → [임시 비밀번호 발급] 버튼을 눌러야 true
-	// 등록할 때 서버가 임의의 임시 비밀번호를 만들어 사용자 휴대폰으로만 보냄 (관리자 화면에는 안 보임)
+	// 등록할 때 서버가 임의의 임시 비밀번호를 만들어 사용자 이메일로만 보냄 (관리자 화면에는 안 보임)
 	private boolean tempPwIssued;
 
 	@NotEmpty(message="이메일은 필수항목입니다.")
