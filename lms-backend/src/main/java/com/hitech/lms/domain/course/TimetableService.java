@@ -52,7 +52,8 @@ public class TimetableService {
 	}
 
 	// ---------- 시간표 만들기 ----------
-	public TimetableGrid build(String userId, boolean teacher, boolean all, String semester) {
+	// grade: 대상 필터 (null이면 전체). 값은 Course.courseTarget 코드와 같다 (1, 2, 9=하이테크과정)
+	public TimetableGrid build(String userId, boolean teacher, boolean all, String semester, Integer grade) {
 		String[] sp = semester.split("-");
 		int year = Integer.parseInt(sp[0]);
 		int sem = Integer.parseInt(sp[1]);
@@ -61,14 +62,20 @@ public class TimetableService {
 
 		List<Course> courses;
 		if (!teacher) {
-			// [임시 수정] 학생 계정이어도 우선 DB의 전체 강의를 다 가져와서 학년 필터가 먹히는지 테스트합니다.
-			courses = cr.findByCourseIsUse("Y"); 
+			// [임시] 학생: 수강 관계 테이블을 만들기 전까지 전체 강의 (대상 필터로 확인)
+			courses = cr.findByCourseIsUse("Y");
 		} else if (all) {
 			courses = cr.findByCourseIsUse("Y");
 		} else {
 			courses = cr.findByTeacher_UserIdAndCourseIsUseOrderByCourseIdDesc(userId, "Y");
 		}
 
+		// 대상 필터: 코드가 정확히 같은 강의만
+		if (grade != null) {
+			courses = courses.stream()
+					.filter(c -> grade.equals(c.getCourseTarget()))
+					.toList();
+		}
 
 		// 1) 강의별 수업 시간을 요일별로 모으기
 		Map<String, List<Entry>> byDay = new HashMap<>();
@@ -128,89 +135,5 @@ public class TimetableService {
 	private boolean overlaps(Course c, LocalDate from, LocalDate to) {
 		if (c.getCourseStartDate() == null || c.getCourseEndDate() == null) return true;
 		return !c.getCourseStartDate().isAfter(to) && !c.getCourseEndDate().isBefore(from);
-	}
-	
-	public TimetableGrid build(String userId, boolean teacher, boolean all, String semester, String grade) {
-		String[] sp = semester.split("-");
-		int year = Integer.parseInt(sp[0]);
-		int sem = Integer.parseInt(sp[1]);
-        
-		// 1. 학기 날짜 계산 로직 정확하게 교정 (오타 및 매핑 수정)
-		LocalDate from = (sem == 1) ? LocalDate.of(year, 3, 1) : LocalDate.of(year, 9, 1);
-		LocalDate to = (sem == 1) ? LocalDate.of(year, 8, 31) : LocalDate.of(year + 1, 3, 1).minusDays(1);
-
-		List<Course> courses;
-		if (!teacher) {
-			courses = cr.findByCourseIsUse("Y");   
-		} else if (all) {
-			courses = cr.findByCourseIsUse("Y");
-		} else {
-			courses = cr.findByTeacher_UserIdAndCourseIsUseOrderByCourseIdDesc(userId, "Y");
-		}
-
-		// 2. 학년 필터링 구조 유지
-		if (grade != null && !grade.trim().isEmpty()) {
-			String searchGrade = grade.trim(); // 사용자가 선택한 값 (예: "1")
-			
-			courses = courses.stream()
-					.filter(c -> {
-						if (c.getCourseTarget() == null) return false;
-						
-						// 어떠한 타입이든 안전하게 문자열로 변환합니다. (예: 1 -> "1", "1학년" -> "1학년")
-						String target = String.valueOf(c.getCourseTarget()).trim();
-						
-						// 서로 완전히 일치하거나, 어느 한쪽이 다른 쪽을 포함하고 있으면 통과시킵니다.
-						return target.equals(searchGrade) || target.contains(searchGrade) || searchGrade.contains(target);
-					})
-					.toList();
-		}
-
-
-		// 1) 강의별 수업 시간을 요일별로 모으기
-		Map<String, List<Entry>> byDay = new HashMap<>();
-		for (Course c : courses) {
-			if (!overlaps(c, from, to)) continue;
-
-			TimetableGrid.Block block = new TimetableGrid.Block(
-					c.getCourseId(), c.getCourseTitle(),
-					c.getTeacher().getUserName(), c.getSubject().getSubjectName(),
-					(int) (c.getCourseId() % 4));
-
-			if (c.getTimes().isEmpty()) {   // 이전 방식으로 등록된 강의
-				add(byDay, c.getCourseWeekday(), c.getCourseStartTime(), c.getCourseEndTime(), block);
-			} else {
-				for (CourseTime t : c.getTimes()) {
-					add(byDay, t.getWeekday(), t.getStartTime(), t.getEndTime(), block);
-				}
-			}
-		}
-
-		// 2) 표의 열(월~금, 토/일은 수업이 있을 때만)과 행(기본 9교시) 정하기
-		Set<String> days = new TreeSet<>(List.of("1", "2", "3", "4", "5"));
-		days.addAll(byDay.keySet());
-		int maxPeriod = 9;
-		for (List<Entry> list : byDay.values()) {
-			for (Entry e : list) maxPeriod = Math.max(maxPeriod, e.end());
-		}
-
-		// 3) 요일별로 칸 만들기 (겹치는 시간은 한 칸에 쌓기)
-		TimetableGrid grid = new TimetableGrid(new ArrayList<>(days), maxPeriod);
-		for (String d : days) {
-			List<Entry> list = new ArrayList<>(byDay.getOrDefault(d, List.of()));
-			list.sort(Comparator.comparingInt(Entry::start).thenComparingInt(Entry::end));
-
-			TimetableGrid.Cell cur = null;
-			for (Entry e : list) {
-				if (cur != null && e.start() <= cur.getEndPeriod()) {
-					cur.add(e.block(), e.end());
-				} else {
-					cur = new TimetableGrid.Cell(e.start(), e.end());
-					cur.add(e.block(), e.end());
-					grid.putCell(d, cur);
-				}
-			}
-		}
-		grid.markSkipped();
-		return grid;
 	}
 }
