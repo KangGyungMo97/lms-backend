@@ -34,66 +34,72 @@ public class AdminService {
 	private final DeptRepository dr;
 	private final UserStatusLogRepository uslr;
 	private final UserService us;
-	private final SmsService sms;                     // 임시 비밀번호 문자 발송
+	private final SmsService sms;                     // �시 비�번호 문자 발송
 	private final SecureRandom random = new SecureRandom();
 
-	// ===== 회원 =====
+	// ===== �원 =====
 
-	// 회원 목록 - 페이징 + 검색 (이름, 학번) + 필터 (구분, 학과, 상태)
+	// �원 목록 - �이�+ 검(�름, �번) + �터 (구분, �과, �태)
 	public Page<Users> getUserList(int page, String kw, String role, String deptId, String status) {
 		Pageable pageable = PageRequest.of(page, 10, Sort.by(Sort.Direction.DESC, "userCreated"));
 		return ur.search(role, deptId, status, kw.trim(), pageable);
 	}
 
-	// 학과는 스마트소프트웨어과 하나로 고정 (팀 결정)
+	// �과�마�소�트�어곘나�고정 (� 결정)
 	public static final String DEPT_ID = "D001";
 
-	// 계정 등록 (홍승훈) - 입력 오류는 IllegalStateException("필드명:메시지") 으로 알려 줌
+	// 계정 �록 (�승 - �력 �류IllegalStateException("�드�메시지") �로 �려 �
 	@Transactional
 	public Users createUser(UserCreateForm f) {
-		String userId = f.getUserId().trim();
-		String email  = f.getUserEmail().trim();
+	    String userId = f.getUserId().trim();
+	    String email = f.getUserEmail().trim();
 		String role   = f.getUserRole();
 		String grade  = f.getUserGrade();
 
 		if (!f.isTempPwIssued()) {
-			throw new IllegalStateException("tempPwIssued:[임시 비밀번호 발급] 버튼을 눌러 주세요.");
+			throw new IllegalStateException("tempPwIssued:[�시 비�번호 발급] 버튼�러 주세");
 		}
 		if (!List.of("S", "P", "A").contains(role)) {
-			throw new IllegalStateException("userRole:구분 값이 올바르지 않습니다.");
+			throw new IllegalStateException("userRole:구분 값이 �바르� �습�다.");
 		}
 		if ("S".equals(role) && !List.of("1", "2").contains(grade)) {
-			throw new IllegalStateException("userGrade:학생은 학년(1 · 2학년)을 선택해 주세요.");
+			throw new IllegalStateException("userGrade:�생� �년(1 · 2�년)�택주세");
 		}
+	    if (ur.existsById(userId)) {
+	        throw new IllegalStateException("userId:�� �록�번/�번�니");
+	    }
+	    if (ur.existsByUserEmail(email)) {
+	        throw new IllegalStateException("userEmail:�� �용 중인 �메�입�다.");
+	    }
 		if (ur.existsById(userId)) {
-			throw new IllegalStateException("userId:이미 등록된 학번/사번입니다.");
+			throw new IllegalStateException("userId:�� �록�번/�번�니");
 		}
 		if (ur.existsByUserEmail(email)) {
-			throw new IllegalStateException("userEmail:이미 사용 중인 이메일입니다.");
+			throw new IllegalStateException("userEmail:�� �용 중인 �메�입�다.");
 		}
-		// 임시 비밀번호: 서버가 임의로 만들고, 암호화해서 저장 → 관리자는 알 수 없음
+		// �시 비�번호: �버가 �의�만들� �호�해�관리자�음
 		String tempPw = makeTempPassword();
 		Users user = us.create(userId, f.getUserName().trim(), tempPw, email,
 				f.getUserTel().trim(), f.getUserBday(), DEPT_ID, role);
 
-		// 학년은 학생만 (교수 · 관리자는 NULL)
+		// �년� �생�(교수 · 관리자NULL)
 		user.setUserGrade("S".equals(role) ? grade : null);
 		ur.save(user);
-
-		// 계정 주인의 휴대폰으로만 임시 비밀번호 발송 (개발 중에는 LogSmsService 가 서버 콘솔에 출력)
-		sms.send(user.getUserTel(), "[하이테크 LMS] " + user.getUserName() + "님 계정이 등록되었습니다. "
-				+ "아이디: " + user.getUserId() + " / 임시 비밀번호: " + tempPw
-				+ " (로그인 후 비밀번호 찾기에서 새 비밀번호로 바꿔 주세요)");
+	    
+		// 계정 주인��으로만 �시 비�번호 발송 (개발 중에LogSmsService 가 �버 콘솔출력)
+		sms.send(user.getUserTel(), "[�이�크 LMS] " + user.getUserName() + "계정�록�었�니 "
+				+ "�이 " + user.getUserId() + " / �시 비�번호: " + tempPw
+				+ " (로그비�번호 찾기�서 비�번호�바꿔 주세");
 		return user;
 	}
 
-	// 임시 비밀번호 만들기 - 영문 대소문자 + 숫자 + 특수문자 섞어서 10자 (헷갈리는 0 O 1 l I 제외)
+	// �시 비�번호 만들�- �문 ��문+ �자 + �수문자 �어10(�갈리는 0 O 1 l I �외)
 	private String makeTempPassword() {
 		String upper = "ABCDEFGHJKLMNPQRSTUVWXYZ", lower = "abcdefghijkmnopqrstuvwxyz",
 				digit = "23456789", special = "!@#$%^&*";
 		String all = upper + lower + digit + special;
 		List<Character> chars = new ArrayList<>();
-		chars.add(upper.charAt(random.nextInt(upper.length())));      // 종류마다 최소 1개
+		chars.add(upper.charAt(random.nextInt(upper.length())));      // 종류마다 최소 1�
 		chars.add(lower.charAt(random.nextInt(lower.length())));
 		chars.add(digit.charAt(random.nextInt(digit.length())));
 		chars.add(special.charAt(random.nextInt(special.length())));
@@ -104,12 +110,40 @@ public class AdminService {
 		return sb.toString();
 	}
 
-	// 고정 학과 이름 (화면 표시용)
+	// 고정 �과 �름 (�면 �시
 	public String getFixedDeptName() {
-		return dr.findById(DEPT_ID).map(Dept::getDeptName).orElse("스마트소프트웨어과");
+		return dr.findById(DEPT_ID).map(Dept::getDeptName).orElse("�마�소�트�어�);
+
+	    // �림 문자 발송
+	    sms.send(user.getUserTel(), "[�이�크 LMS] " + user.getUserName() + "계정�록�었�니 " +
+	            "�이 " + user.getUserId() + " / �시 비�번호: " + tempPw + " (로그비�번호 찾기�서 비�번호�바꿔 주세");
+
+	    return user;
 	}
 
-	// 통계 카드: 전체 / 학생 / 교수 / 차단·잠금
+	// �시 비�번호 만들�- �문 ��문+ �자 + �수문자 �어10(�갈리는 0 O 1 l I �외)
+	private String makeTempPassword() {
+		String upper = "ABCDEFGHJKLMNPQRSTUVWXYZ", lower = "abcdefghijkmnopqrstuvwxyz",
+				digit = "23456789", special = "!@#$%^&*";
+		String all = upper + lower + digit + special;
+		List<Character> chars = new ArrayList<>();
+		chars.add(upper.charAt(random.nextInt(upper.length())));      // 종류마다 최소 1�
+		chars.add(lower.charAt(random.nextInt(lower.length())));
+		chars.add(digit.charAt(random.nextInt(digit.length())));
+		chars.add(special.charAt(random.nextInt(special.length())));
+		while (chars.size() < 10) chars.add(all.charAt(random.nextInt(all.length())));
+		Collections.shuffle(chars, random);
+		StringBuilder sb = new StringBuilder();
+		chars.forEach(sb::append);
+		return sb.toString();
+	}
+
+	// 고정 �과 �름 (�면 �시
+	public String getFixedDeptName() {
+		return dr.findById(DEPT_ID).map(Dept::getDeptName).orElse("�마�소�트�어�);
+	}
+
+	// �계 카드: �체 / �생 / 교수 / 차단·�금
 	public Map<String, Long> getUserStats() {
 		return Map.of(
 			"total",   ur.count(),
@@ -119,32 +153,32 @@ public class AdminService {
 		);
 	}
 
-	// 상태 변경 (정상 / 잠금 / 차단 / 탈퇴) + 이력 기록
+	// �태 변�(�상 / �금 / 차단 / �퇴) + �력 기록
 	@Transactional
 	public void changeStatus(Users user, String status, String reason,
 	                         LocalDate blockStart, LocalDate blockEnd, String adminId) {
 
 		if (!List.of("A", "L", "B", "W").contains(status)) {
-			throw new IllegalArgumentException("상태 값이 올바르지 않습니다.");
+			throw new IllegalArgumentException("�태 값이 �바르� �습�다.");
 		}
 		if (user.getUserId().equals(adminId)) {
-			throw new IllegalArgumentException("본인 계정의 상태는 변경할 수 없습니다.");
+			throw new IllegalArgumentException("본인 계정�태변경할 �습�다.");
 		}
 		if ("W".equals(user.getUserStatus())) {
-			throw new IllegalArgumentException("탈퇴 처리된 계정은 상태를 변경할 수 없습니다.");
+			throw new IllegalArgumentException("�퇴 처리계정� �태�변경할 �습�다.");
 		}
 		if (status.equals(user.getUserStatus())) {
-			throw new IllegalArgumentException("이미 해당 상태입니다.");
+			throw new IllegalArgumentException("�� �당 �태�니");
 		}
 		if (reason == null || reason.isBlank()) {
-			throw new IllegalArgumentException("사유는 필수 항목입니다.");
+			throw new IllegalArgumentException("�유�수 ���니");
 		}
 		if ("B".equals(status)) {
 			if (blockStart == null || blockEnd == null) {
-				throw new IllegalArgumentException("차단 기간을 입력해 주세요.");
+				throw new IllegalArgumentException("차단 기간�력주세");
 			}
 			if (blockEnd.isBefore(blockStart)) {
-				throw new IllegalArgumentException("차단 종료일은 시작일보다 빠를 수 없습니다.");
+				throw new IllegalArgumentException("차단 종료�� �작�보빠� �습�다.");
 			}
 		} else {
 			blockStart = null;
@@ -166,38 +200,38 @@ public class AdminService {
 		ur.save(user);
 	}
 
-	// 상태 변경 이력 (최신순)
+	// �태 변겴력 (최신
 	public List<UserStatusLog> getStatusLogs(Users user) {
 		return uslr.findByUserOrderByChangedAtDesc(user);
 	}
 
-	// ===== 관리자 게시글 (시스템 공지) =====
+	// ===== 관리자 게시글 (�스공�) =====
 
-	// 목록 - 최신순 + 페이징(10개) + 검색(제목 · 내용)
+	// 목록 - 최신+ �이�10� + 검�목 · �용)
 	public Page<AdminPost> getPostList(int page, String kw) {
 		page = Math.max(page, 0);
 		Pageable pageable = PageRequest.of(page, 10, Sort.by(Sort.Direction.DESC, "adminPostId"));
 		return apr.findPostList(kw.trim(), pageable);
 	}
 
-	// 한 개 찾기 - 없거나 삭제(N)된 글이면 DataNotFoundException(404)
+	// �찾기 - �거��(N)글�면 DataNotFoundException(404)
 	public AdminPost getPost(Long id) {
 		AdminPost post = apr.findById(id)
-				.orElseThrow(() -> new DataNotFoundException("게시글을 찾을 수 없습니다."));
+				.orElseThrow(() -> new DataNotFoundException("게시글찾을 �습�다."));
 		if (!"Y".equals(post.getAdminPostIsUse())) {
-			throw new DataNotFoundException("게시글을 찾을 수 없습니다.");
+			throw new DataNotFoundException("게시글찾을 �습�다.");
 		}
 		return post;
 	}
 
-	// 조회수 +1
+	// 조회+1
 	@Transactional
 	public void increaseViewCount(AdminPost adminPost) {
 		adminPost.setAdminPostView(adminPost.getAdminPostView() + 1);
 		apr.save(adminPost);
 	}
 
-	// 등록 - 작성자 = 로그인한 관리자
+	// �록 - �성= 로그�한 관리자
 	@Transactional
 	public AdminPost createPost(String title, String content, String adminId) {
 		AdminPost post = new AdminPost();
@@ -209,7 +243,7 @@ public class AdminService {
 		return apr.save(post);
 	}
 
-	// 수정 - 수정일 now
+	// �정 - �정now
 	@Transactional
 	public void modifyPost(AdminPost post, String title, String content) {
 		post.setAdminPostTitle(title.trim());
@@ -218,31 +252,31 @@ public class AdminService {
 		apr.save(post);
 	}
 
-	// 삭제 - 자유게시판과 같은 방식 (admin_post_is_use = 'N')
+	// �� - �유게시�과 같� 방식 (admin_post_is_use = 'N')
 	@Transactional
 	public void deletePost(AdminPost post) {
 		post.setAdminPostIsUse("N");
 		apr.save(post);
 	}
 
-	// ===== 학과 및 검증 유틸 =====
+	// ===== �과 �검즠틸 =====
 
-	// 학과 목록
+	// �과 목록
 	public List<Dept> getDeptList() {
 		return dr.findAll();
 	}
 	
-	// 학번/사번 중복 확인
+	// �번/�번 중복 �인
 	public boolean isUserIdTaken(String userId) {
 		return ur.existsById(userId);
 	}
 
-	// 이메일 중복 확인
+	// �메중복 �인
 	public boolean isUserEmailTaken(String email) {
 		return ur.existsByUserEmail(email.trim());
 	}
 
-	// 전화번호 하이픈 자동 변환기
+	// �화번호 �이�동 변�기
 	private String normalizeTel(String tel) {
 		if (tel == null) return null;
 		String d = tel.replaceAll("\\D", "");
