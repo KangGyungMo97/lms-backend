@@ -20,9 +20,9 @@ public class UserCreateForm {
 	@Size(max = 20, message="이름은 20자까지 입력할 수 있습니다.")
 	private String userName;
 
-	@NotEmpty(message="임시 비밀번호는 필수항목입니다.")
-	@Size(min = 4, max = 20, message="임시 비밀번호는 4~20자로 입력해 주세요.")
-	private String password;
+	// 비밀번호는 관리자가 입력하지 않음 → [임시 비밀번호 발급] 버튼을 눌러야 true
+	// 등록할 때 서버가 임의의 임시 비밀번호를 만들어 사용자 휴대폰으로만 보냄 (관리자 화면에는 안 보임)
+	private boolean tempPwIssued;
 
 	@NotEmpty(message="이메일은 필수항목입니다.")
 	@Email(message="이메일 형식이 올바르지 않습니다.")
@@ -37,12 +37,12 @@ public class UserCreateForm {
 	@Pattern(regexp = "\\d{8}", message="생년월일은 8자리 숫자입니다. (예: 20070315)")
 	private String userBday;
 
-	@NotEmpty(message="학과는 필수항목입니다.")
+	// 학과는 스마트소프트웨어과(D001) 하나로 고정 → 화면에서 고르지 않음 (AdminService.DEPT_ID)
 	private String deptId;
 
 	@NotEmpty(message="구분은 필수항목입니다.")
 	private String userRole; // S(학생) / P(교수) / A(관리자)
 
-	private String userGrade; // 학년 (학생만)
+	private String userGrade; // 학년 1 / 2 (학생만 필수, 교수 · 관리자는 NULL)
 
 }

@@ -10,6 +10,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface CourseRepository extends JpaRepository<Course, Long> {
 
+	// 관리자 대시보드 - 개설(사용 중) 강의 수 (홍승훈)
+	long countByCourseIsUse(String courseIsUse);
+
 	@EntityGraph(attributePaths = {"subject"})
 	List<Course> findByTeacher_UserIdAndCourseIsUseOrderByCourseIdDesc(String userId, String courseIsUse);
 

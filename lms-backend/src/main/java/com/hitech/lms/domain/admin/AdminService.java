@@ -1,7 +1,10 @@
 package com.hitech.lms.domain.admin;
 
+import java.security.SecureRandom;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -13,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.hitech.lms.domain.user.Dept;
+import com.hitech.lms.domain.user.SmsService;
 import com.hitech.lms.domain.user.UserService;
 import com.hitech.lms.domain.user.DeptRepository;
 import com.hitech.lms.domain.user.Users;
@@ -30,6 +34,8 @@ public class AdminService {
 	private final DeptRepository dr;
 	private final UserStatusLogRepository uslr;
 	private final UserService us;
+	private final SmsService sms;                     // 임시 비밀번호 문자 발송
+	private final SecureRandom random = new SecureRandom();
 
 	// ===== 회원 =====
 
@@ -39,42 +45,68 @@ public class AdminService {
 		return ur.search(role, deptId, status, kw.trim(), pageable);
 	}
 
-	// 계정 등록 - 중복이면 IllegalStateException(필드명:메시지) 으로 예외 처리
+	// 학과는 스마트소프트웨어과 하나로 고정 (팀 결정)
+	public static final String DEPT_ID = "D001";
+
+	// 계정 등록 (홍승훈) - 입력 오류는 IllegalStateException("필드명:메시지") 으로 알려 줌
 	@Transactional
 	public Users createUser(UserCreateForm f) {
 		String userId = f.getUserId().trim();
 		String email  = f.getUserEmail().trim();
-		
+		String role   = f.getUserRole();
+		String grade  = f.getUserGrade();
+
+		if (!f.isTempPwIssued()) {
+			throw new IllegalStateException("tempPwIssued:[임시 비밀번호 발급] 버튼을 눌러 주세요.");
+		}
+		if (!List.of("S", "P", "A").contains(role)) {
+			throw new IllegalStateException("userRole:구분 값이 올바르지 않습니다.");
+		}
+		if ("S".equals(role) && !List.of("1", "2").contains(grade)) {
+			throw new IllegalStateException("userGrade:학생은 학년(1 · 2학년)을 선택해 주세요.");
+		}
 		if (ur.existsById(userId)) {
 			throw new IllegalStateException("userId:이미 등록된 학번/사번입니다.");
 		}
 		if (ur.existsByUserEmail(email)) {
 			throw new IllegalStateException("userEmail:이미 사용 중인 이메일입니다.");
 		}
-		if (!List.of("S", "P", "A").contains(f.getUserRole())) {
-			throw new IllegalStateException("userRole:구분 값이 올바르지 않습니다.");
-		}
-		
-		// 전화번호 포맷 정규화 반영
-		String normalizedTel = normalizeTel(f.getUserTel());
+		// 임시 비밀번호: 서버가 임의로 만들고, 암호화해서 저장 → 관리자는 알 수 없음
+		String tempPw = makeTempPassword();
+		Users user = us.create(userId, f.getUserName().trim(), tempPw, email,
+				f.getUserTel().trim(), f.getUserBday(), DEPT_ID, role);
 
-		// 초기 비밀번호는 생년월일(f.getUserBday())로 설정하여 전달
-		Users user = us.create(
-				userId, 
-				f.getUserName().trim(), 
-				f.getUserBday(), 
-				email,
-				normalizedTel, 
-				f.getUserBday(), 
-				f.getDeptId(), 
-				f.getUserRole()
-		);
+		// 학년은 학생만 (교수 · 관리자는 NULL)
+		user.setUserGrade("S".equals(role) ? grade : null);
+		ur.save(user);
 
-		// 학년은 학생만 (교수 · 관리자 · 학년 없는 과정은 NULL)
-		String grade = f.getUserGrade();
-		user.setUserGrade("S".equals(f.getUserRole()) && List.of("1", "2").contains(grade) ? grade : null);
-		
-		return ur.save(user);
+		// 계정 주인의 휴대폰으로만 임시 비밀번호 발송 (개발 중에는 LogSmsService 가 서버 콘솔에 출력)
+		sms.send(user.getUserTel(), "[하이테크 LMS] " + user.getUserName() + "님 계정이 등록되었습니다. "
+				+ "아이디: " + user.getUserId() + " / 임시 비밀번호: " + tempPw
+				+ " (로그인 후 비밀번호 찾기에서 새 비밀번호로 바꿔 주세요)");
+		return user;
+	}
+
+	// 임시 비밀번호 만들기 - 영문 대소문자 + 숫자 + 특수문자 섞어서 10자 (헷갈리는 0 O 1 l I 제외)
+	private String makeTempPassword() {
+		String upper = "ABCDEFGHJKLMNPQRSTUVWXYZ", lower = "abcdefghijkmnopqrstuvwxyz",
+				digit = "23456789", special = "!@#$%^&*";
+		String all = upper + lower + digit + special;
+		List<Character> chars = new ArrayList<>();
+		chars.add(upper.charAt(random.nextInt(upper.length())));      // 종류마다 최소 1개
+		chars.add(lower.charAt(random.nextInt(lower.length())));
+		chars.add(digit.charAt(random.nextInt(digit.length())));
+		chars.add(special.charAt(random.nextInt(special.length())));
+		while (chars.size() < 10) chars.add(all.charAt(random.nextInt(all.length())));
+		Collections.shuffle(chars, random);
+		StringBuilder sb = new StringBuilder();
+		chars.forEach(sb::append);
+		return sb.toString();
+	}
+
+	// 고정 학과 이름 (화면 표시용)
+	public String getFixedDeptName() {
+		return dr.findById(DEPT_ID).map(Dept::getDeptName).orElse("스마트소프트웨어과");
 	}
 
 	// 통계 카드: 전체 / 학생 / 교수 / 차단·잠금
