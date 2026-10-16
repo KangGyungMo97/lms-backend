@@ -1,10 +1,7 @@
 package com.hitech.lms.domain.admin;
 
-import java.security.SecureRandom;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -16,7 +13,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.hitech.lms.domain.user.Dept;
-import com.hitech.lms.domain.user.MailService;
 import com.hitech.lms.domain.user.UserService;
 import com.hitech.lms.domain.user.DeptRepository;
 import com.hitech.lms.domain.user.Users;
@@ -34,8 +30,6 @@ public class AdminService {
 	private final DeptRepository dr;
 	private final UserStatusLogRepository uslr;
 	private final UserService us;
-	private final MailService mail;                   // 임시 비밀번호 메일 발송
-	private final SecureRandom random = new SecureRandom();
 
 	// ===== 회원 =====
 
@@ -48,7 +42,7 @@ public class AdminService {
 	// 학과는 스마트소프트웨어과 하나로 고정 (팀 결정)
 	public static final String DEPT_ID = "D001";
 
-	// 계정 등록 (홍승훈) - 입력 오류는 IllegalStateException("필드명:메시지") 으로 알려 줌
+	// 계정 등록 (홍승훈) - 처음 비밀번호는 생년월일 8자리, 입력 오류는 IllegalStateException("필드명:메시지")
 	@Transactional
 	public Users createUser(UserCreateForm f) {
 		String userId = f.getUserId().trim();
@@ -56,9 +50,6 @@ public class AdminService {
 		String role   = f.getUserRole();
 		String grade  = f.getUserGrade();
 
-		if (!f.isTempPwIssued()) {
-			throw new IllegalStateException("tempPwIssued:[임시 비밀번호 발급] 버튼을 눌러 주세요.");
-		}
 		if (!List.of("S", "P", "A").contains(role)) {
 			throw new IllegalStateException("userRole:구분 값이 올바르지 않습니다.");
 		}
@@ -71,41 +62,14 @@ public class AdminService {
 		if (ur.existsByUserEmail(email)) {
 			throw new IllegalStateException("userEmail:이미 사용 중인 이메일입니다.");
 		}
-		// 임시 비밀번호: 서버가 임의로 만들고, 암호화해서 저장 → 관리자는 알 수 없음
-		String tempPw = makeTempPassword();
-		Users user = us.create(userId, f.getUserName().trim(), tempPw, email,
+		// 처음 비밀번호 = 생년월일 8자리 (회원 상세의 '비밀번호 초기화'와 같은 규칙), 암호화해서 저장
+		Users user = us.create(userId, f.getUserName().trim(), f.getUserBday(), email,
 				f.getUserTel().trim(), f.getUserBday(), DEPT_ID, role);
 
 		// 학년은 학생만 (교수 · 관리자는 NULL)
 		user.setUserGrade("S".equals(role) ? grade : null);
 		ur.save(user);
-
-		// 계정 주인의 이메일로만 임시 비밀번호 발송 (메일 설정이 없으면 서버 콘솔에 [DEV MAIL] 로 출력)
-		// 발송이 실패하면 예외 → @Transactional 이라 계정 등록도 취소됨 (비밀번호를 모르는 계정이 남지 않게)
-		mail.send(user.getUserEmail(), "[Smart Learning Hub] 계정이 등록되었습니다",
-				user.getUserName() + "님, Smart Learning Hub 계정이 등록되었습니다.\n\n"
-				+ "아이디(학번/사번): " + user.getUserId() + "\n"
-				+ "임시 비밀번호: " + tempPw + "\n\n"
-				+ "로그인 후 [비밀번호 찾기]에서 새 비밀번호로 바꿔 주세요.\n"
-				+ "본인이 요청하지 않은 메일이라면 학과 사무실로 문의해 주세요.");
 		return user;
-	}
-
-	// 임시 비밀번호 만들기 - 영문 대소문자 + 숫자 + 특수문자 섞어서 10자 (헷갈리는 0 O 1 l I 제외)
-	private String makeTempPassword() {
-		String upper = "ABCDEFGHJKLMNPQRSTUVWXYZ", lower = "abcdefghijkmnopqrstuvwxyz",
-				digit = "23456789", special = "!@#$%^&*";
-		String all = upper + lower + digit + special;
-		List<Character> chars = new ArrayList<>();
-		chars.add(upper.charAt(random.nextInt(upper.length())));      // 종류마다 최소 1개
-		chars.add(lower.charAt(random.nextInt(lower.length())));
-		chars.add(digit.charAt(random.nextInt(digit.length())));
-		chars.add(special.charAt(random.nextInt(special.length())));
-		while (chars.size() < 10) chars.add(all.charAt(random.nextInt(all.length())));
-		Collections.shuffle(chars, random);
-		StringBuilder sb = new StringBuilder();
-		chars.forEach(sb::append);
-		return sb.toString();
 	}
 
 	// 고정 학과 이름 (화면 표시용)
