@@ -34,15 +34,30 @@ public class AdminController {
 
 	// 계정 등록 화면
 	@GetMapping("/user/create")
-	public String userCreate(UserCreateForm userCreateForm) {
+	public String userCreate(Model model, UserCreateForm userCreateForm) {
+		if (userCreateForm.getUserRole() == null) userCreateForm.setUserRole("S");   // 기본: 학생
+		model.addAttribute("deptList", as.getDeptList());
 		return "admin/user_form";
 	}
 
-	// 계정 등록 완료
+	// 계정 등록 완료 → 등록한 회원의 상세 화면으로
 	@PostMapping("/user/create")
-	public String userCreate(@Valid UserCreateForm userCreateForm, BindingResult bindingResult) {
-
-		return "redirect:/admin/user/list";
+	public String userCreate(Model model, @Valid UserCreateForm userCreateForm, BindingResult bindingResult,
+			RedirectAttributes ra) {
+		if (!bindingResult.hasErrors()) {
+			try {
+				Users user = as.createUser(userCreateForm);
+				ra.addFlashAttribute("msg", "계정이 등록되었습니다. 이 학번/사번과 임시 비밀번호로 로그인할 수 있습니다.");
+				return "redirect:/admin/user/" + user.getUserId();
+			} catch (IllegalStateException e) {            // 학번 · 이메일 중복 등
+				String[] err = e.getMessage().split(":", 2);
+				bindingResult.rejectValue(err[0], "duplicate", err[1]);
+			} catch (IllegalArgumentException e) {         // 없는 학과
+				bindingResult.rejectValue("deptId", "invalid", e.getMessage());
+			}
+		}
+		model.addAttribute("deptList", as.getDeptList());
+		return "admin/user_form";
 	}
 
 	// 회원 목록
@@ -102,13 +117,64 @@ public class AdminController {
 			return "redirect:/admin/user/" + id;
 		}
 
-	// ===== 관리자 게시글 =====
+	// ===== 관리자 게시글 (시스템 공지) ===== (홍승훈)
 
 	// 관리자 게시글 목록
 	@GetMapping("/post/list")
-	public String postList(Model model, @RequestParam(value="page", defaultValue = "0") int page, @RequestParam(value="kw", defaultValue = "") String kw) {
-
+	public String postList(Model model, @RequestParam(value="page", defaultValue = "0") int page,
+			@RequestParam(value="kw", defaultValue = "") String kw) {
+		model.addAttribute("paging", as.getPostList(page, kw));
+		model.addAttribute("kw", kw);
 		return "admin/post_list";
+	}
+
+	// 등록 화면
+	@GetMapping("/post/create")
+	public String postCreate(AdminPostForm adminPostForm) {
+		return "admin/post_form";
+	}
+
+	// 등록 완료
+	@PostMapping("/post/create")
+	public String postCreate(@Valid AdminPostForm adminPostForm, BindingResult bindingResult,
+			Principal principal, RedirectAttributes ra) {
+		if (bindingResult.hasErrors()) {
+			return "admin/post_form";
+		}
+		as.createPost(adminPostForm.getTitle(), adminPostForm.getContent(), principal.getName());
+		ra.addFlashAttribute("msg", "게시글이 등록되었습니다. 정보마당 > 시스템 공지에 바로 보입니다.");
+		return "redirect:/admin/post/list";
+	}
+
+	// 수정 화면
+	@GetMapping("/post/modify/{id}")
+	public String postModify(Model model, AdminPostForm adminPostForm, @PathVariable("id") Long id) {
+		AdminPost post = as.getPost(id);
+		adminPostForm.setTitle(post.getAdminPostTitle());
+		adminPostForm.setContent(post.getAdminPostContent());
+		model.addAttribute("mode", "modify");
+		return "admin/post_form";
+	}
+
+	// 수정 완료
+	@PostMapping("/post/modify/{id}")
+	public String postModify(Model model, @Valid AdminPostForm adminPostForm, BindingResult bindingResult,
+			@PathVariable("id") Long id, RedirectAttributes ra) {
+		if (bindingResult.hasErrors()) {
+			model.addAttribute("mode", "modify");
+			return "admin/post_form";
+		}
+		as.modifyPost(as.getPost(id), adminPostForm.getTitle(), adminPostForm.getContent());
+		ra.addFlashAttribute("msg", "게시글이 수정되었습니다.");
+		return "redirect:/admin/post/list";
+	}
+
+	// 삭제 (게시판 삭제와 같은 GET 방식)
+	@GetMapping("/post/delete/{id}")
+	public String postDelete(@PathVariable("id") Long id, RedirectAttributes ra) {
+		as.deletePost(as.getPost(id));
+		ra.addFlashAttribute("msg", "게시글이 삭제되었습니다.");
+		return "redirect:/admin/post/list";
 	}
 
 	// ===== 학과 =====

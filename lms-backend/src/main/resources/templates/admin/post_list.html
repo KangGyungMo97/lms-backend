@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+
+<head>
+  <title>관리자 게시글</title>
+  <style>
+    .board-head { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 12px; }
+    .board-head h2 { margin: 0; }
+    .guide { color: #666; font-size: 13px; margin: 6px 0 0; }
+    .search { display: flex; gap: 6px; }
+    .search input { padding: 7px 10px; border: 1px solid #ccc; border-radius: 4px; width: 240px; }
+    .btn { display: inline-block; padding: 7px 14px; border: 1px solid #1f3a5f; border-radius: 4px;
+           background: #fff; color: #1f3a5f; text-decoration: none; font-size: 14px; cursor: pointer; }
+    .btn-primary { background: #1f3a5f; color: #fff; }
+    .btn-sm { padding: 3px 10px; font-size: 12px; }
+    .btn-danger { border-color: #c0392b; color: #c0392b; }
+    .msg { background: #e8f5e9; color: #2e7d32; border-radius: 4px; padding: 10px 14px; margin-bottom: 12px; font-size: 14px; }
+    .total { color: #666; font-size: 13px; margin: 8px 0; }
+    table.board { width: 100%; border-collapse: collapse; background: #fff; }
+    table.board th, table.board td { padding: 10px 8px; border-bottom: 1px solid #e5e5e5; font-size: 14px; text-align: center; }
+    table.board th { background: #eef2f7; border-top: 2px solid #1f3a5f; }
+    table.board td.title { text-align: left; }
+    table.board td.title a { color: #222; text-decoration: none; }
+    table.board td.title a:hover { text-decoration: underline; }
+    .empty { padding: 40px 0; color: #888; }
+    .paging { display: flex; justify-content: center; gap: 4px; margin: 20px 0; padding: 0; list-style: none; }
+    .paging a, .paging span { display: block; min-width: 32px; padding: 6px 8px; border: 1px solid #ccc;
+           border-radius: 4px; text-align: center; text-decoration: none; color: #333; font-size: 13px; }
+    .paging .active span { background: #1f3a5f; color: #fff; border-color: #1f3a5f; }
+    .paging .disabled span { color: #bbb; }
+  </style>
+</head>
+
+<body>
+  <div layout:fragment="content">
+
+    <div class="board-head">
+      <div>
+        <h2>관리자 게시글 (시스템 공지)</h2>
+        <p class="guide">여기서 등록한 글은 <b>정보마당 &gt; 시스템 공지</b>에 바로 보입니다.</p>
+      </div>
+      <form class="search" th:action="@{/admin/post/list}" method="get">
+        <input type="text" name="kw" th:value="${kw}" placeholder="제목, 내용 검색">
+        <button type="submit" class="btn">검색</button>
+      </form>
+    </div>
+
+    <div class="msg" th:if="${msg}" th:text="${msg}">완료 메시지</div>
+
+    <div class="board-head">
+      <p class="total">전체 <b th:text="${paging.totalElements}">0</b>건</p>
+      <a th:href="@{/admin/post/create}" class="btn btn-primary">글 등록</a>
+    </div>
+
+    <table class="board">
+      <thead>
+        <tr>
+          <th style="width:70px">번호</th>
+          <th>제목</th>
+          <th style="width:100px">작성자</th>
+          <th style="width:110px">등록일</th>
+          <th style="width:110px">수정일</th>
+          <th style="width:70px">조회</th>
+          <th style="width:130px">관리</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:if="${paging.totalElements == 0}">
+          <td colspan="7" class="empty">등록된 게시글이 없습니다.</td>
+        </tr>
+        <tr th:each="post, loop : ${paging}">
+          <td th:text="${paging.totalElements - (paging.number * paging.size) - loop.index}">1</td>
+          <td class="title">
+            <!-- 사용자에게 보이는 화면(정보마당 상세)으로 이동 -->
+            <a th:href="@{|/info/notice/detail/${post.adminPostId}|}" th:text="${post.adminPostTitle}">제목</a>
+          </td>
+          <td th:text="${post.writer.userName}">관리자</td>
+          <td th:text="${#temporals.format(post.adminPostCreateDate, 'yyyy-MM-dd')}">2026-10-15</td>
+          <td th:text="${#temporals.format(post.adminPostUpdateDate, 'yyyy-MM-dd')}">2026-10-15</td>
+          <td th:text="${post.adminPostView}">0</td>
+          <td>
+            <a th:href="@{|/admin/post/modify/${post.adminPostId}|}" class="btn btn-sm">수정</a>
+            <a th:href="@{|/admin/post/delete/${post.adminPostId}|}" class="btn btn-sm btn-danger"
+               onclick="return confirm('정말 삭제하시겠습니까?');">삭제</a>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <ul class="paging" th:if="${paging.totalPages > 0}">
+      <li th:classappend="${!paging.hasPrevious()} ? 'disabled'">
+        <a th:if="${paging.hasPrevious()}" th:href="@{/admin/post/list(page=${paging.number - 1}, kw=${kw})}">이전</a>
+        <span th:unless="${paging.hasPrevious()}">이전</span>
+      </li>
+      <li th:each="page : ${#numbers.sequence(0, paging.totalPages - 1)}"
+          th:if="${page >= paging.number - 5 and page <= paging.number + 5}"
+          th:classappend="${page == paging.number} ? 'active'">
+        <a th:unless="${page == paging.number}" th:href="@{/admin/post/list(page=${page}, kw=${kw})}" th:text="${page + 1}">1</a>
+        <span th:if="${page == paging.number}" th:text="${page + 1}">1</span>
+      </li>
+      <li th:classappend="${!paging.hasNext()} ? 'disabled'">
+        <a th:if="${paging.hasNext()}" th:href="@{/admin/post/list(page=${paging.number + 1}, kw=${kw})}">다음</a>
+        <span th:unless="${paging.hasNext()}">다음</span>
+      </li>
+    </ul>
+
+  </div>
+</body>
+
+</html>

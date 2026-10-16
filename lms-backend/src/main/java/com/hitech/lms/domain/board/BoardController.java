@@ -47,6 +47,7 @@ public class BoardController {
 
 		Page<Board> paging = bs.getList(page, kw);
 		model.addAttribute("paging", paging);
+		model.addAttribute("commentCounts", bs.getCommentCounts(paging));   // 제목 옆 (댓글 수)
 		model.addAttribute("kw", kw);
 		return "board/list";
 	}
