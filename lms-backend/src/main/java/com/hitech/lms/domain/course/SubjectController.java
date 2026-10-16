@@ -86,7 +86,6 @@ public class SubjectController {
 	}
 
 	// 과목 수정 완료 - 교수
-	@PreAuthorize("hasRole('TEACHER')")
 	@PostMapping("/update/{id}")
 	public String subjectUpdate(@Valid SubjectForm subjectForm, BindingResult bindingResult,
 		Principal principal, @PathVariable("id") String id, Model model) {

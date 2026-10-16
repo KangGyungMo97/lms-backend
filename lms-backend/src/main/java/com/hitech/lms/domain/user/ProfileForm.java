@@ -17,6 +17,6 @@ public class ProfileForm {
 
 	@NotEmpty(message = "이메일은 필수항목입니다.")
 	@Email(message = "이메일 형식이 올바르지 않습니다.")
-	@Size(max = 50, message = "이메일은 50자 이하로 입력하세요.")
+	@Size(max = 50, message = "이메일은 50자까지 입력할 수 있습니다.")
 	private String userEmail;
 }

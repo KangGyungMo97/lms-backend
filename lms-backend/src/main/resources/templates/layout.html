@@ -10,9 +10,6 @@
   <!-- 레이아웃(헤더 · 메뉴 · 제목 띠 · 푸터) 스타일 -->
   <link rel="stylesheet" th:href="@{/css/layout.css}">
   <link rel="icon" type="image/png" th:href="@{/img/favicon.png}">
-  <script th:inline="javascript">
-      window.MAP_IMAGE_PATH = /*[[@{/img/map.png}]]*/ '/img/map.png';
-  </script>
 </head>
 <body>
 
@@ -92,7 +89,6 @@
       </nav>
 
       <!-- 오른쪽: 로그인 / 사용자 · 로그아웃 -->
-	  <!-- 오른쪽: 로그인 / 사용자 · 아이콘 메뉴 -->
 	  <div class="util">
 	    <a sec:authorize="isAnonymous()" class="btn-login" th:href="@{/user/login}">로그인</a>
 	    <th:block sec:authorize="isAuthenticated()">
@@ -117,8 +113,9 @@
 	        </ul>
 	      </div>
 	    </th:block>
-	  </div>
-  </header>
+	</div>   
+</div>     
+</header>
 
   <!-- ===== 페이지 제목 띠 =====
        각 화면에서 아래처럼 넣으면 '제목 + 홈 › 메뉴 › 하위메뉴' 띠가 나옴 (안 넣으면 띠 없음)
@@ -193,7 +190,6 @@
 	      if (e.key === 'Escape') setOpen(false);
 	    });
 	  })();
-	  
   </script>
 </body>
 </html>
