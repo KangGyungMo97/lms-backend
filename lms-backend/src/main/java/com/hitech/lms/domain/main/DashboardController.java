@@ -8,6 +8,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 
+import com.hitech.lms.domain.board.Board;
 import com.hitech.lms.domain.course.Course;
 import com.hitech.lms.domain.qna.QnaBoard;
 import com.hitech.lms.domain.study.AttService;
@@ -22,6 +23,8 @@ import lombok.RequiredArgsConstructor;
 public class DashboardController {
 
 	private final DashboardService ds;
+
+	private final AdminDashboardService ads;   // 관리자 대시보드 데이터 (홍승훈)
 
 	private final AttService as;
 
@@ -86,9 +89,16 @@ public class DashboardController {
 		return "dashboard/teacher";
 	}
 
+	// 관리자 대시보드 (홍승훈)
 	@GetMapping("/dashboard/admin")
 	public String admin(Authentication auth, Model model) {
 		model.addAttribute("userId", auth.getName());
+		model.addAttribute("stats", ads.getAdminStats());            // ① 요약 카드
+		model.addAttribute("recentUsers", ads.getRecentUsers());     // ③ 최근 등록 계정
+		model.addAttribute("recentPosts", ads.getRecentPosts());     // ⑤ 최근 시스템 공지
+		List<Board> recentBoards = ads.getRecentBoards();            // ⑥ 자유게시판 최근 글
+		model.addAttribute("recentBoards", recentBoards);
+		model.addAttribute("commentCounts", ads.getCommentCounts(recentBoards));
 		return "dashboard/admin";
 	}
 
