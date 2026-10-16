@@ -40,13 +40,15 @@ public interface AttRepository extends JpaRepository<Att, Long> {
 	// 수강 대상 학생 - 학과 + 대상 학년, 학번 순 (출석부의 세로 줄 · 수강 인원)
 	//   grade 가 null 이면 학과 전체
 	// TODO: 수강신청 테이블이 생기면 '이 과정을 신청한 학생' 으로 바꾸기
-	@Query("select u from Users u where u.userRole = 'S' and u.dept = :dept "
-			+ "and (:grade is null or u.userGrade = :grade) order by u.userId asc")
-	List<Users> findStudentsOf(@Param("dept") Dept dept, @Param("grade") String grade);
+	// ===== 출석부 및 대시보드 연동용 쿼리 개정 =====
 
-	// 학생이 듣는 강의 - 같은 학과 과목 중 대상 학년이 내 학년인 것 (대상 학년이 비어 있으면 학과 전체 대상)
-	@Query("select c from Course c join fetch c.subject s join fetch c.teacher "
-			+ "where c.courseIsUse = 'Y' and s.dept = :dept "
-			+ "and (c.courseTarget is null or c.courseTarget = :grade) order by c.courseId asc")
-	List<Course> findCoursesOf(@Param("dept") Dept dept, @Param("grade") Integer grade);
-}
+		// 수강 대상 학생 목록 조회: 해당 학과의 학생("S")이면서, 학년 정보가 targets 리스트(일반 학년 또는 하이테크 과정 9)에 포함되는 경우
+		@Query("select u from Users u where u.userRole = 'S' and u.dept = :dept "
+				+ "and u.userGrade in :targets order by u.userId asc")
+		List<Users> findStudentsOfDeptAndTargets(@Param("dept") Dept dept, @Param("targets") List<String> targets);
+
+		// 학생이 듣는 강의 목록 조회: 해당 학과의 과목이면서, 과정 대상(courseTarget)이 targets 리스트(일반 학년 또는 하이테크 과정 9)에 포함되거나 전체 대상(null)인 경우
+		@Query("select c from Course c join fetch c.subject s join fetch c.teacher "
+				+ "where c.courseIsUse = 'Y' and s.dept = :dept " // c.dept -> s.dept 로 올바르게 수정
+				+ "and (c.courseTarget is null or c.courseTarget in :targets) order by c.courseId asc")
+		List<Course> findCoursesOfDeptAndTargets(@Param("dept") Dept dept, @Param("targets") List<Integer> targets);}

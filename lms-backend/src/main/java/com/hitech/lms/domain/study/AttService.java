@@ -65,29 +65,44 @@ public class AttService {
 
 	// 수강 대상 학생 - 과목의 학과 + 대상 학년 (대상 학년이 비어 있으면 학과 전체)
 	// TODO: 수강신청 테이블이 생기면 '이 과정을 신청한 학생' 으로 바꾸기
-	public List<Users> getRoster(Course course) {
-		String grade = course.getCourseTarget() == null ? null : String.valueOf(course.getCourseTarget());
-		return ar.findStudentsOf(course.getSubject().getDept(), grade);
-	}
+	// 수강 대상 학생 - 과목의 학과 + 대상 학년 (하이테크 과정 및 일반 과정 분기 처리)
+		public List<Users> getRoster(Course course) {
+			List<String> targets = new ArrayList<>();
+			if (course.getCourseTarget() != null) {
+				targets.add(String.valueOf(course.getCourseTarget()));
+			} else {
+				// 대상 학년 코드가 따로 지정되지 않은 과목이라면 1학년, 2학년, 하이테크(9) 모두 수강 대상으로 포용합니다.
+				targets.addAll(List.of("1", "2", "3", "4", "9")); 
+			}
+			return ar.findStudentsOfDeptAndTargets(course.getSubject().getDept(), targets);
+		}
 
-	// 이 학생이 듣는 강의인지 (학과 + 학년)
-	public boolean isTarget(Course course, Users student) {
-		if (!"S".equals(student.getUserRole())) return false;
-		if (!course.getSubject().getDept().getDeptId().equals(student.getDept().getDeptId())) return false;
-		return course.getCourseTarget() == null
-				|| String.valueOf(course.getCourseTarget()).equals(student.getUserGrade());
-	}
+		// 이 학생이 듣는 강의인지 검증 (학과 + 학년/과정 매핑 확인)
+		public boolean isTarget(Course course, Users student) {
+			if (!"S".equals(student.getUserRole())) return false;
+			if (!course.getSubject().getDept().getDeptId().equals(student.getDept().getDeptId())) return false;
+			if (course.getCourseTarget() == null) return true;
+			
+			// 과목 대상과 학생의 학년 정보가 일치하거나, 하이테크(9) 과정인 경우 매핑 성공
+			String courseTargetStr = String.valueOf(course.getCourseTarget());
+			return courseTargetStr.equals(student.getUserGrade()) || "9".equals(courseTargetStr);
+		}
+
 
 	// 학생이 듣는 강의 목록
-	public List<Course> getStudentCourses(Users student) {
-		Integer grade = null;
-		try {
-			grade = Integer.valueOf(student.getUserGrade());
-		} catch (NumberFormatException | NullPointerException e) {
-			// 학년이 없으면 '대상 학년 없음' 강의만
+		public List<Course> getStudentCourses(Users student) {
+			List<Integer> targets = new ArrayList<>();
+			targets.add(9); // 하이테크 과정 타겟 코드(9)를 무조건 탐색 리스트에 기본 할당
+			
+			try {
+				if (student.getUserGrade() != null) {
+					targets.add(Integer.valueOf(student.getUserGrade()));
+				}
+			} catch (NumberFormatException e) {
+				// 학년 필드 값이 숫자가 아니더라도 에러를 핸들링하며 하이테크(9) 단독 조건으로 조회를 속행합니다.
+			}
+			return ar.findCoursesOfDeptAndTargets(student.getDept(), targets);
 		}
-		return ar.findCoursesOf(student.getDept(), grade);
-	}
 
 	// 교수가 맡은 강의 목록
 	public List<Course> getTeacherCourses(Users teacher) {

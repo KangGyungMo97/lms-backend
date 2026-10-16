@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 
 import com.hitech.lms.domain.board.Board;
 import com.hitech.lms.domain.course.Course;
+import com.hitech.lms.domain.course.CourseController;
 import com.hitech.lms.domain.qna.QnaBoard;
 import com.hitech.lms.domain.study.AttService;
 import com.hitech.lms.domain.study.TodayClass;
@@ -49,7 +50,7 @@ public class DashboardController {
 
 		model.addAttribute("user", user);
 		model.addAttribute("semester", ds.semesterLabel());
-
+		model.addAttribute("targetLabels", CourseController.TARGET);
 		// 요약 숫자 4개
 		model.addAttribute("courseCount", courses.size());
 		model.addAttribute("todayCount", todayList.size());
