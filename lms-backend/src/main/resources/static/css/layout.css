@@ -136,3 +136,17 @@ a { color: inherit; }
 .flash { margin: 0 0 16px; padding: 11px 16px; border-radius: 4px; font-size: 14px; border: 1px solid; }
 .flash.ok { background: #e8f5e9; border-color: #c8e6c9; color: #2e7d32; }
 .flash.fail { background: #fdecea; border-color: #f5c6c0; color: var(--danger); }
+
+/* ===== 사용자 아이콘 메뉴 ===== */
+.user-menu { position: relative; }
+.user-btn { display: flex; align-items: center; justify-content: center; width: 36px; height: 36px;
+            border: 1px solid #d5dbe3; border-radius: 50%; background: #fff; color: #1f3a5f; cursor: pointer; }
+.user-btn:hover, .user-menu.open .user-btn { background: #eef2f7; }
+.user-dropdown { display: none; position: absolute; right: 0; top: calc(100% + 8px); min-width: 140px;
+                 margin: 0; padding: 6px 0; list-style: none; background: #fff;
+                 border: 1px solid #e0e4ea; border-radius: 6px; box-shadow: 0 6px 18px rgba(0, 0, 0, .12);
+                 z-index: 1000; }
+.user-menu.open .user-dropdown { display: block; }
+.user-dropdown a { display: block; padding: 9px 16px; font-size: 14px; color: #222;
+                   text-decoration: none; white-space: nowrap; }
+.user-dropdown a:hover { background: #f2f5f9; }

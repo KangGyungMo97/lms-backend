@@ -41,7 +41,7 @@
         <div class="form-row">
           <label>강의명<span class="req">필수</span></label>
           <div class="field">
-            <input type="text" class="wide" th:field="*{courseTitle}" maxlength="50" placeholder="과목명을 입력하세요">
+            <input type="text" class="wide" th:field="*{courseTitle}" maxlength="50" placeholder="강의명을 입력하세요">
             <span class="error" th:if="${#fields.hasErrors('courseTitle')}" th:errors="*{courseTitle}"></span>
           </div>
         </div>

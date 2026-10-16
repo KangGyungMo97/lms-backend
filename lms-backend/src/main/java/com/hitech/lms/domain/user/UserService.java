@@ -20,25 +20,32 @@ public class UserService {
 	private final PasswordEncoder passwordEncoder;
 
 	/** 관리자 계정 등록: role = S(학생) / P(교수) / A(관리자) */
+	public Users create(String userId, String userName, String tempPassword, String userEmail,
+            String userTel, String userBday, String deptId, String userRole) {
+	return create(userId, userName, tempPassword, userEmail, userTel, userBday, deptId, userRole, null);
+	}
+
 	/*계정상태 : status =A(정상)/잠금(L)/차단(B)/탈퇴W */
-	public Users create(String userId, String userName, String tempPassword, String userEmail, String userTel, String userBday, String deptId, String userRole) {
+	public Users create(String userId, String userName, String tempPassword, String userEmail,
+            String userTel, String userBday, String deptId, String userRole, String userGrade) {
 
-		Dept dept = dr.findById(deptId)
-				.orElseThrow(() -> new IllegalArgumentException("존재하지 않는 학과입니다: " + deptId));
-
-		Users user = new Users();
-		user.setUserId(userId);
-		user.setUserName(userName);
-		user.setUserPassword(passwordEncoder.encode(tempPassword));   // 임시 비번 암호화
-		user.setUserEmail(userEmail);
-		user.setUserTel(userTel);
-		user.setUserBday(userBday);
-		user.setDept(dept);
-		user.setUserRole(userRole);
-		user.setUserCreated(LocalDateTime.now());
-		user.setUserStatus("A");                                  
-
-		return ur.save(user);
+	Dept dept = dr.findById(deptId)
+		.orElseThrow(() -> new IllegalArgumentException("존재하지 않는 학과입니다: " + deptId));
+	
+	Users user = new Users();
+	user.setUserId(userId);
+	user.setUserName(userName);
+	user.setUserPassword(passwordEncoder.encode(tempPassword));   // 임시 비번 암호화
+	user.setUserEmail(userEmail);
+	user.setUserTel(userTel);
+	user.setUserBday(userBday);
+	user.setUserGrade(userGrade);
+	user.setDept(dept);
+	user.setUserRole(userRole);
+	user.setUserCreated(LocalDateTime.now());
+	user.setUserStatus("A");
+	
+	return ur.save(user);
 	}
 
 	/** 로그인한 사용자 찾기 (principal.getName() = 학번/사번) */

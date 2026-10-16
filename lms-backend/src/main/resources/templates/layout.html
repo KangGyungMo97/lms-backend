@@ -10,6 +10,9 @@
   <!-- 레이아웃(헤더 · 메뉴 · 제목 띠 · 푸터) 스타일 -->
   <link rel="stylesheet" th:href="@{/css/layout.css}">
   <link rel="icon" type="image/png" th:href="@{/img/favicon.png}">
+  <script th:inline="javascript">
+      window.MAP_IMAGE_PATH = /*[[@{/img/map.png}]]*/ '/img/map.png';
+  </script>
 </head>
 <body>
 
@@ -89,18 +92,32 @@
       </nav>
 
       <!-- 오른쪽: 로그인 / 사용자 · 로그아웃 -->
-      <div class="util">
-        <a sec:authorize="isAnonymous()" class="btn-login" th:href="@{/user/login}">로그인</a>
-        <th:block sec:authorize="isAuthenticated()">
-          <!-- 권한 표시 + 이름 (이름은 LoginUserAdvice 가 넣어 줌, 없으면 학번) -->
-          <span class="role-badge" sec:authorize="hasRole('STUDENT')">학생</span>
-          <span class="role-badge" sec:authorize="hasRole('TEACHER')">교수</span>
-          <span class="role-badge" sec:authorize="hasRole('ADMIN')">관리자</span>
-          <span class="user"><b th:text="${loginName != null} ? ${loginName} : ${#authentication.name}">강경모</b> 님</span>
-          <a class="btn-logout" th:href="@{/user/logout}">로그아웃</a>
-        </th:block>
-      </div>
-    </div>
+	  <!-- 오른쪽: 로그인 / 사용자 · 아이콘 메뉴 -->
+	  <div class="util">
+	    <a sec:authorize="isAnonymous()" class="btn-login" th:href="@{/user/login}">로그인</a>
+	    <th:block sec:authorize="isAuthenticated()">
+	      <!-- 권한 표시 + 이름 (이름은 LoginUserAdvice 가 넣어 줌, 없으면 학번) -->
+	      <span class="role-badge" sec:authorize="hasRole('STUDENT')">학생</span>
+	      <span class="role-badge" sec:authorize="hasRole('TEACHER')">교수</span>
+	      <span class="role-badge" sec:authorize="hasRole('ADMIN')">관리자</span>
+	      <span class="user"><b th:text="${loginName != null} ? ${loginName} : ${#authentication.name}">강경모</b> 님</span>
+
+	      <!-- 사람 아이콘: 클릭하면 마이페이지 / 로그아웃 -->
+	      <div class="user-menu">
+	        <button type="button" class="user-btn" aria-label="사용자 메뉴" aria-haspopup="true" aria-expanded="false">
+	          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
+	               stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+	            <circle cx="12" cy="8" r="4"/>
+	            <path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/>
+	          </svg>
+	        </button>
+	        <ul class="user-dropdown">
+	          <li><a th:href="@{/mypage}">마이페이지</a></li>
+	          <li><a th:href="@{/user/logout}">로그아웃</a></li>
+	        </ul>
+	      </div>
+	    </th:block>
+	  </div>
   </header>
 
   <!-- ===== 페이지 제목 띠 =====
@@ -156,6 +173,27 @@
         if (!gnb.contains(e.relatedTarget)) closeMenu();
       });
     })();
+	(function () {
+	    var menu = document.querySelector('.user-menu');
+	    if (!menu) return;
+	    var btn = menu.querySelector('.user-btn');
+
+	    function setOpen(open) {
+	      menu.classList.toggle('open', open);
+	      btn.setAttribute('aria-expanded', open);
+	    }
+	    btn.addEventListener('click', function (e) {
+	      e.stopPropagation();
+	      setOpen(!menu.classList.contains('open'));
+	    });
+	    document.addEventListener('click', function (e) {
+	      if (!menu.contains(e.target)) setOpen(false);
+	    });
+	    document.addEventListener('keydown', function (e) {
+	      if (e.key === 'Escape') setOpen(false);
+	    });
+	  })();
+	  
   </script>
 </body>
 </html>
