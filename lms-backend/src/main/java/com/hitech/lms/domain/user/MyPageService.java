@@ -35,7 +35,7 @@ public class MyPageService {
 		ur.save(u);
 	}
 
-	// 비밀번호 변경
+	// 비밀번호 변경을 하는쪽
 	@Transactional
 	public void changePassword(String userId, PasswordForm f) {
 		Users u = us.getUser(userId);
