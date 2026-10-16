@@ -47,11 +47,12 @@ public class AdminController {
 		if (!bindingResult.hasErrors()) {
 			try {
 				Users user = as.createUser(userCreateForm);
-				ra.addFlashAttribute("msg", "계정이 등록되었습니다. 임시 비밀번호는 사용자 휴대폰(" + user.getMaskedTel() + ")으로 발송되었습니다.");
+				ra.addFlashAttribute("msg", "계정이 등록되었습니다. 임시 비밀번호는 사용자 이메일(" + user.getMaskedEmail() + ")로 발송되었습니다.");
 				return "redirect:/admin/user/" + user.getUserId();
 			} catch (IllegalStateException e) {            // 임시 비밀번호 미발급 · 학년 · 학번/이메일 중복
 				String[] err = e.getMessage().split(":", 2);
-				bindingResult.rejectValue(err[0], "duplicate", err[1]);
+				if (err.length == 2) bindingResult.rejectValue(err[0], "duplicate", err[1]);
+				else bindingResult.reject("mailFail", e.getMessage());   // 메일 발송 실패 (필드 없음)
 			} catch (IllegalArgumentException e) {         // 학과(D001)가 DB 에 없을 때
 				bindingResult.reject("noDept", e.getMessage());
 			}

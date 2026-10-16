@@ -16,7 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.hitech.lms.domain.user.Dept;
-import com.hitech.lms.domain.user.SmsService;
+import com.hitech.lms.domain.user.MailService;
 import com.hitech.lms.domain.user.UserService;
 import com.hitech.lms.domain.user.DeptRepository;
 import com.hitech.lms.domain.user.Users;
@@ -34,7 +34,7 @@ public class AdminService {
 	private final DeptRepository dr;
 	private final UserStatusLogRepository uslr;
 	private final UserService us;
-	private final SmsService sms;                     // 임시 비밀번호 문자 발송
+	private final MailService mail;                   // 임시 비밀번호 메일 발송
 	private final SecureRandom random = new SecureRandom();
 
 	// ===== 회원 =====
@@ -80,10 +80,14 @@ public class AdminService {
 		user.setUserGrade("S".equals(role) ? grade : null);
 		ur.save(user);
 
-		// 계정 주인의 휴대폰으로만 임시 비밀번호 발송 (개발 중에는 LogSmsService 가 서버 콘솔에 출력)
-		sms.send(user.getUserTel(), "[하이테크 LMS] " + user.getUserName() + "님 계정이 등록되었습니다. "
-				+ "아이디: " + user.getUserId() + " / 임시 비밀번호: " + tempPw
-				+ " (로그인 후 비밀번호 찾기에서 새 비밀번호로 바꿔 주세요)");
+		// 계정 주인의 이메일로만 임시 비밀번호 발송 (메일 설정이 없으면 서버 콘솔에 [DEV MAIL] 로 출력)
+		// 발송이 실패하면 예외 → @Transactional 이라 계정 등록도 취소됨 (비밀번호를 모르는 계정이 남지 않게)
+		mail.send(user.getUserEmail(), "[Smart Learning Hub] 계정이 등록되었습니다",
+				user.getUserName() + "님, Smart Learning Hub 계정이 등록되었습니다.\n\n"
+				+ "아이디(학번/사번): " + user.getUserId() + "\n"
+				+ "임시 비밀번호: " + tempPw + "\n\n"
+				+ "로그인 후 [비밀번호 찾기]에서 새 비밀번호로 바꿔 주세요.\n"
+				+ "본인이 요청하지 않은 메일이라면 학과 사무실로 문의해 주세요.");
 		return user;
 	}
 
