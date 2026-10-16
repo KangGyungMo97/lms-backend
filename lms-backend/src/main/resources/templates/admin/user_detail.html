@@ -26,14 +26,14 @@
             <td th:text="${user.userRole == 'S'} ? '학생' : (${user.userRole == 'P'} ? '교수' : '관리자')"></td></tr>
         <tr><th style="text-align:left;">학과 / 학년</th>
             <td th:text="${user.dept.deptName} + (${user.userGrade != null} ? ' ' + ${user.userGrade} + '학년' : '')"></td></tr>
-        <tr><th style="text-align:left;">생년월일</th><td th:text="${user.maskedBday}"></td></tr>
-        <tr><th style="text-align:left;">휴대폰</th><td th:text="${user.maskedTel}"></td></tr>
-        <tr><th style="text-align:left;">이메일</th><td th:text="${user.maskedEmail}"></td></tr>
+        <tr><th style="text-align:left;">생년월일</th><td th:text="${user.userBday}"></td></tr>
+        <tr><th style="text-align:left;">휴대폰</th><td th:text="${user.userTel}"></td></tr>
+        <tr><th style="text-align:left;">이메일</th><td th:text="${user.userEmail}"></td></tr>
         <tr><th style="text-align:left;">계정 발급일</th>
             <td th:text="${#temporals.format(user.userCreated, 'yyyy-MM-dd')}"></td></tr>
         <tr><th style="text-align:left;">최근 접속</th>
             <td th:text="${user.userLastLogin != null} ? ${#temporals.format(user.userLastLogin, 'yyyy-MM-dd HH:mm')} : '-'"></td></tr>
-        <tr><th style="text-align:left;">비밀번호 변경</th>
+        <tr><th style="text-align:left;">비밀번호 변경일자</th>
             <td th:text="${user.userPwChanged != null} ? ${#temporals.format(user.userPwChanged, 'yyyy-MM-dd')} : '-'"></td></tr>
       </table>
       <p style="font-size:12px; color:#888;">※ 회원의 개인정보는 관리자가 임의로 수정할 수 없습니다. (본인 요청 시 1대1 문의로 처리)</p>
@@ -72,10 +72,6 @@
         </form>
 
         <div style="display:flex; justify-content:flex-end; gap:8px;">
-			<form th:action="@{/admin/user/{id}/temp-password(id=${user.userId})}" method="post"
-			        onsubmit="return confirm('비밀번호를 생년월일(8자리)로 초기화하시겠습니까?');">
-			    <button type="submit">비밀번호 초기화</button>
-			  </form>
           <button type="submit" form="statusForm">적용</button>
         </div>
       </div>
