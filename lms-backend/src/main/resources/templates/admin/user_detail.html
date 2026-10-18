@@ -25,7 +25,7 @@
         <tr><th style="text-align:left;">구분</th>
             <td th:text="${user.userRole == 'S'} ? '학생' : (${user.userRole == 'P'} ? '교수' : '관리자')"></td></tr>
         <tr><th style="text-align:left;">학과 / 학년</th>
-            <td th:text="${user.dept.deptName} + (${user.userGrade != null} ? ' ' + ${user.userGrade} + '학년' : '')"></td></tr>
+            <td th:text="${user.userRole == 'S' && (user.userGrade == null || user.userGrade == '9')} ? '하이테크과정' : (${user.userGrade != null} ? |${user.dept.deptName} ${user.userGrade}학년| : ${user.dept.deptName})">하이테크과정</td>
         <tr><th style="text-align:left;">생년월일</th><td th:text="${user.userBday}"></td></tr>
         <tr><th style="text-align:left;">휴대폰</th><td th:text="${user.userTel}"></td></tr>
         <tr><th style="text-align:left;">이메일</th><td th:text="${user.userEmail}"></td></tr>

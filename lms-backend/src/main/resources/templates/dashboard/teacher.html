@@ -15,7 +15,7 @@
 
     <div class="dash-hello">
       <h2 th:text="|안녕하세요, ${user.userName} 님|">안녕하세요, 박교수 님</h2>
-      <span th:text="|${semester} · ${user.dept.deptName}|">2026학년도 2학기 · 컴퓨터공학과</span>
+      <span th:text="|${semester} · ${user.dept?.deptName}|">2026학년도 2학기 · 컴퓨터공학과</span>
     </div>
 
     <!-- ===== 요약 숫자 ===== -->
@@ -73,8 +73,22 @@
           <tr th:if="${#lists.isEmpty(courseRows)}"><td colspan="6" class="sub">담당 과목이 없습니다.</td></tr>
           <tr th:each="r : ${courseRows}">
             <td class="title"><a th:href="@{|/course/detail/${r.course.courseId}|}" th:text="${r.course.courseTitle}">데이터베이스 설계와 SQL 실무</a></td>
-            <td class="hide-m sub"
-                th:text="${r.course.courseTarget != null} ? |${r.course.subject.dept.deptName} ${r.course.courseTarget}학년| : ${r.course.subject.dept.deptName}">정보기술과 2학년</td>
+            
+            <!-- [안전장치 강화] targetLabels가 null이거나 인덱스가 없을 때 터지는 것을 방지합니다 -->
+            <td class="hide-m sub">
+              <!-- 1. 대상 값이 아예 없을 때: 학과명만 출력 -->
+              <span th:if="${r.course.courseTarget == null}" 
+                    th:text="${r.course.subject?.dept?.deptName}">학과명</span>
+              
+              <!-- 2. 공통/교양과정(9) 일 때: targetLabels가 존재하면 출력, 없으면 '공통과정' 출력 -->
+              <span th:if="${r.course.courseTarget == 9}" 
+                    th:text="${targetLabels != null ? targetLabels[r.course.courseTarget] : '하이테크과정'}">교양과정</span>
+              
+              <!-- 3. 특정 학과 및 특정 학년 타겟일 때 -->
+              <span th:if="${r.course.courseTarget != null && r.course.courseTarget != 9}" 
+                    th:text="${targetLabels != null ? r.course.subject?.dept?.deptName + ' ' + targetLabels[r.course.courseTarget] : r.course.subject?.dept?.deptName + ' ' + r.course.courseTarget + '학년'}">학과명 학년</span>
+            </td>
+
             <td class="hide-m" th:text="${r.timeLabel}">월·수 10:00~12:50</td>
             <td th:text="|${r.rosterCount}명|">28명</td>
             <td>
@@ -129,7 +143,7 @@
             <tr th:if="${#lists.isEmpty(qnaList)}"><td colspan="3" class="sub">답변을 기다리는 질문이 없습니다.</td></tr>
             <tr th:each="q : ${qnaList}">
               <td class="title"><a th:href="@{|/qna/detail/${q.qnaId}|}" th:text="${q.qnaTitle}">정규화 3NF 예제 질문입니다</a></td>
-              <td class="hide-m sub" th:text="${q.lesson.course.courseTitle}">SQL 실무</td>
+              <td class="hide-m sub" th:text="${q.lesson?.course?.courseTitle}">SQL 실무</td>
               <td th:text="${#temporals.format(q.qnaCreateDate, 'MM-dd')}">09-28</td>
             </tr>
           </tbody>
@@ -139,5 +153,4 @@
     </div>
   </div>
 </body>
-
 </html>
