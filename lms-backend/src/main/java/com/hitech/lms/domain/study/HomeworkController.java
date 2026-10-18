@@ -1,12 +1,27 @@
 package com.hitech.lms.domain.study;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -20,6 +35,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.hitech.lms.domain.file.FileAtt;
+import com.hitech.lms.domain.file.FileDetail;
+import com.hitech.lms.domain.file.FileService;
 import com.hitech.lms.domain.user.UserService;
 import com.hitech.lms.domain.user.Users;
 
@@ -34,6 +52,8 @@ public class HomeworkController {
 	private final HomeworkService hs;
 
 	private final UserService us;
+
+	private final FileService fs;
 
 	// ※ 이제 SecurityConfig 에 @EnableMethodSecurity 가 있어서 @PreAuthorize 가 동작함
 	//    아래 principal == null 체크는 혹시 몰라 남겨 둔 것 (지워도 됨)
@@ -76,11 +96,16 @@ public class HomeworkController {
 	// 과제 상세 화면에 필요한 값 담기 (상세 보기 · 제출 실패 시 같이 씀)
 	private void setDetailModel(Model model, Homework homework, Users user, Principal principal) {
 		model.addAttribute("homework", homework);
+		model.addAttribute("homeworkFiles", fs.getFileList(homework.getFileAtt()));   // 과제 첨부파일 (교수가 올린 자료)
 		model.addAttribute("isTeacher", isTeacher(principal));
 		model.addAttribute("isOwner", isTeacher(principal) && hs.isOwner(homework, user)); // 수정 · 삭제 · 제출현황 버튼
 		if (!isTeacher(principal)) {
-			model.addAttribute("mySubmit", hs.getMySubmit(homework, user));  // 아직 안 냈으면 null
+			Submit mySubmit = hs.getMySubmit(homework, user);
+			model.addAttribute("mySubmit", mySubmit);  // 아직 안 냈으면 null
+			model.addAttribute("mySubmitFiles", mySubmit == null ? List.of() : fs.getFileList(mySubmit.getFileAtt()));
 		}
+		model.addAttribute("allowedExt", String.join(", ", FileService.ALLOWED.stream().sorted().toList()));
+		model.addAttribute("maxFiles", FileService.MAX_FILES);
 		// 마감 여부 · 남은 날짜 (D-n)
 		LocalDate today = LocalDate.now();
 		model.addAttribute("closed", homework.getHomeworkEndDate().isBefore(today));
@@ -96,6 +121,7 @@ public class HomeworkController {
 
 		Users teacher = us.getUser(principal.getName());
 		model.addAttribute("lessonList", hs.getMyLessons(teacher));   // 수업 선택 목록
+		addFileHint(model);
 
 		// 처음 열 때 기간 기본값: 오늘 ~ 7일 뒤
 		homeworkForm.setStartDate(LocalDate.now());
@@ -124,13 +150,24 @@ public class HomeworkController {
 			bindingResult.rejectValue("lessonId", "notMyLesson", "담당하는 수업만 선택할 수 있습니다.");
 		}
 
+		// 첨부파일 저장 (안 골랐으면 null) - 형식 · 개수가 맞지 않으면 화면에 오류
+		FileAtt fileAtt = null;
+		if (!bindingResult.hasErrors()) {
+			try {
+				fileAtt = fs.upload(homeworkForm.getFiles());
+			} catch (IllegalArgumentException e) {
+				bindingResult.reject("file", e.getMessage());
+			}
+		}
+
 		if (bindingResult.hasErrors()) {
 			model.addAttribute("lessonList", hs.getMyLessons(teacher));   // 다시 그릴 때 수업 목록 필요
+			addFileHint(model);
 			return "homework/form";
 		}
 
 		hs.create(homeworkForm.getLessonId(), homeworkForm.getTitle(), homeworkForm.getContent(),
-				homeworkForm.getStartDate(), homeworkForm.getEndDate());
+				homeworkForm.getStartDate(), homeworkForm.getEndDate(), fileAtt);
 		return "redirect:/homework/list";
 	}
 
@@ -184,14 +221,24 @@ public class HomeworkController {
 			bindingResult.reject("already", "이미 제출한 과제입니다.");
 		}
 
-		// 3. 오류 있으면 상세 화면 다시 (입력한 내용 유지)
+		// 3. 첨부파일 저장 (안 골랐으면 null) - 형식 · 개수가 맞지 않으면 오류
+		FileAtt fileAtt = null;
+		if (!bindingResult.hasErrors()) {
+			try {
+				fileAtt = fs.upload(submitForm.getFiles());
+			} catch (IllegalArgumentException e) {
+				bindingResult.reject("file", e.getMessage());
+			}
+		}
+
+		// 4. 오류 있으면 상세 화면 다시 (입력한 내용 유지, 파일은 다시 골라야 함)
 		if (bindingResult.hasErrors()) {
 			setDetailModel(model, homework, student, principal);
 			return "homework/detail";
 		}
 
-		// 4. 저장
-		hs.createSubmit(homework, submitForm.getContent(), student);
+		// 5. 저장
+		hs.createSubmit(homework, submitForm.getContent(), student, fileAtt);
 
 		return "redirect:/homework/detail/" + id;
 	}
@@ -230,8 +277,18 @@ public class HomeworkController {
 		checkOwner(homework, principal);
 
 		// 2. 제출 목록 담기
+		List<Submit> submitList = hs.getSubmitList(homework);
+		Map<Long, Integer> fileCount = new HashMap<>();    // { 제출번호 : 첨부파일 수 }
+		int totalFiles = 0;
+		for (Submit s : submitList) {
+			int n = fs.getFileList(s.getFileAtt()).size();
+			fileCount.put(s.getSubmitId(), n);
+			totalFiles += n;
+		}
 		model.addAttribute("homework", homework);
-		model.addAttribute("submitList", hs.getSubmitList(homework));
+		model.addAttribute("submitList", submitList);
+		model.addAttribute("fileCount", fileCount);
+		model.addAttribute("totalFiles", totalFiles);     // 0 이면 '전체 내려받기' 버튼 숨김
 
 		return "homework/submit_list";
 	}
@@ -253,6 +310,7 @@ public class HomeworkController {
 		}
 
 		model.addAttribute("submit", submit);
+		model.addAttribute("submitFiles", fs.getFileList(submit.getFileAtt()));
 		return "homework/submit_detail";
 	}
 
@@ -270,6 +328,7 @@ public class HomeworkController {
 		// 2. 점수 범위 오류 등 있으면 채점 화면 다시
 		if (bindingResult.hasErrors()) {
 			model.addAttribute("submit", submit);
+			model.addAttribute("submitFiles", fs.getFileList(submit.getFileAtt()));
 			return "homework/submit_detail";
 		}
 
@@ -282,11 +341,50 @@ public class HomeworkController {
 	// 전체 제출물 내려받기  - 교수, 압축 파일
 	@PreAuthorize("hasRole('TEACHER')")
 	@GetMapping("/submit/download/{id}")
-	public ResponseEntity<Resource> submitDownload(@PathVariable("id") Long id) {
+	public ResponseEntity<Resource> submitDownload(@PathVariable("id") Long id, Principal principal) {
+		Homework homework = hs.getHomework(id);
+		checkOwner(homework, principal);
 
+		// 학생마다 폴더 하나 (학번_이름/원본파일명)
+		ByteArrayOutputStream bos = new ByteArrayOutputStream();
+		int count = 0;
+		try (ZipOutputStream zos = new ZipOutputStream(bos, StandardCharsets.UTF_8)) {
+			Set<String> used = new HashSet<>();
+			for (Submit submit : hs.getSubmitList(homework)) {
+				String folder = submit.getStudent().getUserId() + "_" + submit.getStudent().getUserName();
+				for (FileDetail f : fs.getFileList(submit.getFileAtt())) {
+					String name = folder + "/" + f.getFileDetailRealNm();
+					for (int i = 2; !used.add(name); i++) {          // 같은 이름이면 (2), (3) ...
+						name = folder + "/(" + i + ") " + f.getFileDetailRealNm();
+					}
+					zos.putNextEntry(new ZipEntry(name));
+					try (InputStream in = fs.load(f).getInputStream()) {
+						in.transferTo(zos);
+					}
+					zos.closeEntry();
+					count++;
+				}
+			}
+		} catch (IOException e) {
+			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "압축 파일을 만들지 못했습니다.");
+		}
+		if (count == 0) {
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND, "첨부된 제출 파일이 없습니다.");
+		}
 
+		ContentDisposition cd = ContentDisposition.attachment()
+				.filename(homework.getHomeworkTitle() + "_제출물.zip", StandardCharsets.UTF_8)
+				.build();
+		return ResponseEntity.ok()
+				.contentType(MediaType.APPLICATION_OCTET_STREAM)
+				.header(HttpHeaders.CONTENT_DISPOSITION, cd.toString())
+				.body(new ByteArrayResource(bos.toByteArray()));
+	}
 
-		return null;
+	// 첨부파일 안내 문구 (허용 형식 · 개수)
+	private void addFileHint(Model model) {
+		model.addAttribute("allowedExt", String.join(", ", FileService.ALLOWED.stream().sorted().toList()));
+		model.addAttribute("maxFiles", FileService.MAX_FILES);
 	}
 
 	// ===== 권한 확인 =====

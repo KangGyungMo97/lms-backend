@@ -43,6 +43,8 @@
         <span>제출일 <span th:text="${#temporals.format(submit.submitDate, 'yyyy-MM-dd HH:mm')}">2026-10-05 14:20</span></span>
       </div>
       <div class="post-content" th:text="${submit.submitContent}">제출 내용</div>
+      <!-- 학생이 올린 첨부파일 -->
+      <div th:replace="~{fragments/files :: list(${submitFiles})}"></div>
     </div>
 
     <!-- 채점 폼 (이미 채점했으면 기존 값이 채워져 있음 → 다시 저장하면 수정) -->

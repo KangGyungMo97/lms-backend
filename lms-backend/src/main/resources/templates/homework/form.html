@@ -34,7 +34,7 @@
 
     <!-- action 을 비워 두면 지금 주소로 POST 됨
          → /homework/create 에서 열면 등록, /homework/modify/{id} 에서 열면 수정 (화면 하나로 같이 씀) -->
-    <form th:object="${homeworkForm}" method="post">
+    <form th:object="${homeworkForm}" method="post" enctype="multipart/form-data">
       <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
 
       <div class="errors" th:if="${#fields.hasAnyErrors()}">
@@ -76,7 +76,12 @@
             <textarea id="content" th:field="*{content}" maxlength="1000" placeholder="과제 내용과 제출 방법을 입력하세요."></textarea>
           </div>
         </div>
-        <!-- 첨부파일(P3)은 FileService 완성 후 여기에 추가 -->
+        <div class="row">
+          <label>첨부파일</label>
+          <div class="field">
+            <div th:replace="~{fragments/files :: input(${maxFiles}, ${allowedExt})}"></div>
+          </div>
+        </div>
       </div>
 
       <div class="actions">

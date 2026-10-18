@@ -1,6 +1,11 @@
 package com.hitech.lms.domain.study;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.springframework.web.multipart.MultipartFile;
+
 
 import org.springframework.format.annotation.DateTimeFormat;
 
@@ -32,4 +37,7 @@ public class HomeworkForm {
 	@DateTimeFormat(pattern = "yyyy-MM-dd")
 	private LocalDate endDate;
 
+
+	// 첨부파일 (여러 개 선택 가능, 안 골라도 됨) - <input type="file" name="files" multiple>
+	private List<MultipartFile> files = new ArrayList<>();
 }

@@ -19,6 +19,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.hitech.lms.domain.course.Lesson;
 import com.hitech.lms.domain.course.LessonRepository;
+import com.hitech.lms.domain.file.FileAtt;
 import com.hitech.lms.domain.user.Users;
 import com.hitech.lms.global.error.DataNotFoundException;
 
@@ -61,7 +62,7 @@ public class HomeworkService {
 
 	// 등록 - lessonId 로 수업 찾아서 넣고 저장
 	@Transactional
-	public void create(Long lessonId, String title, String content, LocalDate startDate, LocalDate endDate) {
+	public void create(Long lessonId, String title, String content, LocalDate startDate, LocalDate endDate, FileAtt fileAtt) {
 		Lesson lesson = lr.findById(lessonId)
 				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "수업을 찾을 수 없습니다."));
 
@@ -71,6 +72,7 @@ public class HomeworkService {
 		homework.setHomeworkContent(content);
 		homework.setHomeworkStartDate(startDate);
 		homework.setHomeworkEndDate(endDate);
+		homework.setFileAtt(fileAtt);         // 첨부파일 (없으면 null)
 		hr.save(homework);
 	}
 
@@ -124,7 +126,7 @@ public class HomeworkService {
 
 	// 제출 - 제출일 now, submit_is_done = "Y"
 	@Transactional
-	public void createSubmit(Homework homework, String content, Users student) {
+	public void createSubmit(Homework homework, String content, Users student, FileAtt fileAtt) {
 
 		Submit submit = new Submit();
 
@@ -133,6 +135,7 @@ public class HomeworkService {
 		submit.setSubmitContent(content);
 		submit.setSubmitDate(LocalDateTime.now());
 		submit.setSubmitIsDone("Y");          // 제출완료
+		submit.setFileAtt(fileAtt);           // 첨부파일 (없으면 null)
 
 		sr.save(submit);
 	}
