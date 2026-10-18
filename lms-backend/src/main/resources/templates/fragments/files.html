@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!-- 첨부파일 공통 조각 (과제 · 제출물)
+     ① 목록:  <div th:replace="~{fragments/files :: list(${homeworkFiles})}"></div>
+     ② 선택칸: <div th:replace="~{fragments/files :: input(${maxFiles}, ${allowedExt})}"></div>
+        ※ 선택칸을 쓰는 form 에는 enctype="multipart/form-data" 가 있어야 함 -->
+
+<!-- ① 첨부파일 목록 (없으면 아무것도 안 나옴) -->
+<div th:fragment="list(files)" class="file-list" th:if="${files != null and !#lists.isEmpty(files)}">
+  <style>
+    /* white-space: normal → 감싸는 칸(dd · post-content)의 pre-wrap 때문에 줄바꿈 · 공백이 그대로 보이는 것 방지 */
+    .file-list { display: inline-block; min-width: 260px; max-width: 100%; margin: 8px 0 0; padding: 8px 12px;
+                 background: #f7f9fc; border: 1px solid #e3e6eb; border-radius: 6px; white-space: normal; line-height: 1.5; }
+    dd:has(> .file-list) { white-space: normal; }        /* 내 제출 내역 칸 안에서 위쪽 빈 줄 없애기 */
+    dd > .file-list { margin-top: 0; }
+    .file-list .fl-title { font-size: 12px; font-weight: 700; color: #1f3a5f; margin: 0 0 4px; }
+    .file-list ul { list-style: none; margin: 0; padding: 0; }
+    .file-list li { padding: 2px 0; font-size: 14px; }
+    .file-list a { color: #2f6fd6; text-decoration: none; }
+    .file-list a:hover { text-decoration: underline; }
+    .file-list .size { color: #999; font-size: 12px; margin-left: 6px; }
+  </style>
+  <div class="fl-title" th:text="|첨부파일 ${#lists.size(files)}개|">첨부파일 2개</div>
+  <ul>
+    <li th:each="f : ${files}">
+      📎 <a th:href="@{|/file/download/${f.fileDetailId}|}" th:text="${f.fileDetailRealNm}">과제안내.pdf</a>
+      <span class="size" th:text="${f.fileDetailSize ge 1048576}
+            ? |${#numbers.formatDecimal(f.fileDetailSize / 1048576.0, 1, 1)} MB|
+            : |${#numbers.formatDecimal(f.fileDetailSize / 1024.0, 1, 1)} KB|">120.5 KB</span>
+    </li>
+  </ul>
+</div>
+
+<!-- ② 파일 선택칸 -->
+<div th:fragment="input(maxFiles, allowedExt)" class="file-input">
+  <style>
+    .file-input input[type=file] { display: block; width: 100%; padding: 8px; border: 1px dashed #b9c3d0; border-radius: 6px; background: #fafbfd; font-size: 14px; }
+    .file-input .hint { margin: 6px 0 0; font-size: 12px; color: #888; line-height: 1.6; }
+  </style>
+  <input type="file" name="files" multiple>
+  <p class="hint">
+    최대 <b th:text="${maxFiles}">5</b>개 · 파일 1개 20MB, 전체 50MB까지<br>
+    가능한 형식: <span th:text="${allowedExt}">pdf, hwp, zip ...</span><br>
+    ※ 입력 오류로 화면이 다시 나오면 파일은 다시 선택해 주세요.
+  </p>
+</div>
+
+</body>
+</html>

@@ -20,7 +20,8 @@
     .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 12px; }
     .b-done { background: #e8f0fb; color: #1f3a5f; }   /* 제출완료 */
     .b-graded { background: #e7f5ec; color: #1e7e46; } /* 채점완료 */
-    .actions { margin-top: 16px; }
+    .actions { margin-top: 16px; display: flex; justify-content: space-between; }
+    .btn-primary { background: #1f3a5f; color: #fff; }
   </style>
 </head>
 
@@ -47,13 +48,14 @@
           <th>이름</th>
           <th style="width:170px">제출일</th>
           <th style="width:100px">상태</th>
+          <th style="width:70px">첨부</th>
           <th style="width:80px">점수</th>
           <th style="width:100px">채점</th>
         </tr>
       </thead>
       <tbody>
         <tr th:if="${submitList.isEmpty()}">
-          <td colspan="7" class="empty">아직 제출한 학생이 없습니다.</td>
+          <td colspan="8" class="empty">아직 제출한 학생이 없습니다.</td>
         </tr>
         <tr th:each="submit, loop : ${submitList}">
           <td th:text="${loop.count}">1</td>
@@ -64,6 +66,7 @@
             <span th:if="${submit.submitIsDone == 'R'}" class="badge b-graded">채점완료</span>
             <span th:unless="${submit.submitIsDone == 'R'}" class="badge b-done">제출완료</span>
           </td>
+          <td th:text="${fileCount[submit.submitId] > 0} ? |📎 ${fileCount[submit.submitId]}| : '-'">📎 2</td>
           <td th:text="${submit.submitScore != null} ? |${submit.submitScore}점| : '-'">-</td>
           <td>
             <a th:href="@{|/homework/submit/detail/${submit.submitId}|}" class="btn"
@@ -75,6 +78,9 @@
 
     <div class="actions">
       <a th:href="@{|/homework/detail/${homework.homeworkId}|}" class="btn">과제로 돌아가기</a>
+      <!-- 학생들이 올린 첨부파일을 학번_이름 폴더별로 묶어서 zip 으로 -->
+      <a th:if="${totalFiles > 0}" th:href="@{|/homework/submit/download/${homework.homeworkId}|}" class="btn btn-primary"
+         th:text="|전체 첨부파일 내려받기 (${totalFiles}개, zip)|">전체 첨부파일 내려받기</a>
     </div>
 
   </div>

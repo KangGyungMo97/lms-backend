@@ -57,6 +57,8 @@
       </div>
       <!-- white-space: pre-wrap 으로 줄바꿈 그대로 표시, th:text 라 HTML 태그는 글자로 나옴(안전) -->
       <div class="post-content" th:text="${homework.homeworkContent}">과제 내용</div>
+      <!-- 과제 첨부파일 (교수가 올린 자료) -->
+      <div th:replace="~{fragments/files :: list(${homeworkFiles})}"></div>
     </div>
 
     <!-- ===== 학생: 내 제출 내역 ===== -->
@@ -73,6 +75,10 @@
         <dd th:text="${mySubmit.submitIsDone == 'R'} ? '채점완료' : '제출완료'">제출완료</dd>
         <dt>제출 내용</dt>
         <dd th:text="${mySubmit.submitContent}">내용</dd>
+        <th:block th:unless="${#lists.isEmpty(mySubmitFiles)}">
+          <dt>첨부파일</dt>
+          <dd><div th:replace="~{fragments/files :: list(${mySubmitFiles})}"></div></dd>
+        </th:block>
         <th:block th:if="${mySubmit.submitIsDone == 'R'}">
           <dt>점수</dt>
           <dd th:text="|${mySubmit.submitScore}점|">95점</dd>
@@ -83,7 +89,8 @@
 
       <!-- 과제 제출 폼: 아직 안 냈고, 마감 전일 때만 -->
       <form class="submit-form" th:if="${mySubmit == null and !closed}"
-            th:action="@{|/homework/submit/create/${homework.homeworkId}|}" th:object="${submitForm}" method="post">
+            th:action="@{|/homework/submit/create/${homework.homeworkId}|}" th:object="${submitForm}" method="post"
+            enctype="multipart/form-data">
         <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
 
         <div class="errors" th:if="${#fields.hasAnyErrors()}">
@@ -91,6 +98,7 @@
         </div>
 
         <textarea th:field="*{content}" maxlength="2000" placeholder="제출할 내용을 입력하세요."></textarea>
+        <div th:replace="~{fragments/files :: input(${maxFiles}, ${allowedExt})}"></div>
         <div class="btn-row">
           <button type="submit" class="btn btn-primary">제출</button>
         </div>
