@@ -3,7 +3,7 @@
 <body>
 
 <!--
-  오늘의 수업 카드 한 장 (대시보드 · 출석 화면에서 같이 씀)
+  오늘의 수업 카드 (학생: 출석 코드 입력 / 교수: 수업 시작 · 코드 표시) 한 장 (대시보드 · 출석 화면에서 같이 씀)
     t       : TodayClass
     teacher : true 교수 / false 학생
     back    : 실패했을 때 돌아올 화면 ('dashboard' 또는 '')
@@ -49,15 +49,19 @@
       </th:block>
 
       <th:block th:if="${t.myAtt == null}">
-        <!-- 수업 시간 + 교수가 시작함 → 참여하면 출석 / 지각 자동 기록 -->
-        <form method="post" th:if="${t.phase == 'ON' and t.started}"
-              th:action="@{|/attendance/enter/${t.course.courseId}|}">
+        <!-- 수업 시간 + 교수가 시작함 → 교수님이 알려 준 6자리 코드 입력 -->
+        <form method="post" class="tc-code" th:if="${t.phase == 'ON' and t.started and !t.locked}"
+              th:action="@{|/attendance/check/${t.course.courseId}|}">
           <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
           <input type="hidden" name="back" th:value="${back}">
-          <button type="submit" class="tc-btn">수업 참여</button>
+          <input type="text" name="code" maxlength="6" inputmode="numeric" pattern="\d{6}" autocomplete="off"
+                 placeholder="출석 코드 6자리" required aria-label="출석 코드">
+          <button type="submit" class="tc-btn">출석</button>
+          <span class="tc-hint" th:if="${t.failCount > 0}" th:text="|남은 기회 ${t.remaining}회|">남은 기회 4회</span>
         </form>
-        <span class="tc-hint" th:if="${t.phase == 'ON' and !t.started}">교수님이 수업을 시작하면 참여할 수 있어요</span>
-        <button type="button" class="tc-btn" disabled th:if="${t.phase == 'ON' and !t.started}">수업 대기</button>
+        <span class="tc-state N" th:if="${t.phase == 'ON' and t.started and t.locked}">입력 잠김 (5회 오류)</span>
+        <span class="tc-hint" th:if="${t.phase == 'ON' and !t.started}">교수님이 수업을 시작하면 코드를 입력할 수 있어요</span>
+        <button type="button" class="tc-btn" disabled th:if="${t.phase == 'ON' and !t.started}">출석 대기</button>
         <button type="button" class="tc-btn" disabled th:if="${t.phase == 'BEFORE'}"
                 th:text="|${t.startLabel} 시작|">10:00 시작</button>
         <span class="tc-state N" th:if="${t.phase == 'END' and t.started}">결석</span>
@@ -66,6 +70,8 @@
 
     <!-- ===== 교수 ===== -->
     <th:block th:if="${teacher}">
+      <!-- 진행 중이면 출석 코드를 바로 보여 줌 (학생에게 알려 줄 번호) -->
+      <span class="tc-codechip" th:if="${t.started and t.phase == 'ON'}">코드 <b th:text="${t.attSession.code}">048213</b></span>
       <a class="tc-btn" th:if="${t.started}" th:classappend="${t.phase == 'END'} ? 'line'"
          th:href="@{|/attendance/session/${t.attSession.lesson.lessonId}|}"
          th:text="|출석 현황 ${t.attendCount}/${t.rosterCount}|">출석 현황 12/28</a>

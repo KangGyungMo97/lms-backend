@@ -23,9 +23,10 @@ public class TodayClass {
 	private final Att myAtt;             // 학생 - 내 출석 기록 (없으면 null)
 	private final int attendCount;       // 교수 - 출석 + 지각 인원
 	private final int rosterCount;       // 교수 - 수강 인원
+	private final int failCount;         // 학생 - 코드 틀린 횟수 (MAX_FAIL 이면 잠김)
 
 	public TodayClass(Course course, ClassClock.Slot slot, Lesson lesson, int lessonNo,
-			AttSession attSession, Att myAtt, int attendCount, int rosterCount) {
+			AttSession attSession, Att myAtt, int attendCount, int rosterCount, int failCount) {
 		this.course = course;
 		this.slot = slot;
 		this.lesson = lesson;
@@ -34,6 +35,17 @@ public class TodayClass {
 		this.myAtt = myAtt;
 		this.attendCount = attendCount;
 		this.rosterCount = rosterCount;
+		this.failCount = failCount;
+	}
+
+	// 학생 - 코드 5회 틀려서 잠김
+	public boolean isLocked() {
+		return failCount >= AttService.MAX_FAIL;
+	}
+
+	// 학생 - 남은 기회
+	public int getRemaining() {
+		return Math.max(0, AttService.MAX_FAIL - failCount);
 	}
 
 	public String getPhase() {
