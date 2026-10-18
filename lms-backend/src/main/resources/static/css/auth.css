@@ -1,0 +1,161 @@
+/* =========================================================
+   로그인 · 아이디 찾기 · 비밀번호 찾기 공통 (레이아웃 없는 단독 화면)
+   - 왼쪽: 학교 마크 + 폼 / 오른쪽: 그림 (fragments/auth.html)
+   ========================================================= */
+:root {
+  --navy: #1f3a5f;
+  --navy-dark: #162b47;
+  --accent: #2f6fd6;
+  --text: #1d2430;
+  --sub: #6b7480;
+  --line: #d9dee5;
+  --side: #dfe6f6;          /* 오른쪽 그림 배경 */
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body {
+  font-family: 'Pretendard', 'Malgun Gothic', '맑은 고딕', sans-serif;
+  display: flex; min-height: 100vh; background: #fff; color: var(--text);
+}
+
+/* ===== 왼쪽: 로그인 폼 ===== */
+.form-side { flex: 0 0 46%; display: flex; flex-direction: column; padding: 20px clamp(24px, 3vw, 64px) 28px; }
+.top { display: flex; align-items: center; gap: 16px; }
+.top .school { height: clamp(42px, 2.8vw, 56px); width: auto; display: block; }   /* 여백 잘라낸 로고 */
+.top .bar { width: 1px; height: 34px; background: var(--line); }
+.top .dept { font-size: clamp(15px, 1vw, 18px); font-weight: 600; line-height: 1; color: #3a4350; white-space: nowrap; padding-top: 5px; }   /* 로고 글자 줄에 맞춤 */
+
+.login { width: 100%; max-width: clamp(380px, 28vw, 540px); margin: auto; padding: 40px 0; }   /* 화면이 넓을수록 커짐 */
+.login h1 { display: flex; align-items: center; gap: 12px; margin: 0 0 10px;
+            font-size: clamp(30px, 2.4vw, 46px); font-weight: 800; letter-spacing: -1px; color: var(--navy); white-space: nowrap; }
+.login h1 .title-icon { width: 1.15em; height: 1.15em; border-radius: .28em; }
+.login .sub { margin: 0 0 clamp(26px, 2vw, 40px); color: var(--sub); font-size: clamp(14px, 1vw, 18px); }
+
+.field { margin-bottom: 14px; }
+.field label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }  /* 화면에는 안 보이고 읽어 주기용 */
+.field input {
+  width: 100%; height: clamp(46px, 3.3vw, 60px); padding: 0 16px; font-size: clamp(14px, 1vw, 17px); font-family: inherit; color: var(--text);
+  background: #fff; border: 1px solid var(--line); border-radius: 8px; outline: none;
+  transition: border-color .15s, box-shadow .15s;
+}
+.field input::placeholder { color: #a3abb5; }
+.field input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(47, 111, 214, .15); }
+
+.row { display: flex; justify-content: space-between; align-items: center; margin: 2px 0 clamp(20px, 1.6vw, 30px); font-size: clamp(13px, .9vw, 16px); }
+.save { display: inline-flex; align-items: center; gap: 8px; color: var(--text); cursor: pointer; }
+.save input { width: 16px; height: 16px; accent-color: var(--navy); }
+.row a { color: var(--accent); font-weight: 600; text-decoration: none; }
+.row a:hover { text-decoration: underline; }
+
+.btn-login {
+  width: 100%; height: clamp(48px, 3.4vw, 62px); border: none; border-radius: 8px; cursor: pointer;
+  background: var(--navy); color: #fff; font-size: clamp(15px, 1.05vw, 18px); font-weight: 700; font-family: inherit;
+  transition: background .15s;
+}
+.btn-login:hover { background: var(--accent); }
+
+.finds { display: flex; align-items: center; justify-content: center; gap: 14px;
+         margin-top: clamp(18px, 1.4vw, 26px); font-size: clamp(13px, .95vw, 16px); }
+.finds a { color: var(--sub); text-decoration: none; }
+.finds a:hover { color: var(--navy); text-decoration: underline; }
+.finds .sep { width: 1px; height: 12px; background: var(--line); }
+
+.foot { margin-top: clamp(22px, 1.8vw, 32px); font-size: clamp(13px, .9vw, 16px); line-height: 1.8; color: var(--sub); }
+.foot b { color: var(--accent); }
+
+.msg { padding: 11px 14px; border-radius: 8px; margin-bottom: 18px; font-size: 14px; font-weight: 600; }
+.msg.error { background: #fdecec; border: 1px solid #f5b5b5; color: #c0392b; }
+.msg.ok { background: #e9f7ef; border: 1px solid #a9dfbf; color: #1e7e46; }
+
+.copy { font-size: 12px; color: #a3abb5; }
+
+/* ===== 오른쪽: 그림 ===== */
+.art-side { flex: 1; display: flex; align-items: center; justify-content: center; background: var(--side); padding: 40px; }
+.art-side svg { width: 100%; max-width: clamp(520px, 42vw, 880px); height: auto; }   /* 화면이 넓을수록 커짐 */
+
+/* ===== 좁은 화면: 그림 숨김 ===== */
+@media (max-width: 900px) {
+  .top { gap: 12px; }
+  .top .school { height: 36px; }
+  .top .dept { font-size: 15px; }
+  .top .bar { height: 26px; }
+  .login h1 { font-size: 26px; }
+  .login h1 .title-icon { width: 34px; height: 34px; }
+  .art-side { display: none; }
+  .form-side { flex: 1; padding: 24px 20px; }
+  .login { margin: 24px auto; }
+  .login h1 { font-size: 30px; }
+}
+
+/* =========================================================
+   아이디 찾기 · 비밀번호 찾기 (find_id.html, find_pw.html)
+   ========================================================= */
+.back { display: inline-flex; align-items: center; gap: 6px; margin-bottom: 18px; font-size: 14px; color: var(--sub); text-decoration: none; }
+.back:hover { color: var(--navy); }
+.login h1.small { font-size: clamp(26px, 2vw, 38px); }
+
+/* 탭: 아이디 찾기 | 비밀번호 찾기 */
+.tabs { display: grid; grid-template-columns: 1fr 1fr; margin-bottom: 22px; border-bottom: 1px solid var(--line); }
+.tabs a { padding: 12px 0; text-align: center; font-size: clamp(14px, 1vw, 17px); font-weight: 600; color: var(--sub);
+          text-decoration: none; border-bottom: 3px solid transparent; margin-bottom: -1px; }
+.tabs a:hover { color: var(--navy); }
+.tabs a.on { color: var(--navy); border-bottom-color: var(--navy); }
+
+/* 단계 표시 */
+.steps { display: flex; align-items: center; gap: 8px; list-style: none; margin: 0 0 22px; padding: 0; font-size: clamp(12px, .85vw, 14px); color: #a3abb5; }
+.steps li { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+.steps li + li::before { content: ""; width: 18px; height: 1px; background: var(--line); margin-right: 2px; }
+.steps b { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%;
+           background: #eef1f5; color: #a3abb5; font-size: 12px; }
+.steps li.on { color: var(--navy); font-weight: 700; }
+.steps li.on b { background: var(--navy); color: #fff; }
+.steps li.done b { background: #dbe6f8; color: var(--accent); }
+
+.guide { margin: 0 0 18px; font-size: clamp(13px, .95vw, 15px); color: var(--sub); line-height: 1.6; }
+
+/* 이름이 보이는 입력칸 */
+.field.show label { position: static; width: auto; height: auto; overflow: visible; clip: auto;
+                    display: block; margin-bottom: 6px; font-size: clamp(13px, .95vw, 15px); font-weight: 700; color: var(--text); }
+.field.show label .req { color: #e5484d; margin-left: 2px; }
+.field input:disabled, .field input[readonly] { background: #f3f5f8; color: #7a838e; }
+
+/* 학생 / 교수 선택 */
+.roles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 4px 0 22px; }
+.roles label { position: relative; cursor: pointer; }
+.roles input { position: absolute; opacity: 0; }
+.roles span { display: flex; align-items: center; justify-content: center; height: clamp(44px, 3vw, 54px); border: 1px solid var(--line);
+              border-radius: 8px; font-size: clamp(14px, 1vw, 16px); color: var(--sub); transition: all .15s; }
+.roles input:checked + span { border-color: var(--navy); background: #eef3fb; color: var(--navy); font-weight: 700; }
+.roles input:focus-visible + span { box-shadow: 0 0 0 3px rgba(47, 111, 214, .2); }
+
+/* 입력칸 + 작은 버튼 한 줄 */
+.inline { display: flex; gap: 8px; align-items: stretch; }
+.inline input { flex: 1; min-width: 0; }
+.inline .timer { align-self: center; min-width: 46px; font-weight: 700; color: #c0392b; font-size: 14px; }
+.btn-sub {
+  flex-shrink: 0; padding: 0 16px; border: 1px solid var(--navy); border-radius: 8px; background: #fff; color: var(--navy);
+  font-size: clamp(13px, .95vw, 15px); font-weight: 600; font-family: inherit; cursor: pointer; white-space: nowrap;
+}
+.btn-sub:hover { background: #eef3fb; }
+.btn-sub:disabled { border-color: var(--line); color: #b3bac3; background: #f6f7f9; cursor: default; }
+.hint { margin: 6px 0 0; font-size: 12px; color: #8b939d; }
+.hint.err { color: #c0392b; font-weight: 600; }
+
+/* 버튼 두 개 (이전 · 다음 / 취소 · 확인) */
+.btns { display: flex; gap: 10px; margin-top: 22px; }
+.btns > * { flex: 1; }
+.btns form { margin: 0; }
+.btns form button { width: 100%; }
+.btn-line {
+  display: flex; align-items: center; justify-content: center; width: 100%; height: clamp(48px, 3.4vw, 62px);
+  border: 1px solid var(--line); border-radius: 8px; background: #fff; color: var(--text);
+  font-size: clamp(15px, 1.05vw, 18px); font-weight: 600; font-family: inherit; text-decoration: none; cursor: pointer;
+}
+.btn-line:hover { border-color: var(--navy); color: var(--navy); }
+.btn-login:disabled { background: #b7c0cc; cursor: default; }
+
+/* 아이디 찾기 결과 */
+.result { margin: 0 0 8px; padding: 22px; border: 1px solid #cfe0f7; border-radius: 10px; background: #f4f8fe; text-align: center; }
+.result p { margin: 0 0 12px; color: var(--sub); font-size: clamp(13px, .95vw, 15px); }
+.result ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.result li { font-size: clamp(22px, 1.8vw, 30px); font-weight: 800; letter-spacing: 1px; color: var(--navy); }

@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+
+<head>
+  <title>교육과정 상세</title>
+  <link rel="stylesheet" th:href="@{/css/about.css}">
+</head>
+
+<body>
+  <section layout:fragment="page-head">
+    <div th:replace="~{fragments/page_head :: head('교육과정 상세', '학과 안내', '교육과정 안내')}"></div>
+  </section>
+
+  <!-- 교육과정 상세 - 정적 화면 (?id= 번호로 static/js/curriculum-data.js 에서 찾아 표시) -->
+  <div layout:fragment="content">
+
+    <div class="ab-detail">
+      <div class="ab-img">과정 대표 이미지</div>
+      <div>
+        <span class="ab-tag" id="dField">정보기술</span>
+        <span class="ab-tag green" id="dSem">2026-2학기 운영</span>
+        <h2 id="dTitle">데이터베이스 설계와 SQL 실무</h2>
+        <table class="ab-info">
+          <tr><th>담당 교수</th><td id="dTeacher"></td><th>교육 대상</th><td id="dTarget"></td></tr>
+          <tr><th>교육기간</th><td id="dPeriod"></td><th>총 시수</th><td id="dHours"></td></tr>
+          <tr><th>수업 시간</th><td id="dTime" colspan="3"></td></tr>
+          <tr><th>수료 기준</th><td id="dCriteria" colspan="3"></td></tr>
+        </table>
+        <div class="ab-actions">
+          <a class="ab-btn primary" th:href="@{/timetable}">시간표 보기</a>
+          <a class="ab-btn" th:href="@{/about/curriculum}">목록</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="ab-tabs" id="tabs">
+      <button type="button" class="active" data-tab="tIntro">과정 소개</button>
+      <button type="button" data-tab="tPlan">커리큘럼</button>
+      <button type="button" data-tab="tEval">평가 기준</button>
+    </div>
+
+    <!-- 과정 소개 탭: 소개 + 커리큘럼을 같이 보여 줌 (화면정의서 기준) -->
+    <div class="ab-tabpane active" id="tIntro">
+      <h3 class="ab-title">과정 소개</h3>
+      <p id="dIntro"></p>
+      <h3 class="ab-title">커리큘럼</h3>
+      <div class="plan"></div>
+    </div>
+    <div class="ab-tabpane" id="tPlan">
+      <h3 class="ab-title">커리큘럼</h3>
+      <div class="plan"></div>
+    </div>
+    <div class="ab-tabpane" id="tEval">
+      <h3 class="ab-title">평가 기준</h3>
+      <table class="ab-table">
+        <thead><tr><th style="width:160px">항목</th><th style="width:100px">비율</th><th>내용</th></tr></thead>
+        <tbody id="dEval"></tbody>
+      </table>
+    </div>
+
+    <script th:src="@{/js/curriculum-data.js}"></script>
+    <script th:inline="none">
+      (function () {
+        function $(id) { return document.getElementById(id); }
+        function esc(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+        // ?id=3 → 3번 과정 (없으면 첫 번째)
+        var id = Number(new URLSearchParams(location.search).get('id'));
+        var c = CURRICULUM.filter(function (x) { return x.id === id; })[0] || CURRICULUM[0];
+
+        document.title = c.title + ' | Smart Learning Hub';
+        $('dField').textContent = c.field;
+        $('dSem').textContent = c.sem + '학기 운영';
+        $('dTitle').textContent = c.title;
+        $('dTeacher').textContent = c.teacher + ' (' + c.dept + ')';
+        $('dTarget').textContent = c.target;
+        $('dPeriod').textContent = c.start + ' ~ ' + c.end;
+        $('dHours').textContent = c.weeks + '주 · ' + c.hours + '시간';
+        $('dTime').textContent = c.time;
+        $('dCriteria').textContent = c.criteria;
+        $('dIntro').textContent = c.intro;
+
+        // 커리큘럼 표 (주당 시간 = 총 시수 / 주 수)
+        var perWeek = Math.round(c.hours / c.weeks) + '시간';
+        var rows = '';
+        c.plan.forEach(function (p, i) {
+          rows += '<tr><td>' + (i + 1) + '</td><td class="left">' + esc(p[0]) + '</td><td>' + perWeek + '</td><td>' + esc(p[1]) + '</td></tr>';
+        });
+        var table = '<table class="ab-table"><thead><tr><th style="width:70px">주차</th><th>학습 내용</th>'
+                  + '<th style="width:100px">시간</th><th style="width:100px">비고</th></tr></thead><tbody>' + rows + '</tbody></table>';
+        document.querySelectorAll('.plan').forEach(function (el) { el.innerHTML = table; });
+
+        var ev = '';
+        CURRICULUM_EVAL.forEach(function (e) {
+          ev += '<tr><td>' + esc(e[0]) + '</td><td>' + esc(e[1]) + '</td><td class="left">' + esc(e[2]) + '</td></tr>';
+        });
+        $('dEval').innerHTML = ev;
+
+        // 탭 전환
+        var buttons = document.querySelectorAll('#tabs button');
+        buttons.forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            buttons.forEach(function (b) { b.classList.remove('active'); });
+            document.querySelectorAll('.ab-tabpane').forEach(function (p) { p.classList.remove('active'); });
+            btn.classList.add('active');
+            $(btn.getAttribute('data-tab')).classList.add('active');
+          });
+        });
+      })();
+    </script>
+  </div>
+</body>
+
+</html>

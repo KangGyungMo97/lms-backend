@@ -6,7 +6,9 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -35,7 +37,9 @@ public class CourseController {
 	public static final Map<String, String> WEEKDAY = new LinkedHashMap<>();
 
 	static {
-		for (int i = 1; i <= 4; i++) TARGET.put(i, i + "학년");
+		TARGET.put(1, "1학년");
+		TARGET.put(2, "2학년");
+		TARGET.put(9, "하이테크과정");
 
 		String[] s = {"09:00","10:00","11:00","12:00","13:00","14:00","15:00","16:00","17:00"};
 		String[] e = {"09:50","10:50","11:50","12:50","13:50","14:50","15:50","16:50","17:50"};
@@ -58,6 +62,9 @@ public class CourseController {
 	}
 
 	private void validateRange(CourseForm f, BindingResult br) {
+		if (f.getCourseTarget() != null && !TARGET.containsKey(f.getCourseTarget())) {
+			br.rejectValue("courseTarget", "invalid", "올바른 대상을 선택하세요.");
+		}
 		if (f.getCourseStartDate() != null && f.getCourseEndDate() != null
 				&& f.getCourseEndDate().isBefore(f.getCourseStartDate())) {
 			br.rejectValue("courseEndDate", "invalid", "종료일은 시작일 이후여야 합니다.");
@@ -87,10 +94,17 @@ public class CourseController {
 	// ---------- 목록 / 상세 ----------
 	@GetMapping("/list")
 	public String list(@RequestParam(name = "page", defaultValue = "0") int page,
-	                   Principal principal, Model model) {
-		Page<Course> paging = cs.getTeacherCourses(principal.getName(), page);
+	                   Authentication auth, Model model) {
+
+		boolean teacher = auth.getAuthorities().stream()
+				.anyMatch(a -> a.getAuthority().equals("ROLE_TEACHER"));
+
+		Page<Course> paging = teacher
+				? cs.getTeacherCourses(auth.getName(), page)
+				: Page.empty(PageRequest.of(page, 10));   // 학생: 수강 관계 테이블 연결 전까지 빈 목록
+
 		model.addAttribute("paging", paging);
-		model.addAttribute("isTeacher", true);   // 임시: 실제로는 권한/역할로 판단
+		model.addAttribute("isTeacher", teacher);
 		addLabels(model);
 		return "course/list";
 	}

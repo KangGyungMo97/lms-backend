@@ -48,7 +48,6 @@ public class SubjectController {
 	}
 
 	// 과목 등록 화면 - 교수
-	@PreAuthorize("hasRole('TEACHER')")
 	@GetMapping("/create")
 	public String subjectCreate(SubjectForm subjectForm, Model model) {
 		model.addAttribute("depts", dr.findAll());
@@ -56,7 +55,6 @@ public class SubjectController {
 	}
 
 	// 과목 등록 완료 - 교수
-	@PreAuthorize("hasRole('TEACHER')")
 	@PostMapping("/create")
 	public String subjectCreate(@Valid SubjectForm subjectForm, BindingResult bindingResult,
 			Principal principal, Model model) {
@@ -75,7 +73,6 @@ public class SubjectController {
 	}
 
 	// 과목 수정 화면 - 교수
-	@PreAuthorize("hasRole('TEACHER')")
 	@GetMapping("/update/{id}")
 	public String subjectUpdate(SubjectForm subjectForm, Principal principal,
 		@PathVariable("id") String id, Model model) {
@@ -89,7 +86,6 @@ public class SubjectController {
 	}
 
 	// 과목 수정 완료 - 교수
-	@PreAuthorize("hasRole('TEACHER')")
 	@PostMapping("/update/{id}")
 	public String subjectUpdate(@Valid SubjectForm subjectForm, BindingResult bindingResult,
 		Principal principal, @PathVariable("id") String id, Model model) {
@@ -105,7 +101,6 @@ public class SubjectController {
 
 	// 과목 삭제 - 교수 (POST)
 	// [수정] 강좌(Course)가 참조 중인 과목은 FK 때문에 삭제 불가 -> 500 대신 안내 메시지
-	@PreAuthorize("hasRole('TEACHER')")
 	@PostMapping("/delete/{id}")
 	public String subjectDelete(Principal principal, @PathVariable("id") String id,
 			RedirectAttributes ra) {

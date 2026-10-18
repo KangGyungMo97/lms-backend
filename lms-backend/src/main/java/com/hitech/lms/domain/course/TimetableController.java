@@ -22,7 +22,7 @@ public class TimetableController {
 	@GetMapping("")
 	public String list(@RequestParam(name = "semester", required = false) String semester,
 	                   @RequestParam(name = "scope", defaultValue = "mine") String scope,
-	                   @RequestParam(name = "grade", required = false) String grade, // 1. 학년 파라미터 수집
+	                   @RequestParam(name = "grade", required = false) Integer grade,
 	                   Authentication auth, Model model) {
 
 		boolean teacher = auth.getAuthorities().stream()
@@ -30,18 +30,22 @@ public class TimetableController {
 		boolean all = teacher && "all".equals(scope);
 		String sem = ts.normalizeSemester(semester);
 
-		// 2. ★핵심★ ts.build 인자에 수집한 grade를 함께 던져줍니다.
-		// (기존 ts.build 메서드 시그니처에 String grade 파라미터를 추가하셔야 합니다)
-		model.addAttribute("grid", ts.build(auth.getName(), teacher, all, sem, grade));
-		
+		// 목록에 없는 값이 들어오면 비어 있는 것(전체)으로 처리
+		Integer target = (grade != null && CourseController.TARGET.containsKey(grade)) ? grade : null;
+
+		// 학생은 '전체'가 없으므로 값이 비어 있으면 첫 번째 대상(1학년)으로
+		if (!teacher && target == null) {
+			target = CourseController.TARGET.keySet().iterator().next();
+		}
+
+		model.addAttribute("grid", ts.build(auth.getName(), teacher, all, sem, target));
 		model.addAttribute("semester", sem);
 		model.addAttribute("semesters", ts.getSemesterOptions());
 		model.addAttribute("scope", all ? "all" : "mine");
 		model.addAttribute("isTeacher", teacher);
-		
-		// 3. 화면단 드롭다운에 선택 값 유지를 위해 model에 심어 전송
-		model.addAttribute("grade", grade); 
+		model.addAttribute("grade", target);                         // 선택값 유지용
 
+		model.addAttribute("targetLabels", CourseController.TARGET); // 대상 드롭다운 옵션
 		model.addAttribute("startLabels", CourseController.START);
 		model.addAttribute("endLabels", CourseController.END);
 		model.addAttribute("weekdayLabels", CourseController.WEEKDAY);

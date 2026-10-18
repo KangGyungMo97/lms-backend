@@ -46,7 +46,7 @@
 
 <body>
   <section layout:fragment="page-head">
-    <div th:replace="~{fragments/page_head :: head('시간표', '교육안내', null)}"></div>
+    <div th:replace="~{fragments/page_head :: head('시간표', '수업', null)}"></div>
   </section>
 
   <div layout:fragment="content">
@@ -65,13 +65,11 @@
 	        </select>
 	        
 	        <!-- 학년 선택 드롭다운 -->
-	        <select name="grade" onchange="this.form.submit()">
-	          <option value="" th:selected="${grade == null or grade == ''}">전체 학년</option>
-	          <option value="1" th:selected="${grade == '1'}">1학년</option>
-	          <option value="2" th:selected="${grade == '2'}">2학년</option>
-	          <option value="3" th:selected="${grade == '3'}">3학년</option>
-	          <option value="4" th:selected="${grade == '4'}">4학년</option>
-	        </select>
+			<select name="grade" onchange="this.form.submit()">
+			  <option value="" th:if="${isTeacher}" th:selected="${grade == null}">전체 선택</option>
+			  <option th:each="t : ${targetLabels}" th:value="${t.key}" th:text="${t.value}"
+			          th:selected="${grade != null and grade == t.key}"></option>
+			</select>
 	      </div>
 	      <button type="button" class="btn" onclick="window.print()">인쇄</button>
 	    </form>

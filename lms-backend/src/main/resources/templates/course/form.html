@@ -29,7 +29,7 @@
 
 <body>
   <section layout:fragment="page-head">
-    <div th:replace="~{fragments/page_head :: head(${courseId != null} ? '강의 수정' : '강의 등록', '수업참여', null)}"></div>
+    <div th:replace="~{fragments/page_head :: head(${courseId != null} ? '강의 수정' : '강의 등록', '수업', null)}"></div>
   </section>
 
   <div layout:fragment="content">
@@ -39,22 +39,22 @@
       <div class="form-box">
 
         <div class="form-row">
-          <label>과목명<span class="req">필수</span></label>
+          <label>강의명<span class="req">필수</span></label>
           <div class="field">
-            <input type="text" class="wide" th:field="*{courseTitle}" maxlength="50" placeholder="과목명을 입력하세요">
+            <input type="text" class="wide" th:field="*{courseTitle}" maxlength="50" placeholder="강의명을 입력하세요">
             <span class="error" th:if="${#fields.hasErrors('courseTitle')}" th:errors="*{courseTitle}"></span>
           </div>
         </div>
 
         <div class="form-row">
-          <label>분류 / 대상<span class="req">필수</span></label>
+          <label>과목 선택 / 학년<span class="req">필수</span></label>
           <div class="field">
             <select th:field="*{subjectId}">
-              <option value="">분류 선택</option>
+              <option value="">과목 선택</option>
               <option th:each="s : ${subjects}" th:value="${s.subjectId}" th:text="${s.subjectName}"></option>
             </select>
             <select th:field="*{courseTarget}">
-              <option value="">대상 선택</option>
+              <option value="">학년 선택</option>
               <option th:each="t : ${targetLabels}" th:value="${t.key}" th:text="${t.value}"></option>
             </select>
             <span class="error" th:if="${#fields.hasErrors('subjectId')}" th:errors="*{subjectId}"></span>

@@ -77,7 +77,7 @@
         <td th:text="${u.userId}"></td>
         <td th:text="${u.userName}"></td>
         <td th:text="${u.userRole == 'S'} ? '학생' : (${u.userRole == 'P'} ? '교수' : '관리자')"></td>
-        <td th:text="${u.dept.deptName}"></td>
+        <td th:text="${u.userRole == 'S' && (u.userGrade == null || u.userGrade == '9')} ? '하이테크과정' : (${u.userGrade != null} ? |${u.dept.deptName} ${u.userGrade}학년| : ${u.dept.deptName})">하이테크과정</td>
         <td th:text="${u.maskedTel}"></td>
         <td th:text="${u.userLastLogin != null} ? ${#temporals.format(u.userLastLogin, 'MM-dd HH:mm')} : '-'"></td>
         <td th:text="${u.statusLabel}"></td>

@@ -1,5 +1,7 @@
 package com.hitech.lms.domain.user;
 
+import java.security.Principal;
+
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -24,8 +26,12 @@ public class UserController {
 	private final PasswordFindService pfs;
 
 	// 로그인 화면 (POST /user/login 처리는 스프링 시큐리티가 해줌)
+	// 이미 로그인한 상태로 들어오면 대시보드로 보냄
 	@GetMapping("/login")
-	public String login() {
+	public String login(Principal principal) {
+		if (principal != null) {
+			return "redirect:/dashboard";
+		}
 		return "login";
 	}
 

@@ -1,0 +1,106 @@
+/* =========================================================
+   학과 안내 (과정 소개 · 교육과정 안내 · 교육과정 상세) - 정적 화면
+   색은 layout.css 의 :root 변수를 그대로 씀
+   ========================================================= */
+.ab-sec { margin-bottom: 36px; }
+.ab-title { margin: 0 0 12px; font-size: 16px; padding-left: 10px; border-left: 3px solid var(--navy); line-height: 1.2; }
+.ab-img {
+  display: flex; align-items: center; justify-content: center;
+  background: #dfe5ee; color: #8590a0; font-size: 12px;
+}
+.ab-tag { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 11px; font-weight: 600;
+          background: var(--navy-light); color: var(--navy); border: 1px solid #d5dde8; }
+.ab-tag.green { background: #2e7d32; color: #fff; border-color: #2e7d32; }
+
+/* 표 */
+table.ab-table { width: 100%; border-collapse: collapse; background: var(--white); border-top: 2px solid var(--navy); }
+.ab-table th { background: var(--navy-light); font-weight: 600; font-size: 13px; padding: 10px 8px; }
+.ab-table td { padding: 11px 8px; border-bottom: 1px solid var(--line); text-align: center; font-size: 13px; }
+.ab-table td.left { text-align: left; }
+
+/* 버튼 */
+.ab-btn { display: inline-block; padding: 9px 18px; border: 1px solid var(--navy); border-radius: 3px;
+          background: var(--white); color: var(--navy); font-size: 14px; text-decoration: none; cursor: pointer; font-family: inherit; }
+.ab-btn.primary { background: var(--navy); color: var(--white); }
+.ab-btn:hover { opacity: .9; }
+
+/* ===== 과정 소개 ===== */
+.ab-hero { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center; margin-bottom: 36px; }
+.ab-hero h2 { margin: 12px 0 14px; font-size: 26px; line-height: 1.4; color: var(--text); }
+.ab-hero p { margin: 0; color: var(--text-sub); line-height: 1.8; }
+.ab-hero .ab-img { height: 260px; }
+.ab-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 36px; }
+.ab-stat { background: var(--white); border: 1px solid var(--line); border-top: 2px solid var(--navy); padding: 16px 18px; }
+.ab-stat .label { font-size: 12px; color: var(--text-sub); }
+.ab-stat .num { margin-top: 8px; font-size: 28px; font-weight: 700; color: var(--navy); line-height: 1; }
+.ab-stat .num small { font-size: 13px; font-weight: 400; color: var(--text-sub); margin-left: 3px; }
+.ab-flow { display: grid; grid-template-columns: repeat(5, 1fr); list-style: none; margin: 0; padding: 0; }
+.ab-flow li { position: relative; }
+.ab-flow button {
+  width: 100%; padding: 12px 6px; border: 1px solid var(--line); background: var(--navy-light);
+  color: var(--navy); font-size: 14px; font-family: inherit; cursor: pointer;
+}
+.ab-flow li + li button { border-left: none; }
+.ab-flow button.active { background: var(--navy); color: var(--white); font-weight: 700; border-color: var(--navy); }
+.ab-flow-desc { background: var(--white); border: 1px solid var(--line); border-top: none; padding: 18px 20px; color: var(--text-sub); line-height: 1.7; }
+.ab-flow-desc b { color: var(--navy); }
+.ab-visit { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.ab-visit .box { background: var(--white); border: 1px solid var(--line); padding: 22px; }
+.ab-visit .box h4 { margin: 0 0 10px; font-size: 15px; }
+.ab-visit .box p { margin: 0; color: var(--text-sub); font-size: 13px; line-height: 1.8; }
+.ab-visit .ab-img { min-height: 130px; }
+
+/* ===== 교육과정 안내 (목록) ===== */
+.ab-filter { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap;
+             background: #f0f3f7; border: 1px solid var(--line); padding: 16px 18px; margin-bottom: 18px; }
+.ab-filter label { display: block; font-size: 12px; color: var(--text-sub); margin-bottom: 5px; }
+.ab-filter select, .ab-filter input, .ab-sort {
+  height: 38px; padding: 0 10px; border: 1px solid #cfd6df; border-radius: 3px; font-size: 14px; font-family: inherit; background: var(--white);
+}
+.ab-filter select { width: 150px; }
+.ab-filter .kw { flex: 1; min-width: 200px; }
+.ab-filter .kw input { width: 100%; }
+.ab-filter .ab-btn { height: 38px; padding: 0 18px; }
+.ab-listbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 13px; }
+.ab-listbar b { color: var(--navy); }
+.ab-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+.ab-card { display: block; background: var(--white); border: 1px solid var(--line); text-decoration: none; color: var(--text); transition: box-shadow .15s; }
+.ab-card:hover { box-shadow: 0 6px 16px rgba(31, 58, 95, .12); }
+.ab-card .ab-img { height: 160px; }
+.ab-card .body { padding: 14px 16px 18px; }
+.ab-card h4 { margin: 8px 0 8px; font-size: 16px; }
+.ab-card .meta { color: var(--text-sub); font-size: 12px; line-height: 1.7; }
+.ab-empty { grid-column: 1 / -1; background: var(--white); border: 1px solid var(--line); padding: 40px 0; text-align: center; color: var(--text-muted); }
+.ab-paging { display: flex; justify-content: center; gap: 4px; margin-top: 26px; }
+.ab-paging a { min-width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+               border: 1px solid var(--line); background: var(--white); text-decoration: none; font-size: 13px; color: var(--text-sub); }
+.ab-paging a.on { background: var(--navy); border-color: var(--navy); color: var(--white); font-weight: 700; }
+
+/* ===== 교육과정 상세 ===== */
+.ab-detail { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px; }
+.ab-detail .ab-img { height: 100%; min-height: 260px; }
+.ab-detail h2 { margin: 10px 0 14px; font-size: 22px; }
+table.ab-info { width: 100%; border-collapse: collapse; border-top: 2px solid var(--navy); background: var(--white); }
+.ab-info th { width: 90px; background: var(--navy-light); text-align: left; font-size: 13px; padding: 10px 12px; font-weight: 600; }
+.ab-info td { font-size: 13px; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+.ab-info tr:first-child th, .ab-info tr:first-child td { border-top: none; }
+.ab-info th { border-bottom: 1px solid var(--line); }
+.ab-actions { display: flex; gap: 8px; margin-top: 16px; }
+.ab-tabs { display: grid; grid-template-columns: repeat(3, 1fr); border-bottom: 2px solid var(--navy); margin-bottom: 22px; }
+.ab-tabs button { padding: 12px 0; border: 1px solid var(--line); border-bottom: none; background: var(--white);
+                  font-size: 14px; font-family: inherit; color: var(--text-sub); cursor: pointer; }
+.ab-tabs button + button { border-left: none; }
+.ab-tabs button.active { background: var(--navy); color: var(--white); font-weight: 700; border-color: var(--navy); }
+.ab-tabpane { display: none; }
+.ab-tabpane.active { display: block; }
+.ab-tabpane p { line-height: 1.8; color: var(--text-sub); margin: 0 0 26px; }
+
+/* ===== 좁은 화면 ===== */
+@media (max-width: 860px) {
+  .ab-hero, .ab-visit, .ab-detail { grid-template-columns: 1fr; }
+  .ab-stats { grid-template-columns: repeat(2, 1fr); }
+  .ab-cards { grid-template-columns: 1fr; }
+  .ab-flow { grid-template-columns: repeat(5, minmax(70px, 1fr)); overflow-x: auto; }
+  .ab-filter select { width: 100%; }
+  .ab-filter > div { flex: 1 1 140px; }
+}
