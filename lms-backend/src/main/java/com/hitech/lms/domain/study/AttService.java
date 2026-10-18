@@ -1,5 +1,7 @@
 package com.hitech.lms.domain.study;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -27,10 +29,11 @@ import com.hitech.lms.global.error.DataNotFoundException;
 
 import lombok.RequiredArgsConstructor;
 
-// 출석 = '수업 시간에 강의실에 들어오면 자동 기록'
-//   1) 교수가 수업 시간에 [수업 시작] → 오늘 진행할 차시의 출석 세션이 열림 (수업 끝나는 시각까지)
-//   2) 학생이 수업 시간에 [수업 참여] → 들어온 시각으로 출석(Y) / 지각(L) 자동 기록 후 차시 화면으로
-//      시작 후 10분까지 출석, 그 뒤로는 지각, 수업이 끝나면 참여 불가 (기록 없으면 출석부에서 결석)
+// 출석 = '교수가 알려 준 6자리 코드 입력'
+//   1) 교수가 수업 시간에 [수업 시작] → 오늘 진행할 차시의 출석이 열리고 6자리 코드가 생김 (수업 끝나는 시각까지)
+//   2) 학생이 그 코드를 입력 → 입력한 시각으로 출석(Y) / 지각(L) 기록
+//      시작 후 10분까지 출석, 그 뒤로는 지각, 수업이 끝나면 입력 불가 (기록 없으면 출석부에서 결석)
+//      코드를 5번 틀리면 그 수업은 잠김 (틀린 횟수는 DB 에 저장 → 로그아웃해도 유지)
 //   ※ 교수가 늦게 시작하면 '교수가 시작한 시각' 기준으로 10분
 @Service
 @RequiredArgsConstructor
@@ -39,6 +42,7 @@ public class AttService {
 
 	public static final int ENTER_BEFORE_MINUTES = 10;   // 수업 시작 10분 전부터 입장 가능
 	public static final int LATE_MINUTES = 10;           // 시작 후 10분이 지나면 지각
+	public static final int MAX_FAIL = 5;                // 코드를 틀릴 수 있는 횟수
 
 	private static final SecureRandom RANDOM = new SecureRandom();
 
@@ -49,6 +53,8 @@ public class AttService {
 	private final LessonRepository lr;
 
 	private final CourseRepository cr;
+
+	private final AttFailRepository fr;
 
 	// ===== 공통 =====
 
@@ -138,10 +144,11 @@ public class AttService {
 			int lessonNo = (lesson == null) ? 0 : indexOf(lessons, lesson) + 1;
 
 			Att myAtt = null;
-			int attendCount = 0, rosterCount = 0;
+			int attendCount = 0, rosterCount = 0, failCount = 0;
 			if (student != null) {
 				if (todaySession != null) {
 					myAtt = ar.findByStudentAndLesson(student, todaySession.getLesson()).orElse(null);
+					failCount = fr.findBySessionAndStudent(todaySession, student).map(AttFail::getFailCount).orElse(0);
 				}
 			} else {
 				rosterCount = getRoster(c).size();
@@ -151,7 +158,7 @@ public class AttService {
 							.count();
 				}
 			}
-			list.add(new TodayClass(c, slot.get(), lesson, lessonNo, todaySession, myAtt, attendCount, rosterCount));
+			list.add(new TodayClass(c, slot.get(), lesson, lessonNo, todaySession, myAtt, attendCount, rosterCount, failCount));
 		}
 		list.sort((a, b) -> a.getSlot().start().compareTo(b.getSlot().start()));
 		return list;
@@ -390,12 +397,12 @@ public class AttService {
 		ar.save(att);
 	}
 
-	// ===== 학생: 수업 참여 =====
+	// ===== 학생: 출석 코드 입력 =====
 
-	// 수업 참여 → 들어온 시각으로 출석 / 지각 자동 기록
-	//   순서: 내 강의인가 → 오늘 수업 있나 → 입장 시간인가 → 교수가 시작했나 → 이미 기록 있나 → 출석/지각 저장
+	// 코드 입력 → 맞으면 입력한 시각으로 출석 / 지각 기록
+	//   순서: 내 강의인가 → 오늘 수업 있나 → 시간인가 → 교수가 시작했나 → 이미 기록 있나 → 끝났나 → 잠겼나 → 코드 비교
 	@Transactional
-	public AttResult enter(Course course, Users student) {
+	public AttResult check(Course course, Users student, String input) {
 		if (!isTarget(course, student)) return AttResult.of(AttResult.Status.NOT_MINE);
 
 		Optional<ClassClock.Slot> slot = ClassClock.today(course);
@@ -410,7 +417,7 @@ public class AttService {
 		}
 		Lesson lesson = session.getLesson();
 
-		// 이미 기록이 있으면 다시 쓰지 않음 (교수가 수정한 기록을 덮어쓰지 않게) → 그냥 입장
+		// 이미 기록이 있으면 다시 쓰지 않음 (교수가 수정한 기록을 덮어쓰지 않게)
 		Att old = ar.findByStudentAndLesson(student, lesson).orElse(null);
 		if (old != null) {
 			boolean attended = "Y".equals(old.getAttStatus()) || "L".equals(old.getAttStatus());
@@ -418,6 +425,31 @@ public class AttService {
 		}
 
 		if (!now.isBefore(slot.get().end())) return AttResult.of(AttResult.Status.CLOSED);
+
+		AttFail fail = fr.findBySessionAndStudent(session, student).orElse(null);
+		int failCount = (fail == null) ? 0 : fail.getFailCount();
+		if (failCount >= MAX_FAIL) {
+			return AttResult.of(AttResult.Status.LOCKED);   // 잠긴 뒤에는 코드가 맞아도 출석 불가
+		}
+
+		// 코드 비교 (글자 수가 같을 때 걸리는 시간이 일정한 비교)
+		boolean match = MessageDigest.isEqual(
+				session.getCode().getBytes(StandardCharsets.UTF_8),
+				input.getBytes(StandardCharsets.UTF_8));
+
+		if (!match) {
+			if (fail == null) {
+				fail = new AttFail();
+				fail.setSession(session);
+				fail.setStudent(student);
+			}
+			fail.setFailCount(failCount + 1);
+			fr.save(fail);
+
+			int remaining = MAX_FAIL - fail.getFailCount();
+			return remaining <= 0 ? AttResult.of(AttResult.Status.LOCKED)
+					: new AttResult(AttResult.Status.WRONG, null, remaining);
+		}
 
 		// 출석 기준 = 수업 시작 시각과 교수가 시작한 시각 중 늦은 쪽 + 10분
 		LocalDateTime base = session.getOpenedAt().isAfter(slot.get().start()) ? session.getOpenedAt() : slot.get().start();
@@ -431,6 +463,38 @@ public class AttService {
 		ar.save(att);
 
 		return AttResult.of(late ? AttResult.Status.LATE : AttResult.Status.PRESENT, lesson.getLessonId());
+	}
+
+	// ===== 교수: 차시별 출석 기록 =====
+
+	// 이 과정의 차시별 출석 기록 (1차시부터) - 출석 · 지각 · 공결 · 결석 인원 + 진행일
+	public List<LessonAttRow> getLessonRows(Course course) {
+		List<Lesson> lessons = getCourseLessons(course);
+		List<AttBookRow> book = getBook(course, lessons);
+		Map<Long, LocalDate> dates = getLessonDates(course);
+		Map<Long, AttSession> sessions = getSessionMap(lessons);
+		int roster = getRoster(course).size();
+
+		List<LessonAttRow> rows = new ArrayList<>();
+		for (int i = 0; i < lessons.size(); i++) {
+			Lesson l = lessons.get(i);
+			int present = 0, late = 0, excused = 0, absent = 0;
+			for (AttBookRow r : book) {
+				String st = r.getCells().get(l.getLessonId());
+				if (st == null) continue;
+				switch (st) {
+					case "Y" -> present++;
+					case "L" -> late++;
+					case "E" -> excused++;
+					case "N" -> absent++;
+					default -> { }
+				}
+			}
+			AttSession s = sessions.get(l.getLessonId());
+			String state = (s != null && s.isOpen()) ? "ON" : (dates.containsKey(l.getLessonId()) ? "DONE" : "NONE");
+			rows.add(new LessonAttRow(l, i + 1, dates.get(l.getLessonId()), state, present, late, excused, absent, roster));
+		}
+		return rows;
 	}
 
 	// 내 출석 기록 (최근 순)
