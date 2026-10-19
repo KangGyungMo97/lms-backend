@@ -72,7 +72,7 @@
         <tbody>
           <tr th:if="${#lists.isEmpty(courseRows)}"><td colspan="6" class="sub">담당 과목이 없습니다.</td></tr>
           <tr th:each="r : ${courseRows}">
-            <td class="title"><a th:href="@{|/course/detail/${r.course.courseId}|}" th:text="${r.course.courseTitle}">데이터베이스 설계와 SQL 실무</a></td>
+            <td class="title"><a th:href="@{|/course/room/${r.course.courseId}|}" th:text="${r.course.courseTitle}">데이터베이스 설계와 SQL 실무</a></td>
             
             <!-- [안전장치 강화] targetLabels가 null이거나 인덱스가 없을 때 터지는 것을 방지합니다 -->
             <td class="hide-m sub">
@@ -96,7 +96,7 @@
                     th:text="${r.state}">진행 중</span>
             </td>
             <td>
-              <a class="mini-btn" th:href="@{|/course/detail/${r.course.courseId}|}">강의실</a>
+              <a class="mini-btn" th:href="@{|/course/room/${r.course.courseId}|}">강의실</a>
               <a class="mini-btn" th:href="@{|/attendance/book/${r.course.courseId}|}">출석부</a>
             </td>
           </tr>
