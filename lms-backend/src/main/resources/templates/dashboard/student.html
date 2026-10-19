@@ -70,13 +70,13 @@
           <tr th:if="${#lists.isEmpty(courseRows)}"><td colspan="6" class="sub">수강 중인 과목이 없습니다.</td></tr>
           <tr th:each="r : ${courseRows}">
             <td class="hide-m sub" th:text="${r.course.subject.subjectName}">정보기술</td>
-            <td class="title"><a th:href="@{|/course/detail/${r.course.courseId}|}" th:text="${r.course.courseTitle}">데이터베이스 설계와 SQL 실무</a></td>
+            <td class="title"><a th:href="@{|/course/room/${r.course.courseId}|}" th:text="${r.course.courseTitle}">데이터베이스 설계와 SQL 실무</a></td>
             <td th:text="${r.course.teacher.userName}">박○○</td>
             <td class="hide-m" th:text="${r.timeLabel}">월·수 10:00~12:50</td>
             <td class="hide-m">
               <span class="bar"><i><b th:style="|width:${r.progress}%|" style="width:72%"></b></i><span th:text="|${r.progress}%|">72%</span></span>
             </td>
-            <td><a class="mini-btn" th:href="@{|/course/detail/${r.course.courseId}|}">강의실</a></td>
+            <td><a class="mini-btn" th:href="@{|/course/room/${r.course.courseId}|}">강의실</a></td>
           </tr>
         </tbody>
       </table>
