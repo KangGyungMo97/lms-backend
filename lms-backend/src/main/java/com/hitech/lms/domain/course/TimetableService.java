@@ -13,6 +13,8 @@ import java.util.TreeSet;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.hitech.lms.domain.user.UserService;
+
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -21,7 +23,8 @@ import lombok.RequiredArgsConstructor;
 public class TimetableService {
 
 	private final CourseRepository cr;
-
+	private final UserService us;
+	
 	private record Entry(String weekday, int start, int end, TimetableGrid.Block block) {}
 
 	// ---------- 학년도/학기 ----------
@@ -49,6 +52,17 @@ public class TimetableService {
 		if (semester != null && getSemesterOptions().containsKey(semester)) return semester;
 		int[] cur = currentSemester();
 		return cur[0] + "-" + cur[1];
+	}
+	
+	public Integer getStudentTarget(String userId) {
+		String g = us.getUser(userId).getUserGrade();
+		if (g == null || g.isBlank()) return null;
+		try {
+			int code = Integer.parseInt(g.trim());
+			return CourseController.TARGET.containsKey(code) ? code : null;
+		} catch (NumberFormatException e) {
+			return null;
+		}
 	}
 
 	// ---------- 시간표 만들기 ----------

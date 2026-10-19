@@ -62,8 +62,8 @@ public class AdminService {
 		if (!List.of("S", "P", "A").contains(role)) {
 			throw new IllegalStateException("userRole:구분 값이 올바르지 않습니다.");
 		}
-		if ("S".equals(role) && !List.of("1", "2").contains(grade)) {
-			throw new IllegalStateException("userGrade:학생은 학년(1 · 2학년)을 선택해 주세요.");
+		if ("S".equals(role) && !List.of("1", "2", "9").contains(grade)) {
+			throw new IllegalStateException("userGrade:학생은 학년(1 · 2학년) 또는 하이테크과정을 선택해 주세요.");
 		}
 		if (ur.existsById(userId)) {
 			throw new IllegalStateException("userId:이미 등록된 학번/사번입니다.");

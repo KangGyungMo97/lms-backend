@@ -35,7 +35,8 @@ public class TimetableController {
 
 		// 학생은 '전체'가 없으므로 값이 비어 있으면 첫 번째 대상(1학년)으로
 		if (!teacher && target == null) {
-			target = CourseController.TARGET.keySet().iterator().next();
+			Integer mine = ts.getStudentTarget(auth.getName());
+			target = (mine != null) ? mine : CourseController.TARGET.keySet().iterator().next();
 		}
 
 		model.addAttribute("grid", ts.build(auth.getName(), teacher, all, sem, target));

@@ -1,57 +1,75 @@
 <!DOCTYPE html>
-<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{layout}">
+
 <head>
   <title th:text="${isUpdate} ? '과목 수정' : '과목 등록'">과목 등록</title>
-  <link rel="stylesheet" th:href="@{/css/lms.css}">
+  <style>
+    .form-box { background: #fff; border-top: 2px solid #1f3a5f; padding: 20px 16px; }
+    .row { display: flex; margin-bottom: 14px; }
+    .row label { width: 100px; padding-top: 8px; font-weight: bold; font-size: 14px; }
+    .row label .req { color: #c0392b; font-size: 12px; }
+    .row .field { flex: 1; }
+    .row input, .row select { width: 100%; padding: 8px 10px; border: 1px solid #ccc; border-radius: 4px;
+           font-family: inherit; font-size: 14px; box-sizing: border-box; background: #fff; }
+    .row input[readonly] { background: #f2f4f7; color: #666; }
+    .errors { background: #fdecea; color: #c0392b; border-radius: 4px; padding: 10px 14px; margin-bottom: 14px; font-size: 14px; }
+    .errors p { margin: 2px 0; }
+    .actions { display: flex; justify-content: space-between; margin-top: 16px; }
+    .btn { display: inline-block; padding: 7px 14px; border: 1px solid #1f3a5f; border-radius: 4px;
+           background: #fff; color: #1f3a5f; text-decoration: none; font-size: 14px; font-family: inherit; cursor: pointer; }
+    .btn-primary { background: #1f3a5f; color: #fff; }
+  </style>
 </head>
+
 <body>
-<main layout:fragment="content">
-  <div class="page-head">
-    <h1 th:text="${isUpdate} ? '과목 수정' : '과목 등록'">과목 등록</h1>
-    <div class="breadcrumb">홈 &gt; 교육안내 &gt; <b th:text="${isUpdate} ? '과목 수정' : '과목 등록'">과목 등록</b></div>
+  <div layout:fragment="content">
+
+    <h2 th:text="${isUpdate} ? '과목 수정' : '과목 등록'">과목 등록</h2>
+
+    <!-- 등록: /subject/create , 수정: /subject/update/{id} (th:action 이 CSRF 토큰 자동 삽입) -->
+    <form th:object="${subjectForm}"
+          th:action="${isUpdate} ? @{|/subject/update/*{subjectId}|} : @{/subject/create}"
+          method="post">
+
+      <div class="errors" th:if="${#fields.hasAnyErrors()}">
+        <p th:each="err : ${#fields.allErrors()}" th:text="${err}">오류 메시지</p>
+      </div>
+
+      <div class="form-box">
+        <div class="row">
+          <label for="subjectId">과목 코드 <span class="req">*</span></label>
+          <div class="field">
+            <!-- 수정 시 PK 변경 불가: disabled 가 아니라 readonly (disabled 면 값이 전송 안 돼서 검증 실패) -->
+            <input type="text" id="subjectId" th:field="*{subjectId}" maxlength="20"
+                   th:readonly="${isUpdate}" placeholder="예) DB101">
+          </div>
+        </div>
+        <div class="row">
+          <label for="subjectName">과목명 <span class="req">*</span></label>
+          <div class="field">
+            <input type="text" id="subjectName" th:field="*{subjectName}" maxlength="50" placeholder="과목명을 입력하세요">
+          </div>
+        </div>
+        <div class="row">
+          <label for="deptId">학과 <span class="req">*</span></label>
+          <div class="field">
+            <select id="deptId" th:field="*{deptId}">
+              <option value="">-- 학과 선택 --</option>
+              <option th:each="d : ${depts}" th:value="${d.deptId}" th:text="${d.deptName}"></option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <a class="btn" th:href="${isUpdate} ? @{|/subject/detail/*{subjectId}|} : @{/subject/list}">취소</a>
+        <button type="submit" class="btn btn-primary" th:text="${isUpdate} ? '수정' : '등록'">등록</button>
+      </div>
+    </form>
+
   </div>
-
-  <!-- 등록: /subject/create , 수정: /subject/update/{id} (th:action 이 CSRF 토큰 자동 삽입) -->
-  <form th:object="${subjectForm}"
-        th:action="${isUpdate} ? @{|/subject/update/*{subjectId}|} : @{/subject/create}"
-        method="post">
-
-    <table class="form-table">
-      <tr>
-        <th>과목 코드<span class="req">*</span></th>
-        <td>
-          <!-- 수정 시 PK 변경 불가: disabled 가 아니라 readonly (disabled 면 값이 전송 안 돼서 검증 실패) -->
-          <input type="text" th:field="*{subjectId}" maxlength="20"
-                 th:readonly="${isUpdate}" placeholder="예) DB101">
-          <div class="field-error" th:if="${#fields.hasErrors('subjectId')}" th:errors="*{subjectId}"></div>
-        </td>
-      </tr>
-      <tr>
-        <th>과목명<span class="req">*</span></th>
-        <td>
-          <input type="text" th:field="*{subjectName}" maxlength="50" placeholder="과목명을 입력하세요">
-          <div class="field-error" th:if="${#fields.hasErrors('subjectName')}" th:errors="*{subjectName}"></div>
-        </td>
-      </tr>
-      <tr>
-        <th>학과<span class="req">*</span></th>
-        <td>
-          <select th:field="*{deptId}">
-            <option value="">-- 학과 선택 --</option>
-            <option th:each="d : ${depts}" th:value="${d.deptId}" th:text="${d.deptName}"></option>
-          </select>
-          <div class="field-error" th:if="${#fields.hasErrors('deptId')}" th:errors="*{deptId}"></div>
-        </td>
-      </tr>
-    </table>
-
-    <div class="btn-area">
-      <a class="btn btn-gray" th:href="${isUpdate} ? @{|/subject/detail/*{subjectId}|} : @{/subject/list}">취소</a>
-      <button type="submit" class="btn btn-primary" th:text="${isUpdate} ? '수정' : '등록'">등록</button>
-    </div>
-  </form>
-</main>
 </body>
 </html>
