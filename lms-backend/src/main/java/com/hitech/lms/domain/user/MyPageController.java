@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import com.hitech.lms.domain.course.CourseController;
+
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
@@ -92,5 +94,17 @@ public class MyPageController {
 		String b = u.getUserBday();   // 20070315 -> 2007-03-15
 		model.addAttribute("bdayText",
 				b == null ? "-" : (b.length() == 8 ? b.substring(0, 4) + "-" + b.substring(4, 6) + "-" + b.substring(6) : b));
+
+		// 학과 / 학년 표시
+		//  - 1·2학년: 스마트소프트웨어과 2학년
+		//  - 하이테크과정: 학과명 없이 하이테크과정
+		//  - 교수·관리자(학년 없음): 스마트소프트웨어과
+		String deptGrade = u.getDept().getDeptName();
+		String g = u.getUserGrade();
+		if (g != null && g.matches("\\d")) {
+			String label = CourseController.TARGET.getOrDefault(Integer.valueOf(g), g + "학년");
+			deptGrade = label.endsWith("학년") ? deptGrade + " " + label : label;   // '학년'이 아니면 과정이라 학과명 생략
+		}
+		model.addAttribute("deptGradeLabel", deptGrade);
 	}
 }
