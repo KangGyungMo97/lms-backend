@@ -25,42 +25,42 @@ body {
 .top .bar { width: 1px; height: 34px; background: var(--line); }
 .top .dept { font-size: clamp(15px, 1vw, 18px); font-weight: 600; line-height: 1; color: #3a4350; white-space: nowrap; padding-top: 5px; }   /* 로고 글자 줄에 맞춤 */
 
-.login { width: 100%; max-width: clamp(380px, 28vw, 540px); margin: auto; padding: 40px 0; }   /* 화면이 넓을수록 커짐 */
+.login { width: 100%; max-width: clamp(340px, 24vw, 460px); margin: auto; padding: 40px 0; }   /* 화면이 넓을수록 커짐 */
 .login h1 { display: flex; align-items: center; gap: 12px; margin: 0 0 10px;
-            font-size: clamp(30px, 2.4vw, 46px); font-weight: 800; letter-spacing: -1px; color: var(--navy); white-space: nowrap; }
+            font-size: clamp(28px, 2.1vw, 40px); font-weight: 800; letter-spacing: -1px; color: var(--navy); white-space: nowrap; }
 .login h1 .title-icon { width: 1.15em; height: 1.15em; border-radius: .28em; }
-.login .sub { margin: 0 0 clamp(26px, 2vw, 40px); color: var(--sub); font-size: clamp(14px, 1vw, 18px); }
+.login .sub { margin: 0 0 clamp(22px, 1.7vw, 32px); color: var(--sub); font-size: clamp(14px, .9vw, 16px); }
 
 .field { margin-bottom: 14px; }
 .field label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }  /* 화면에는 안 보이고 읽어 주기용 */
 .field input {
-  width: 100%; height: clamp(46px, 3.3vw, 60px); padding: 0 16px; font-size: clamp(14px, 1vw, 17px); font-family: inherit; color: var(--text);
+  width: 100%; height: clamp(44px, 2.8vw, 52px); padding: 0 16px; font-size: clamp(14px, .9vw, 16px); font-family: inherit; color: var(--text);
   background: #fff; border: 1px solid var(--line); border-radius: 8px; outline: none;
   transition: border-color .15s, box-shadow .15s;
 }
 .field input::placeholder { color: #a3abb5; }
 .field input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(47, 111, 214, .15); }
 
-.row { display: flex; justify-content: space-between; align-items: center; margin: 2px 0 clamp(20px, 1.6vw, 30px); font-size: clamp(13px, .9vw, 16px); }
+.row { display: flex; justify-content: space-between; align-items: center; margin: 2px 0 clamp(18px, 1.4vw, 26px); font-size: clamp(13px, .85vw, 15px); }
 .save { display: inline-flex; align-items: center; gap: 8px; color: var(--text); cursor: pointer; }
 .save input { width: 16px; height: 16px; accent-color: var(--navy); }
 .row a { color: var(--accent); font-weight: 600; text-decoration: none; }
 .row a:hover { text-decoration: underline; }
 
 .btn-login {
-  width: 100%; height: clamp(48px, 3.4vw, 62px); border: none; border-radius: 8px; cursor: pointer;
-  background: var(--navy); color: #fff; font-size: clamp(15px, 1.05vw, 18px); font-weight: 700; font-family: inherit;
+  width: 100%; height: clamp(46px, 2.9vw, 54px); border: none; border-radius: 8px; cursor: pointer;
+  background: var(--navy); color: #fff; font-size: clamp(15px, .95vw, 17px); font-weight: 700; font-family: inherit;
   transition: background .15s;
 }
 .btn-login:hover { background: var(--accent); }
 
 .finds { display: flex; align-items: center; justify-content: center; gap: 14px;
-         margin-top: clamp(18px, 1.4vw, 26px); font-size: clamp(13px, .95vw, 16px); }
+         margin-top: clamp(16px, 1.2vw, 22px); font-size: clamp(13px, .85vw, 15px); }
 .finds a { color: var(--sub); text-decoration: none; }
 .finds a:hover { color: var(--navy); text-decoration: underline; }
 .finds .sep { width: 1px; height: 12px; background: var(--line); }
 
-.foot { margin-top: clamp(22px, 1.8vw, 32px); font-size: clamp(13px, .9vw, 16px); line-height: 1.8; color: var(--sub); }
+.foot { margin-top: clamp(20px, 1.5vw, 28px); font-size: clamp(13px, .85vw, 15px); line-height: 1.8; color: var(--sub); }
 .foot b { color: var(--accent); }
 
 .msg { padding: 11px 14px; border-radius: 8px; margin-bottom: 18px; font-size: 14px; font-weight: 600; }
@@ -147,9 +147,9 @@ body {
 .btns form { margin: 0; }
 .btns form button { width: 100%; }
 .btn-line {
-  display: flex; align-items: center; justify-content: center; width: 100%; height: clamp(48px, 3.4vw, 62px);
+  display: flex; align-items: center; justify-content: center; width: 100%; height: clamp(46px, 2.9vw, 54px);
   border: 1px solid var(--line); border-radius: 8px; background: #fff; color: var(--text);
-  font-size: clamp(15px, 1.05vw, 18px); font-weight: 600; font-family: inherit; text-decoration: none; cursor: pointer;
+  font-size: clamp(15px, .95vw, 17px); font-weight: 600; font-family: inherit; text-decoration: none; cursor: pointer;
 }
 .btn-line:hover { border-color: var(--navy); color: var(--navy); }
 .btn-login:disabled { background: #b7c0cc; cursor: default; }
@@ -159,3 +159,19 @@ body {
 .result p { margin: 0 0 12px; color: var(--sub); font-size: clamp(13px, .95vw, 15px); }
 .result ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 .result li { font-size: clamp(22px, 1.8vw, 30px); font-weight: 800; letter-spacing: 1px; color: var(--navy); }
+
+/* 로그인 아래 '발급 요청' 링크 */
+.foot a { color: #2f6fd6; font-weight: 700; text-decoration: none; }
+.foot a:hover { text-decoration: underline; }
+
+/* 계정 발급 요청 안내 */
+.req-steps { list-style: none; margin: 0 0 18px; padding: 0; display: flex; flex-direction: column; gap: 10px; counter-reset: rs; }
+.req-steps li { position: relative; padding: 12px 14px 12px 48px; border: 1px solid var(--line); border-radius: 8px;
+                font-size: clamp(13px, .9vw, 15px); color: var(--text); line-height: 1.55; counter-increment: rs; }
+.req-steps li::before { content: counter(rs); position: absolute; left: 14px; top: 12px; width: 22px; height: 22px; border-radius: 50%;
+                        background: var(--navy); color: #fff; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.req-steps small { display: block; color: var(--sub); font-size: 12px; }
+.contact { margin: 0 0 6px; padding: 16px 18px; border: 1px solid #cfe0f7; border-radius: 10px; background: #f4f8fe; }
+.contact dl { display: grid; grid-template-columns: 70px 1fr; gap: 6px 10px; margin: 0; font-size: clamp(13px, .9vw, 15px); }
+.contact dt { color: var(--sub); }
+.contact dd { margin: 0; font-weight: 600; color: var(--navy); }

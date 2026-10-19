@@ -35,6 +35,13 @@ public class UserController {
 		return "login";
 	}
 
+	// 계정 발급 요청 안내 (로그인 화면 '학과(관리자)에 발급 요청')
+	//   계정은 관리자가 [계정 등록]으로 만들어 줌 → 여기서는 요청 방법 · 연락처만 안내
+	@GetMapping("/request")
+	public String request() {
+		return "account_request";
+	}
+
 	// ===== 아이디(학번/사번) 찾기 =====
 
 	@GetMapping("/find-id")
