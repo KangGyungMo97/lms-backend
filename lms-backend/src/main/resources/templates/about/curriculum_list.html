@@ -52,79 +52,85 @@
       </select>
     </div>
 
-    <div class="ab-cards" id="cards" th:attr="data-detail=@{/about/curriculum/detail}"></div>
-    <div class="ab-paging" id="paging"></div>
+	<div class="ab-cards" id="cards"
+	     th:attr="data-detail=@{/about/curriculum/detail}, data-img=@{/img/curriculum/}"></div>
+	<div class="ab-paging" id="paging"></div>
 
-    <script th:src="@{/js/curriculum-data.js}"></script>
-    <script th:inline="none">
-      (function () {
-        var PER_PAGE = 6;
-        var detailUrl = document.getElementById('cards').getAttribute('data-detail');
-        var page = 1;
+	<script th:src="@{/js/curriculum-data.js}"></script>
+	<script th:inline="none">
+	  (function () {
+	    var PER_PAGE = 6;
+	    var cardsEl = document.getElementById('cards');
+	    var detailUrl = cardsEl.getAttribute('data-detail');
+	    var imgBase = cardsEl.getAttribute('data-img') || '/img/curriculum/';
+	    var IMG = { '정보기술': 'it.svg', '데이터분석': 'data.svg', '디자인': 'design.svg', '경영회계': 'biz.svg' };
+	    var page = 1;
 
-        function esc(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
-        function short(d) { return d.substring(5).replace('-', '.'); }   // 2026-09-01 → 09.01
+	    function esc(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+	    function attr(s) { return esc(s).replace(/"/g, '&quot;'); }
+	    function short(d) { return d.substring(5).replace('-', '.'); }   // 2026-09-01 → 09.01
+	    function imgFor(field) { return imgBase + (IMG[field] || 'default.svg'); }
 
-        function filtered() {
-          var field = document.getElementById('fField').value;
-          var sem = document.getElementById('fSem').value;
-          var kw = document.getElementById('fKw').value.trim();
-          var list = CURRICULUM.filter(function (c) {
-            return (!field || c.field === field) && (!sem || c.sem === sem)
-                && (!kw || c.title.indexOf(kw) >= 0 || c.teacher.indexOf(kw) >= 0);
-          });
-          var sort = document.getElementById('fSort').value;
-          list.sort(sort === 'title'
-            ? function (a, b) { return a.title.localeCompare(b.title); }
-            : function (a, b) { return b.start.localeCompare(a.start) || a.id - b.id; });
-          return list;
-        }
+	    function filtered() {
+	      var field = document.getElementById('fField').value;
+	      var sem = document.getElementById('fSem').value;
+	      var kw = document.getElementById('fKw').value.trim();
+	      var list = CURRICULUM.filter(function (c) {
+	        return (!field || c.field === field) && (!sem || c.sem === sem)
+	            && (!kw || c.title.indexOf(kw) >= 0 || c.teacher.indexOf(kw) >= 0);
+	      });
+	      var sort = document.getElementById('fSort').value;
+	      list.sort(sort === 'title'
+	        ? function (a, b) { return a.title.localeCompare(b.title); }
+	        : function (a, b) { return b.start.localeCompare(a.start) || a.id - b.id; });
+	      return list;
+	    }
 
-        function render() {
-          var list = filtered();
-          var pages = Math.max(1, Math.ceil(list.length / PER_PAGE));
-          if (page > pages) page = pages;
-          document.getElementById('total').textContent = list.length;
+	    function render() {
+	      var list = filtered();
+	      var pages = Math.max(1, Math.ceil(list.length / PER_PAGE));
+	      if (page > pages) page = pages;
+	      document.getElementById('total').textContent = list.length;
 
-          var html = '';
-          list.slice((page - 1) * PER_PAGE, page * PER_PAGE).forEach(function (c) {
-            html += '<a class="ab-card" href="' + detailUrl + '?id=' + c.id + '">'
-                  + '<div class="ab-img">과정 대표 이미지</div>'
-                  + '<div class="body"><span class="ab-tag">' + esc(c.field) + '</span>'
-                  + '<h4>' + esc(c.title) + '</h4>'
-                  + '<div class="meta">교수 ' + esc(c.teacher) + '<br>교육기간 ' + short(c.start) + ' ~ ' + short(c.end)
-                  + '<br>' + c.weeks + '주 · ' + c.hours + '시간</div></div></a>';
-          });
-          document.getElementById('cards').innerHTML = html || '<div class="ab-empty">조건에 맞는 교육과정이 없습니다.</div>';
+	      var html = '';
+	      list.slice((page - 1) * PER_PAGE, page * PER_PAGE).forEach(function (c) {
+	        html += '<a class="ab-card" href="' + detailUrl + '?id=' + c.id + '">'
+	              + '<div class="ab-img"><img src="' + imgFor(c.field) + '" alt="' + attr(c.title) + ' 대표 이미지" loading="lazy"></div>'
+	              + '<div class="body"><span class="ab-tag">' + esc(c.field) + '</span>'
+	              + '<h4>' + esc(c.title) + '</h4>'
+	              + '<div class="meta">교수 ' + esc(c.teacher) + '<br>교육기간 ' + short(c.start) + ' ~ ' + short(c.end)
+	              + '<br>' + c.weeks + '주 · ' + c.hours + '시간</div></div></a>';
+	      });
+	      document.getElementById('cards').innerHTML = html || '<div class="ab-empty">조건에 맞는 교육과정이 없습니다.</div>';
 
-          var p = '';
-          if (pages > 1) {
-            p += '<a href="#" data-p="1">«</a><a href="#" data-p="' + Math.max(1, page - 1) + '">‹</a>';
-            for (var i = 1; i <= pages; i++) p += '<a href="#" data-p="' + i + '"' + (i === page ? ' class="on"' : '') + '>' + i + '</a>';
-            p += '<a href="#" data-p="' + Math.min(pages, page + 1) + '">›</a><a href="#" data-p="' + pages + '">»</a>';
-          }
-          document.getElementById('paging').innerHTML = p;
-        }
+	      var p = '';
+	      if (pages > 1) {
+	        p += '<a href="#" data-p="1">«</a><a href="#" data-p="' + Math.max(1, page - 1) + '">‹</a>';
+	        for (var i = 1; i <= pages; i++) p += '<a href="#" data-p="' + i + '"' + (i === page ? ' class="on"' : '') + '>' + i + '</a>';
+	        p += '<a href="#" data-p="' + Math.min(pages, page + 1) + '">›</a><a href="#" data-p="' + pages + '">»</a>';
+	      }
+	      document.getElementById('paging').innerHTML = p;
+	    }
 
-        document.getElementById('paging').addEventListener('click', function (e) {
-          var p = e.target.getAttribute('data-p');
-          if (!p) return;
-          e.preventDefault();
-          page = Number(p);
-          render();
-        });
-        document.getElementById('btnSearch').addEventListener('click', function () { page = 1; render(); });
-        document.getElementById('fSort').addEventListener('change', render);
-        document.getElementById('btnReset').addEventListener('click', function () {
-          document.getElementById('fField').value = '';
-          document.getElementById('fSem').value = '2026-2';
-          document.getElementById('fKw').value = '';
-          page = 1;
-          render();
-        });
-        render();
-      })();
-    </script>
+	    document.getElementById('paging').addEventListener('click', function (e) {
+	      var p = e.target.getAttribute('data-p');
+	      if (!p) return;
+	      e.preventDefault();
+	      page = Number(p);
+	      render();
+	    });
+	    document.getElementById('btnSearch').addEventListener('click', function () { page = 1; render(); });
+	    document.getElementById('fSort').addEventListener('change', render);
+	    document.getElementById('btnReset').addEventListener('click', function () {
+	      document.getElementById('fField').value = '';
+	      document.getElementById('fSem').value = '2026-2';
+	      document.getElementById('fKw').value = '';
+	      page = 1;
+	      render();
+	    });
+	    render();
+	  })();
+	</script>
   </div>
 </body>
 

@@ -18,7 +18,9 @@
   <div layout:fragment="content">
 
     <div class="ab-detail">
-      <div class="ab-img">과정 대표 이미지</div>
+		<div class="ab-img" id="dImgBox" th:attr="data-img=@{/img/curriculum/}">
+		  <img id="dImg" th:src="@{/img/curriculum/default.svg}" alt="과정 대표 이미지">
+		</div>
       <div>
         <span class="ab-tag" id="dField">정보기술</span>
         <span class="ab-tag green" id="dSem">2026-2학기 운영</span>
@@ -72,6 +74,9 @@
         var c = CURRICULUM.filter(function (x) { return x.id === id; })[0] || CURRICULUM[0];
 
         document.title = c.title + ' | Smart Learning Hub';
+		var IMG = { '정보기술': 'it.svg', '데이터분석': 'data.svg', '디자인': 'design.svg', '경영회계': 'biz.svg' };
+		$('dImg').src = $('dImgBox').getAttribute('data-img') + (IMG[c.field] || 'default.svg');
+		$('dImg').alt = c.title + ' 대표 이미지';
         $('dField').textContent = c.field;
         $('dSem').textContent = c.sem + '학기 운영';
         $('dTitle').textContent = c.title;
