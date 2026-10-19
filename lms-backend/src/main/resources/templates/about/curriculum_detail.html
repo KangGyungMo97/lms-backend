@@ -18,7 +18,7 @@
   <div layout:fragment="content">
 
     <div class="ab-detail">
-      <div class="ab-img">과정 대표 이미지</div>
+      <div class="ab-img" id="dImg"></div>
       <div>
         <span class="ab-tag" id="dField">정보기술</span>
         <span class="ab-tag green" id="dSem">2026-2학기 운영</span>
@@ -82,6 +82,14 @@
         $('dTime').textContent = c.time;
         $('dCriteria').textContent = c.criteria;
         $('dIntro').textContent = c.intro;
+
+        // 과정 대표 이미지 (없으면 교육분야 이름을 대신 표시)
+        if (c.img) {
+          $('dImg').innerHTML = '<img src="' + c.img + '" alt="' + esc(c.title) + ' 대표 이미지">';
+        } else {
+          $('dImg').classList.add('noimg');
+          $('dImg').textContent = c.field;
+        }
 
         // 커리큘럼 표 (주당 시간 = 총 시수 / 주 수)
         var perWeek = Math.round(c.hours / c.weeks) + '시간';

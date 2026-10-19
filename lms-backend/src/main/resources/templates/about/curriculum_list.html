@@ -64,6 +64,12 @@
 
         function esc(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
         function short(d) { return d.substring(5).replace('-', '.'); }   // 2026-09-01 → 09.01
+        // 과정 대표 이미지 (없으면 교육분야 이름을 대신 표시)
+        function imgBox(c) {
+          return c.img
+            ? '<div class="ab-img"><img src="' + c.img + '" alt="' + esc(c.title) + ' 대표 이미지" loading="lazy"></div>'
+            : '<div class="ab-img noimg">' + esc(c.field) + '</div>';
+        }
 
         function filtered() {
           var field = document.getElementById('fField').value;
@@ -89,7 +95,7 @@
           var html = '';
           list.slice((page - 1) * PER_PAGE, page * PER_PAGE).forEach(function (c) {
             html += '<a class="ab-card" href="' + detailUrl + '?id=' + c.id + '">'
-                  + '<div class="ab-img">과정 대표 이미지</div>'
+                  + imgBox(c)
                   + '<div class="body"><span class="ab-tag">' + esc(c.field) + '</span>'
                   + '<h4>' + esc(c.title) + '</h4>'
                   + '<div class="meta">교수 ' + esc(c.teacher) + '<br>교육기간 ' + short(c.start) + ' ~ ' + short(c.end)
