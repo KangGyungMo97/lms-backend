@@ -20,9 +20,7 @@ public class UserCreateForm {
 	@Size(max = 20, message="이름은 20자까지 입력할 수 있습니다.")
 	private String userName;
 
-	// 비밀번호는 관리자가 입력하지 않음 → [임시 비밀번호 발급] 버튼을 눌러야 true
-	// 등록할 때 서버가 임의의 임시 비밀번호를 만들어 사용자 이메일로만 보냄 (관리자 화면에는 안 보임)
-	private boolean tempPwIssued;
+	// 비밀번호는 입력하지 않음 → 처음 비밀번호는 생년월일 8자리로 자동 설정 (AdminService.createUser)
 
 	@NotEmpty(message="이메일은 필수항목입니다.")
 	@Email(message="이메일 형식이 올바르지 않습니다.")
