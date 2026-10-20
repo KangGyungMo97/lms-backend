@@ -1,8 +1,8 @@
 package com.hitech.lms.domain.board;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
+import com.hitech.lms.domain.course.Subject;
 import com.hitech.lms.domain.file.FileAtt;
 import com.hitech.lms.domain.user.Users;
 
@@ -27,6 +27,10 @@ public class Notice {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long noticeId;
+	
+	@ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "subject_id")
+    private Subject subject; 
 
 	@Column(length = 200, nullable = false)
 	private String noticeTitle;
