@@ -105,12 +105,7 @@
                style="display:flex; gap:4px; justify-content:center; align-items:center;">
             <a class="btn" style="padding:4px 10px; font-size:12px; line-height: 1.2;"
                th:href="@{|/lesson/update/${l.lessonId}|}">수정</a>
-               
-            <form th:action="@{|/lesson/delete/${l.lessonId}|}" method="post" style="display:inline;"
-                  onsubmit="return confirm('이 수업을 삭제하시겠습니까?');">
-              <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
-              <button type="submit" class="btn btn-danger" style="padding:4px 10px; font-size:12px; line-height: 1.2;">삭제</button>
-            </form>
+		<!-- 수업삭제버튼 삭제 -->
           </div>
         </td>
       </tr>
