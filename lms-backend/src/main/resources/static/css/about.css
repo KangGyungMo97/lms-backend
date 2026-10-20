@@ -7,7 +7,12 @@
 .ab-img {
   display: flex; align-items: center; justify-content: center;
   background: #dfe5ee; color: #8590a0; font-size: 12px;
+  overflow: hidden;
 }
+/* 과정 대표 이미지: 칸을 꽉 채우고 넘치는 부분은 잘라냄 */
+.ab-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+/* 이미지가 없는 과정: 빈 칸 대신 교육분야 이름 */
+.ab-img.noimg { background: linear-gradient(135deg, #1f3a5f, #3a5f8f); color: #fff; font-size: 18px; font-weight: 700; letter-spacing: 1px; }
 .ab-tag { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 11px; font-weight: 600;
           background: var(--navy-light); color: var(--navy); border: 1px solid #d5dde8; }
 .ab-tag.green { background: #2e7d32; color: #fff; border-color: #2e7d32; }
