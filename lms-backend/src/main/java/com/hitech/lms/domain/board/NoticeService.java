@@ -1,6 +1,7 @@
 package com.hitech.lms.domain.board;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -9,12 +10,13 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.hitech.lms.global.error.DataNotFoundException;
+import com.hitech.lms.domain.course.Subject;
+import com.hitech.lms.domain.course.SubjectRepository;
 import com.hitech.lms.domain.user.Users;
+import com.hitech.lms.global.error.DataNotFoundException;
 
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -27,8 +29,9 @@ import lombok.RequiredArgsConstructor;
 public class NoticeService {
 
 	private final NoticeRepository nr;
+	private final SubjectRepository sr;
 
-	// 목록 - 최신순 + 페이징(10개) + 검색  (QuestionService.getList 참고)
+	// 목록 - 최신순 + 페이징(10개) + 검색
 	public Page<Notice> getList(int page, String kw) {
 		List<Sort.Order> sorts = new ArrayList<>();
 		sorts.add(Sort.Order.desc("noticeCreateDate"));
@@ -37,13 +40,12 @@ public class NoticeService {
 		return nr.findAllByKeyword(kw == null ? "" : kw, pageable);
 	}
 	
-
-	// 상세 - findById, 없으면 DataNotFoundException
+	// 상세 - 조회수 처리 포함
 	public Notice getNotice(Long id, HttpServletRequest request, HttpServletResponse response) {
 		Optional<Notice> on = nr.findById(id);
 		if(on.isPresent()) {
 			Notice notice = on.get();
-			Cookie oldCookie=null;
+			Cookie oldCookie = null;
 			Cookie[] cookies = request.getCookies();
 			if (cookies != null) {
 				for (Cookie cookie : cookies) {
@@ -54,21 +56,18 @@ public class NoticeService {
 				}
 			}
 			if (oldCookie != null) {
-				// 이미 읽은 게시글 목록 쿠키가 존재하는 경우
 				if (!oldCookie.getValue().contains("[" + id.toString() + "]")) {
-					// 현재 게시글 ID가 쿠키에 없다면 조회수 증가 후 쿠키에 ID 추가
 					notice.setNoticeViewCount(notice.getNoticeViewCount() + 1);
 					oldCookie.setValue(oldCookie.getValue() + "_[" + id + "]");
 					oldCookie.setPath("/");
-					oldCookie.setMaxAge(60 * 60 * 24); // 쿠키 유효기간: 하루(24시간)
+					oldCookie.setMaxAge(60 * 60 * 24); 
 					response.addCookie(oldCookie);
 				}
 			} else {
-				// 최초로 게시글 유입 쿠키가 생성되는 경우
 				notice.setNoticeViewCount(notice.getNoticeViewCount() + 1);
 				Cookie newCookie = new Cookie("noticeViewCount", "[" + id + "]");
 				newCookie.setPath("/");
-				newCookie.setMaxAge(60 * 60 * 24); // 하루
+				newCookie.setMaxAge(60 * 60 * 24); 
 				response.addCookie(newCookie);
 			}
 			nr.save(notice);
@@ -93,30 +92,51 @@ public class NoticeService {
 		}
 	}
 
-	// 작성 - 작성일 now, 작성자 넣고 저장
-	public void create(String title, String content, Users writer) {
+	// 📌 [수정 완] 첫 번째 파라미터를 Long에서 String subjectId로 변경하여 sr.findById와의 충돌 해결
+	@Transactional
+	public void create(String subjectId, String title, String content, Users writer) {
+	    Notice notice = new Notice();
+	    notice.setNoticeTitle(title);
+	    notice.setNoticeContent(content);
+	    notice.setWriter(writer);
+	    notice.setNoticeViewCount(0); 
+	    notice.setNoticeCreateDate(LocalDate.now()); 
+	    
+	    // 📌 이 줄이 들어가 있어야 데이터베이스에서 500 NULL 에러를 뱉지 않습니다!
+	    notice.setNoticeUpdateDate(LocalDate.now()); 
+	    
+	    notice.setNoticeIsUse("Y");
+	    
+	    if (subjectId != null && !subjectId.isBlank()) {
+	        Subject subject = sr.findById(subjectId)
+	            .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 과목입니다."));
+	        notice.setSubject(subject);
+	    }
+	    nr.save(notice);
+	}
+
+	// 📌 [수정 완] 첫 번째 파라미터를 Long에서 String subjectId로 변경
+	@Transactional
+	public void modify(Notice notice, String subjectId, String title, String content) {
+		notice.setNoticeTitle(title);
+		notice.setNoticeContent(content);
+		notice.setNoticeUpdateDate(LocalDate.now()); 
+
+		if (subjectId != null && !subjectId.isBlank()) {
+			Subject subject = sr.findById(subjectId)
+				.orElseThrow(() -> new IllegalArgumentException("존재하지 않는 과목입니다."));
+			notice.setSubject(subject);
+		} else {
+			notice.setSubject(null);
+		}
 		
-		Notice notice = new Notice();
-		notice.setNoticeTitle(title);
-		notice.setNoticeContent(content);
-		notice.setNoticeCreateDate(LocalDate.now());
-		notice.setNoticeUpdateDate(LocalDate.now());  // nullable=false라서 필요
-		notice.setWriter(writer);                    
-		nr.save(notice);
+		nr.save(notice); 
 	}
 
-	// 수정 - 수정일 now
-	public void modify(Notice notice, String title, String content) {
-		notice.setNoticeTitle(title);
-		notice.setNoticeContent(content);
-		notice.setNoticeUpdateDate(LocalDate.now());
-		nr.save(notice);
-	}
-
-	// 삭제 - notice_is_use 를 "N" 으로 바꿀지, 진짜 delete 할지 팀 협의
+	// 삭제
+	@Transactional
 	public void delete(Notice notice) {
 		notice.setNoticeIsUse("N");
 		nr.save(notice);
 	}
-
 }
