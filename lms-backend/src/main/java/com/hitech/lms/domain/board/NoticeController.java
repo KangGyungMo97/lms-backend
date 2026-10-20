@@ -85,21 +85,21 @@ public class NoticeController {
 		Notice notice = ns.getNotice(id);                 
 		checkWriter(notice, principal);
 		
-		// 📌 프록시 지연 로딩 객체 조회를 안전하게 수행하도록 보완 완료
 		if (notice.getSubject() != null) {
 			try {
 				noticeForm.setSubjectId(notice.getSubject().getSubjectId());
 			} catch (Exception e) {
-				// 초기화 실패 예방 방어 코드 작동
+				// 프록시 초기화 실패 예방 방어 코드
 			}
 		}
 		
 		List<Subject> subjects = ss.getList();
 		model.addAttribute("subjects", subjects);
-		model.addAttribute("mode", "modify"); // 수정 모드 플래그 명시
+		model.addAttribute("mode", "modify"); 
 		
 		noticeForm.setTitle(notice.getNoticeTitle());
 		noticeForm.setContent(notice.getNoticeContent());
+		
 		return "notice/form";
 	}
 
@@ -111,6 +111,7 @@ public class NoticeController {
 		if (bindingResult.hasErrors()) {
 			List<Subject> subjects = ss.getList();
 			model.addAttribute("subjects", subjects);
+			model.addAttribute("mode", "modify");
 			return "notice/form";
 		}
 		Notice notice = ns.getNotice(id);
@@ -120,16 +121,25 @@ public class NoticeController {
 		return "redirect:/notice/detail/" + id;
 	}
 
-	// 공지 삭제 - 교수 & 관리자 (POST)
+	// 공지 삭제 - 교수 & 관리자 (POST 방식 버그 수정 완료)
 	@PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
 	@PostMapping("/delete/{id}")
-	public String noticeDelete(Principal principal, @PathVariable("id") Long id) {
+	public String noticeDelete(Principal principal, HttpServletRequest request, @PathVariable("id") Long id) {
 		Notice notice = ns.getNotice(id);
-		checkWriter(notice, principal);   
+		
+		// 로그인 한 사용자가 관리자(ADMIN) 권한을 가졌는지 검사
+		boolean isAdmin = request.isUserInRole("ROLE_ADMIN");
+		
+		// 관리자가 아닐 때만 본인 글 검증 수행 (관리자는 타인 글 삭제 가능)
+		if (!isAdmin) {
+			checkWriter(notice, principal);   
+		}
+		
 		ns.delete(notice);
 		return "redirect:/notice/list";
 	}
 	
+	// 작성자 일치 검증 메서드
 	private void checkWriter(Notice notice, Principal principal) {
 		if (!notice.getWriter().getUserId().equals(principal.getName())) {  
 			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "수정/삭제 권한이 없습니다.");
