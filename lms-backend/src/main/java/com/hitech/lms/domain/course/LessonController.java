@@ -63,7 +63,7 @@ public class LessonController {
 			model.addAttribute("lessonContent", lessonContent);
 			return "lesson/form";
 		}
-		return "redirect:/lesson/list";
+		return "redirect:/dashboard/teacher";
 	}
 
 	// [추가] 수업 수정 화면 - 교수 (본인 수업만)

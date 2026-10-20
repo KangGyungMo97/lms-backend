@@ -10,6 +10,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.hitech.lms.domain.study.AttSessionRepository;
 import com.hitech.lms.global.error.DataNotFoundException;
 
 import lombok.RequiredArgsConstructor;
@@ -21,6 +22,8 @@ public class LessonService {
 
 	private final LessonRepository lr;
 	private final CourseRepository cr;
+	// 📌 외래키 참조 무결성 예외 해결을 위한 리포지토리 추가 주입
+	private final AttSessionRepository asr;
 
 	// 목록 - 페이징(10개)
 	public Page<Lesson> getList(int page) {
@@ -56,7 +59,6 @@ public class LessonService {
 
 		Course course = cr.findById(courseId)
 				.orElseThrow(() -> new DataNotFoundException("강좌를 찾을 수 없습니다!"));
-		// 폼 값 변조 방지: 본인 담당 + 사용중 강좌만 허용
 		if (!course.getTeacher().getUserId().equals(userId) || !"Y".equals(course.getCourseIsUse())) {
 			throw new IllegalArgumentException("본인이 담당하는 강좌에만 수업을 등록할 수 있습니다.");
 		}
@@ -78,10 +80,15 @@ public class LessonService {
 		lr.save(lesson);
 	}
 
-	// [추가] 삭제 - 본인 수업만
+	// [추가] 삭제 - 자식 테이블 참조 관계 선 해제 후 안전하게 본인 수업만 지우기
 	@Transactional
 	public void delete(Long id, String userId) {
 		Lesson lesson = getMyLesson(id, userId);
+		
+		// 📌 [교정] 무결성 조건 에러 방지: 이 수업을 외래키로 참조하는 출석 세션(AttSession)을 먼저 일괄 삭제합니다.
+		asr.deleteByLesson(lesson);
+		
+		// 부모 대상 지우기 실행
 		lr.delete(lesson);
 	}
 
