@@ -113,11 +113,19 @@ public class NoticeController {
 	// 공지 삭제 - 교수 & 관리자 (POST)
 	@PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
 	@PostMapping("/delete/{id}")
-	public String noticeDelete(Principal principal, @PathVariable("id") Long id) {
-		Notice notice = ns.getNotice(id);
-		checkWriter(notice, principal);
-		ns.delete(notice);
-		return "redirect:/notice/list";
+	public String noticeDelete(Principal principal, HttpServletRequest request, @PathVariable("id") Long id) {
+	    Notice notice = ns.getNotice(id);
+	    
+	    // 현재 로그인한 사용자가 관리자인지 확인
+	    boolean isAdmin = request.isUserInRole("ROLE_ADMIN");
+	    
+	    // 관리자가 아닐 때만 작성자 본인인지 체크
+	    if (!isAdmin) {
+	        checkWriter(notice, principal);
+	    }
+	    
+	    ns.delete(notice);
+	    return "redirect:/notice/list";
 	}
 
 	// 드롭다운에 보여 줄 교수 본인 강의

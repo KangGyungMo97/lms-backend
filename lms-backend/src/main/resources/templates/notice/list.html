@@ -4,7 +4,7 @@
       xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
       layout:decorate="~{layout}">
 <head>
-  <title>수업 목록</title>
+  <title>공지사항 목록</title>
   <style>
     .board-head { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 12px; }
     .board-head h2 { margin: 0; font-size: 24px; color: #111; }
@@ -13,10 +13,8 @@
     .btn { display: inline-block; padding: 7px 14px; border: 1px solid #1f3a5f; border-radius: 4px;
            background: #fff; color: #1f3a5f; text-decoration: none; font-size: 14px; cursor: pointer; }
     .btn-primary { background: #1f3a5f; color: #fff; }
-    .btn-danger { border-color: #c0392b; color: #c0392b; }
     .total { color: #666; font-size: 13px; margin: 8px 0; }
     
-    /* 공지사항 폼 스타일 테이블 개편 */
     table.board { width: 100%; border-collapse: collapse; background: #fff; }
     table.board th, table.board td { padding: 10px 8px; border-bottom: 1px solid #e5e5e5; font-size: 14px; }
     table.board th { background: #eef2f7; border-top: 2px solid #1f3a5f; color: #333; font-weight: 600; }
@@ -26,7 +24,6 @@
     table.board td { text-align: center; color: #444; }
     .empty { padding: 40px 0; color: #888; }
     
-    /* 페이징 컴포넌트 스타일 */
     .paging { display: flex; justify-content: center; gap: 4px; margin: 20px 0; padding: 0; list-style: none; }
     .paging a, .paging span { display: block; min-width: 32px; padding: 6px 8px; border: 1px solid #ccc;
            border-radius: 4px; text-align: center; text-decoration: none; color: #333; font-size: 13px; }
@@ -39,8 +36,8 @@
 
   <!-- 1. 타이틀 & 검색창 영역 -->
   <div class="board-head">
-    <h2>수업 목록</h2>
-    <form class="search" th:action="@{/lesson/list}" method="get">
+    <h2>공지사항 목록</h2>
+    <form class="search" th:action="@{/notice/list}" method="get">
       <input type="text" name="kw" th:value="${kw}" placeholder="제목, 내용 검색">
       <button type="submit" class="btn">검색</button>
     </form>
@@ -49,81 +46,56 @@
   <!-- 2. 게시글 개수 표시 및 등록 버튼 영역 -->
   <div class="board-head">
     <p class="total">전체 <b th:text="${paging.totalElements}">0</b>건</p>
-    <a class="btn btn-primary" th:href="@{/lesson/create}" sec:authorize="hasRole('TEACHER')">+ 수업 등록</a>
+    <a class="btn btn-primary" th:href="@{/notice/create}" sec:authorize="hasRole('TEACHER')">+ 공지 등록</a>
   </div>
 
-  <!-- 3. 수업 목록 테이블 -->
+  <!-- 3. 공지사항 목록 테이블 -->
   <table class="board">
-    <colgroup>
-      <col style="width:70px">
-      <col style="width:200px">
-      <col style="width:160px">
-      <col style="width:160px">
-      <col>
-      <col sec:authorize="hasRole('TEACHER')" style="width:130px">
-    </colgroup>
     <thead>
       <tr>
-        <th>번호</th>
-        <th>수업 제목</th>
-        <th>과목</th>
-        <th>강좌</th>
-        <th>수업 내용</th>
-        <th sec:authorize="hasRole('TEACHER')">관리</th>
+        <th style="width:70px">번호</th>
+        <th>제목</th>
+        <th style="width:150px">작성자</th>
+        <th style="width:180px">연관 강좌</th>
       </tr>
     </thead>
     <tbody>
-      <!-- 등록된 데이터가 없을 경우 처리 -->
+      <!-- 데이터가 없을 경우 -->
       <tr th:if="${paging.isEmpty()}">
-        <td th:colspan="${#authorization.expression('hasRole(\'TEACHER\')')} ? 6 : 5" class="empty">등록된 수업이 없습니다.</td>
+        <td colspan="4" class="empty">등록된 공지사항이 없습니다.</td>
       </tr>
       
-      <!-- 기존 리스트 루프 데이터 출력 -->
-      <tr th:unless="${paging.isEmpty()}" th:each="l, loop : ${paging}">
+      <!-- 데이터 목록 출력 -->
+      <tr th:unless="${paging.isEmpty()}" th:each="notice, loop : ${paging}">
         <td th:text="${paging.totalElements - (paging.number * paging.size) - loop.index}">1</td>
         <td class="title">
-          <a th:href="@{|/lesson/detail/${l.lessonId}|}" th:text="${l.lessonTitle}">1주차 - 오리엔테이션</a>
+          <!-- NoticeController의 상세페이지 매핑 주소(/notice/detail/{id}) 반영 -->
+          <a th:href="@{|/notice/detail/${notice.noticeId}|}" th:text="${notice.noticeTitle}">공지 제목</a>
         </td>
-        <td th:text="${l.course.subject.subjectName}">데이터베이스 설계와 SQL 실무</td>
-        <td th:text="${l.course.courseTitle}">월 1~3교시</td>
-        <td class="title" th:text="${#strings.abbreviate(l.lessonContent, 50)}">수업 내용</td>
-
-        <!-- 관리 제어 열 (교수인 동시에 본인 수업 담당자일 때만 노출) -->
-        <td sec:authorize="hasRole('TEACHER')">
-          <div th:if="${#authentication.name == l.course.teacher.userId}"
-               style="display:flex; gap:4px; justify-content:center; align-items:center;">
-            <a class="btn" style="padding:4px 10px; font-size:12px; line-height: 1.2;"
-               th:href="@{|/lesson/update/${l.lessonId}|}">수정</a>
-            <form th:action="@{|/lesson/delete/${l.lessonId}|}" method="post" style="display:inline;"
-                  onsubmit="return confirm('이 수업을 삭제하시겠습니까?');">
-              <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
-              <button type="submit" class="btn btn-danger" style="padding:4px 10px; font-size:12px; line-height: 1.2;">삭제</button>
-            </form>
-          </div>
-        </td>
+        <!-- 엔티티 내부 구조(writer.name 또는 writer.userId)에 맞게 조정 필요 -->
+        <td th:text="${notice.writer.userId}">작성자ID</td>
+        <!-- 강좌가 지정되지 않은 공지(전체 공지)일 경우를 고려해 안전하게 유효성 검사 처리 -->
+        <td th:text="${notice.course != null ? notice.course.courseTitle : '전체 공지'}">강좌 정보</td>
       </tr>
     </tbody>
   </table>
 
   <!-- 4. 하단 페이징 컴포넌트 -->
   <ul class="paging" th:if="${paging.totalPages > 0}">
-    <!-- '이전' 버튼 -->
     <li th:classappend="${!paging.hasPrevious()} ? 'disabled'">
-      <a th:if="${paging.hasPrevious()}" th:href="@{/lesson/list(page=${paging.number - 1}, kw=${kw})}">이전</a>
+      <a th:if="${paging.hasPrevious()}" th:href="@{/notice/list(page=${paging.number - 1}, kw=${kw})}">이전</a>
       <span th:unless="${paging.hasPrevious()}">이전</span>
     </li>
     
-    <!-- 페이지 인덱스 번호 루프 (앞뒤 5페이지 범위 세팅) -->
     <li th:each="page : ${#numbers.sequence(0, paging.totalPages - 1)}"
         th:if="${page >= paging.number - 5 and page <= paging.number + 5}"
         th:classappend="${page == paging.number} ? 'active'">
-      <a th:unless="${page == paging.number}" th:href="@{/lesson/list(page=${page}, kw=${kw})}" th:text="${page + 1}">1</a>
+      <a th:unless="${page == paging.number}" th:href="@{/notice/list(page=${page}, kw=${kw})}" th:text="${page + 1}">1</a>
       <span th:if="${page == paging.number}" th:text="${page + 1}">1</span>
     </li>
     
-    <!-- '다음' 버튼 -->
     <li th:classappend="${!paging.hasNext()} ? 'disabled'">
-      <a th:if="${paging.hasNext()}" th:href="@{/lesson/list(page=${paging.number + 1}, kw=${kw})}">다음</a>
+      <a th:if="${paging.hasNext()}" th:href="@{/notice/list(page=${paging.number + 1}, kw=${kw})}">다음</a>
       <span th:unless="${paging.hasNext()}">다음</span>
     </li>
   </ul>
