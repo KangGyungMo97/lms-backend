@@ -25,4 +25,7 @@ public interface AttSessionRepository extends JpaRepository<AttSession, Long> {
 	// 지금 열려 있는 세션 (마감 시각이 지금보다 뒤) - 학생 화면
 	@EntityGraph(attributePaths = { "lesson", "lesson.course", "lesson.course.teacher" })
 	List<AttSession> findByExpiresAtAfterOrderByOpenedAtDesc(LocalDateTime now);
+	
+	void deleteByLesson(Lesson lesson);
+
 }
