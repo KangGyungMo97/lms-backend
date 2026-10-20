@@ -5,21 +5,22 @@
       layout:decorate="~{layout}">
 
 <head>
-  <title th:text="${mode == 'modify'} ? '공지 수정' : '공지 작성'">공지 작성</title>
+  <title th:text="${mode == 'modify'} ? '과목공지 수정' : '과목공지 작성'">과목공지 작성</title>
   <style>
     .form-box { background: #fff; border-top: 2px solid #1f3a5f; padding: 20px 16px; }
     .row { display: flex; margin-bottom: 14px; }
     .row label { width: 80px; padding-top: 8px; font-weight: bold; font-size: 14px; }
     .row label .req { color: #c0392b; font-size: 12px; }
     .row .field { flex: 1; }
-    .row input, .row textarea { width: 100%; padding: 8px 10px; border: 1px solid #ccc; border-radius: 4px;
-           font-family: inherit; font-size: 14px; }
+    .row input, .row textarea, .row select { width: 100%; padding: 8px 10px; border: 1px solid #ccc; border-radius: 4px;
+           font-family: inherit; font-size: 14px; box-sizing: border-box; background: #fff; }
     .row textarea { height: 300px; resize: vertical; }
+    .row .hint { margin-top: 6px; color: #c0392b; font-size: 12px; }
     .errors { background: #fdecea; color: #c0392b; border-radius: 4px; padding: 10px 14px; margin-bottom: 14px; font-size: 14px; }
     .errors p { margin: 2px 0; }
     .actions { display: flex; justify-content: space-between; margin-top: 16px; }
     .btn { display: inline-block; padding: 7px 14px; border: 1px solid #1f3a5f; border-radius: 4px;
-           background: #fff; color: #1f3a5f; text-decoration: none; font-size: 14px; cursor: pointer; }
+           background: #fff; color: #1f3a5f; text-decoration: none; font-size: 14px; font-family: inherit; cursor: pointer; }
     .btn-primary { background: #1f3a5f; color: #fff; }
   </style>
 </head>
@@ -27,7 +28,7 @@
 <body>
   <div layout:fragment="content">
 
-    <h2 th:text="${mode == 'modify'} ? '공지사항 수정' : '공지사항 작성'">공지사항 작성</h2>
+    <h2 th:text="${mode == 'modify'} ? '과목 공지사항 수정' : '과목 공지사항 작성'">과목 공지사항 작성</h2>
 
     <!-- action 을 비워 두면 지금 주소로 POST 됨
          → /notice/create 에서 열면 작성, /notice/update/{id} 에서 열면 수정 (화면 하나로 같이 씀) -->
@@ -39,6 +40,16 @@
       </div>
 
       <div class="form-box">
+        <div class="row">
+          <label for="courseId">과목 <span class="req">*</span></label>
+          <div class="field">
+            <select id="courseId" th:field="*{courseId}">
+              <option value="">-- 과목 선택 --</option>
+              <option th:each="c : ${courses}" th:value="${c.courseId}" th:text="${c.courseTitle}"></option>
+            </select>
+            <div class="hint" th:if="${#lists.isEmpty(courses)}">담당 중인 과목이 없습니다. 강의를 먼저 등록하세요.</div>
+          </div>
+        </div>
         <div class="row">
           <label for="title">제목 <span class="req">*</span></label>
           <div class="field">
@@ -62,5 +73,4 @@
 
   </div>
 </body>
-
 </html>

@@ -1,8 +1,8 @@
 package com.hitech.lms.domain.board;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
+import com.hitech.lms.domain.course.Course;
 import com.hitech.lms.domain.file.FileAtt;
 import com.hitech.lms.domain.user.Users;
 
@@ -53,6 +53,10 @@ public class Notice {
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "file_att_id")
 	private FileAtt fileAtt;            // 첨부파일 (없으면 NULL)
+	
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "course_id")
+	private Course course;       
 	
 
 }

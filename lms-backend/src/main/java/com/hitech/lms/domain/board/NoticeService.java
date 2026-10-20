@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.hitech.lms.global.error.DataNotFoundException;
+import com.hitech.lms.domain.course.Course;
 import com.hitech.lms.domain.user.Users;
 
 import jakarta.servlet.http.Cookie;
@@ -93,22 +94,23 @@ public class NoticeService {
 		}
 	}
 
-	// 작성 - 작성일 now, 작성자 넣고 저장
-	public void create(String title, String content, Users writer) {
-		
+	// 작성 - 작성일 now, 작성자 · 과목 넣고 저장
+	public void create(String title, String content, Users writer, Course course) {
 		Notice notice = new Notice();
 		notice.setNoticeTitle(title);
 		notice.setNoticeContent(content);
 		notice.setNoticeCreateDate(LocalDate.now());
 		notice.setNoticeUpdateDate(LocalDate.now());  // nullable=false라서 필요
-		notice.setWriter(writer);                    
+		notice.setWriter(writer);
+		notice.setCourse(course);
 		nr.save(notice);
 	}
 
 	// 수정 - 수정일 now
-	public void modify(Notice notice, String title, String content) {
+	public void modify(Notice notice, String title, String content, Course course) {
 		notice.setNoticeTitle(title);
 		notice.setNoticeContent(content);
+		notice.setCourse(course);
 		notice.setNoticeUpdateDate(LocalDate.now());
 		nr.save(notice);
 	}

@@ -97,4 +97,8 @@ public class CourseService {
 		c.setCourseStartTime(first.getStartTime());
 		c.setCourseEndTime(first.getEndTime());
 	}
+	
+	public List<Course> getTeacherCourseList(String userId) {
+		return cr.findByTeacher_UserIdAndCourseIsUseOrderByCourseIdDesc(userId, "Y");
+	}
 }
