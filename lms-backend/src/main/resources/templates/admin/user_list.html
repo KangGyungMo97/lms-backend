@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+
+<head>
+  <title>회원 목록</title>
+  <style>
+    .board-head { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 12px; }
+    .board-head h2 { margin: 0; }
+    .btn { display: inline-block; padding: 7px 14px; border: 1px solid #1f3a5f; border-radius: 4px;
+           background: #fff; color: #1f3a5f; text-decoration: none; font-size: 14px; font-family: inherit; cursor: pointer; }
+    .btn-primary { background: #1f3a5f; color: #fff; }
+    .btn-sm { padding: 3px 10px; font-size: 12px; }
+
+    .stat-row { display: flex; gap: 12px; margin-bottom: 16px; }
+    .stat { flex: 1; background: #fff; border: 1px solid #e0e4ea; border-top: 2px solid #1f3a5f; padding: 14px 16px; }
+    .stat .label { color: #666; font-size: 13px; }
+    .stat .num { margin-top: 4px; font-size: 22px; font-weight: 700; color: #1f3a5f; }
+    .stat.alert .num { color: #c0392b; }
+
+    .filters { display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 16px;
+               background: #fff; border: 1px solid #e0e4ea; padding: 12px 14px; }
+    .filters label { display: block; margin-bottom: 4px; font-size: 12px; font-weight: 600; color: #555; }
+    .filters select, .filters input[type=text] { padding: 7px 10px; border: 1px solid #ccc; border-radius: 4px;
+           font-size: 14px; font-family: inherit; background: #fff; }
+    .filters .kw { flex: 1; min-width: 180px; }
+    .filters .kw input { width: 100%; box-sizing: border-box; }
+    .filters .reset { font-size: 13px; color: #666; padding-bottom: 8px; }
+
+    .total { color: #666; font-size: 13px; margin: 8px 0; }
+    table.board { width: 100%; border-collapse: collapse; background: #fff; }
+    table.board th, table.board td { padding: 10px 8px; border-bottom: 1px solid #e5e5e5; font-size: 14px; text-align: center; }
+    table.board th { background: #eef2f7; border-top: 2px solid #1f3a5f; }
+    .chip.ok { color: #2e7d32; }
+    .chip.bad { color: #c0392b; font-weight: 600; }
+    .empty { padding: 40px 0; color: #888; }
+    .paging { display: flex; justify-content: center; gap: 4px; margin: 20px 0; padding: 0; list-style: none; }
+    .paging a, .paging span { display: block; min-width: 32px; padding: 6px 8px; border: 1px solid #ccc;
+           border-radius: 4px; text-align: center; text-decoration: none; color: #333; font-size: 13px; }
+    .paging .active span { background: #1f3a5f; color: #fff; border-color: #1f3a5f; }
+    .paging .disabled span { color: #bbb; }
+  </style>
+</head>
+
+<body>
+  <div layout:fragment="content">
+
+    <div class="board-head">
+      <h2>회원 목록</h2>
+    </div>
+
+    <!-- 통계 카드 -->
+    <div class="stat-row">
+      <div class="stat">
+        <div class="label">전체 회원</div>
+        <div class="num" th:text="${#numbers.formatInteger(stats.total, 1, 'COMMA')} + '명'">26명</div>
+      </div>
+      <div class="stat">
+        <div class="label">학생</div>
+        <div class="num" th:text="${#numbers.formatInteger(stats.student, 1, 'COMMA')} + '명'">22명</div>
+      </div>
+      <div class="stat">
+        <div class="label">교수</div>
+        <div class="num" th:text="${#numbers.formatInteger(stats.teacher, 1, 'COMMA')} + '명'">3명</div>
+      </div>
+      <div class="stat" th:classappend="${stats.blocked > 0} ? 'alert'">
+        <div class="label">차단·잠금</div>
+        <div class="num" th:text="${#numbers.formatInteger(stats.blocked, 1, 'COMMA')} + '명'">0명</div>
+      </div>
+    </div>
+
+    <!-- 검색 필터 -->
+    <form class="filters" th:action="@{/admin/user/list}" method="get">
+      <div>
+        <label>구분</label>
+        <select name="role">
+          <option value="">전체</option>
+          <option value="S" th:selected="${role == 'S'}">학생</option>
+          <option value="P" th:selected="${role == 'P'}">교수</option>
+          <option value="A" th:selected="${role == 'A'}">관리자</option>
+        </select>
+      </div>
+      <div>
+        <label>학과</label>
+        <select name="deptId">
+          <option value="">전체</option>
+          <option th:each="d : ${deptList}" th:value="${d.deptId}" th:text="${d.deptName}"
+                  th:selected="${deptId == d.deptId}"></option>
+        </select>
+      </div>
+      <div>
+        <label>상태</label>
+        <select name="status">
+          <option value="">전체</option>
+          <option value="A" th:selected="${status == 'A'}">정상</option>
+          <option value="L" th:selected="${status == 'L'}">잠금</option>
+          <option value="B" th:selected="${status == 'B'}">차단</option>
+          <option value="W" th:selected="${status == 'W'}">탈퇴</option>
+        </select>
+      </div>
+      <div class="kw">
+        <label>검색어</label>
+        <input type="text" name="kw" th:value="${kw}" placeholder="이름 또는 학번/사번">
+      </div>
+      <button type="submit" class="btn">검색</button>
+      <a class="reset" th:href="@{/admin/user/list}">초기화</a>
+    </form>
+
+    <!-- 목록 헤더 -->
+    <div class="board-head">
+      <p class="total">검색 결과 <b th:text="${#numbers.formatInteger(paging.totalElements, 1, 'COMMA')}">26</b>명</p>
+      <a th:href="@{/admin/user/create}" class="btn btn-primary">계정 등록</a>
+    </div>
+
+    <!-- 목록 -->
+    <table class="board">
+      <thead>
+        <tr>
+          <th style="width:40px"><input type="checkbox"></th>
+          <th style="width:110px">학번/사번</th>
+          <th style="width:100px">이름</th>
+          <th style="width:70px">구분</th>
+          <th>학과</th>
+          <th style="width:140px">연락처</th>
+          <th style="width:120px">최근 접속</th>
+          <th style="width:70px">상태</th>
+          <th style="width:70px"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:if="${paging.empty}">
+          <td colspan="9" class="empty">검색 결과가 없습니다.</td>
+        </tr>
+        <tr th:each="u : ${paging}">
+          <td><input type="checkbox" th:value="${u.userId}"></td>
+          <td th:text="${u.userId}">2510001</td>
+          <td th:text="${u.userName}">김학생</td>
+          <td th:text="${u.userRole == 'S'} ? '학생' : (${u.userRole == 'P'} ? '교수' : '관리자')">학생</td>
+          <td th:text="${u.userRole == 'S' && (u.userGrade == null || u.userGrade == '9')} ? '하이테크과정' : (${u.userGrade != null} ? |${u.dept.deptName} ${u.userGrade}학년| : ${u.dept.deptName})">하이테크과정</td>
+          <td th:text="${u.maskedTel}">010-****-0001</td>
+          <td th:text="${u.userLastLogin != null} ? ${#temporals.format(u.userLastLogin, 'MM-dd HH:mm')} : '-'">-</td>
+          <td><span class="chip" th:classappend="${u.userStatus == 'A'} ? 'ok' : 'bad'" th:text="${u.statusLabel}">정상</span></td>
+          <td><a class="btn btn-sm" th:href="@{/admin/user/{id}(id=${u.userId})}">상세</a></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- 페이징 -->
+    <ul class="paging" th:if="${paging.totalPages > 0}">
+      <li th:classappend="${!paging.hasPrevious()} ? 'disabled'">
+        <a th:if="${paging.hasPrevious()}"
+           th:href="@{/admin/user/list(page=${paging.number - 1}, kw=${kw}, role=${role}, deptId=${deptId}, status=${status})}">이전</a>
+        <span th:unless="${paging.hasPrevious()}">이전</span>
+      </li>
+      <li th:each="i : ${#numbers.sequence(0, paging.totalPages - 1)}"
+          th:if="${i >= paging.number - 5 and i <= paging.number + 5}"
+          th:classappend="${i == paging.number} ? 'active'">
+        <a th:unless="${i == paging.number}"
+           th:href="@{/admin/user/list(page=${i}, kw=${kw}, role=${role}, deptId=${deptId}, status=${status})}"
+           th:text="${i + 1}">1</a>
+        <span th:if="${i == paging.number}" th:text="${i + 1}">1</span>
+      </li>
+      <li th:classappend="${!paging.hasNext()} ? 'disabled'">
+        <a th:if="${paging.hasNext()}"
+           th:href="@{/admin/user/list(page=${paging.number + 1}, kw=${kw}, role=${role}, deptId=${deptId}, status=${status})}">다음</a>
+        <span th:unless="${paging.hasNext()}">다음</span>
+      </li>
+    </ul>
+
+  </div>
+</body>
+</html>

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+
+<head>
+  <title>시스템 공지</title>
+  <style>
+    .post { background: #fff; border-top: 2px solid #1f3a5f; border-bottom: 1px solid #e5e5e5; }
+    .post-title { margin: 0; padding: 16px; font-size: 20px; border-bottom: 1px solid #e5e5e5; }
+    .post-meta { padding: 10px 16px; color: #666; font-size: 13px; border-bottom: 1px solid #e5e5e5; }
+    .post-meta span + span::before { content: "|"; margin: 0 8px; color: #ccc; }
+    .post-content { padding: 24px 16px; min-height: 200px; line-height: 1.7; white-space: pre-wrap; }
+    .nav-list { list-style: none; margin: 16px 0 0; padding: 0; background: #fff; border-top: 1px solid #e5e5e5; }
+    .nav-list li { display: flex; border-bottom: 1px solid #e5e5e5; font-size: 14px; }
+    .nav-list .label { width: 90px; padding: 10px 16px; background: #eef2f7; color: #555; }
+    .nav-list .link { flex: 1; padding: 10px 16px; }
+    .nav-list a { color: #222; text-decoration: none; }
+    .nav-list a:hover { text-decoration: underline; }
+    .nav-list .none { color: #aaa; }
+    .actions { margin-top: 16px; }
+    .btn { display: inline-block; padding: 7px 14px; border: 1px solid #1f3a5f; border-radius: 4px;
+           background: #fff; color: #1f3a5f; text-decoration: none; font-size: 14px; }
+  </style>
+</head>
+
+<body>
+  <div layout:fragment="content">
+
+    <h2>시스템 공지</h2>
+
+    <!-- ① 관리자 공지 상세보기 -->
+    <div class="post">
+      <h3 class="post-title" th:text="${notice.adminPostTitle}">제목</h3>
+      <div class="post-meta">
+        <span>작성자 <b th:text="${notice.writer.userName}">관리자</b></span>
+        <span>작성일 <span th:text="${#temporals.format(notice.adminPostCreateDate, 'yyyy-MM-dd')}">2026-10-11</span></span>
+        <span>조회 <span th:text="${notice.adminPostView}">0</span></span>
+      </div>
+      <div class="post-content" th:text="${notice.adminPostContent}">내용</div>
+    </div>
+
+    <!-- ② 첨부파일 다운로드는 P3 (FileService 완성 후 여기에 추가) -->
+
+    <!-- ③ 이전 · 다음 글 이동 -->
+    <ul class="nav-list">
+      <li>
+        <span class="label">이전 글</span>
+        <span class="link">
+          <a th:if="${prev != null}" th:href="@{|/info/notice/detail/${prev.adminPostId}|}" th:text="${prev.adminPostTitle}">이전 글 제목</a>
+          <span th:if="${prev == null}" class="none">이전 글이 없습니다.</span>
+        </span>
+      </li>
+      <li>
+        <span class="label">다음 글</span>
+        <span class="link">
+          <a th:if="${next != null}" th:href="@{|/info/notice/detail/${next.adminPostId}|}" th:text="${next.adminPostTitle}">다음 글 제목</a>
+          <span th:if="${next == null}" class="none">다음 글이 없습니다.</span>
+        </span>
+      </li>
+    </ul>
+
+    <!-- ④ 목록으로 이동 -->
+    <div class="actions">
+      <a th:href="@{/info/notice/list}" class="btn">목록</a>
+    </div>
+
+  </div>
+</body>
+
+</html>

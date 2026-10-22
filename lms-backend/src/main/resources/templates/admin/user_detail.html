@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+
+<head>
+  <title>회원 상세</title>
+  <style>
+    .btn { display: inline-block; padding: 7px 14px; border: 1px solid #1f3a5f; border-radius: 4px;
+           background: #fff; color: #1f3a5f; text-decoration: none; font-size: 14px; font-family: inherit; cursor: pointer; }
+    .btn-primary { background: #1f3a5f; color: #fff; }
+    .msg { background: #e8f5e9; color: #2e7d32; border-radius: 4px; padding: 10px 14px; margin-bottom: 12px; font-size: 14px; }
+    .msg.error { background: #fdecea; color: #c0392b; }
+
+    .dt-wrap { display: flex; gap: 20px; align-items: flex-start; }
+    .dt-col { flex: 1; min-width: 0; }
+    .card { background: #fff; border: 1px solid #e0e4ea; border-top: 2px solid #1f3a5f; padding: 20px; margin-bottom: 20px; }
+    .card h3 { margin: 0 0 14px; font-size: 16px; }
+    .chip { margin-left: 6px; padding: 2px 8px; border-radius: 10px; background: #eef2f7; color: #1f3a5f;
+            font-size: 12px; font-weight: 600; vertical-align: middle; }
+
+    table.info { width: 100%; border-collapse: collapse; }
+    table.info th { width: 130px; text-align: left; padding: 9px 0; font-size: 14px; color: #555; font-weight: 600; }
+    table.info td { padding: 9px 0; font-size: 14px; }
+    .note { margin: 12px 0 0; font-size: 12px; color: #888; }
+
+    .field { margin-bottom: 14px; }
+    .field > .lab { display: block; margin-bottom: 6px; font-size: 14px; font-weight: 600; }
+    .field .req { color: #c0392b; font-size: 12px; }
+    .field .radios { display: flex; gap: 16px; flex-wrap: wrap; font-size: 14px; }
+    .field textarea, .field input[type=date] { width: 100%; box-sizing: border-box; padding: 8px 10px;
+           border: 1px solid #ccc; border-radius: 4px; font-family: inherit; font-size: 14px; }
+    .field input[type=date] { width: auto; }
+    .warn { margin-bottom: 14px; padding: 9px 12px; background: #fdecea; color: #c0392b; border-radius: 4px; font-size: 13px; }
+    .card-actions { text-align: right; }
+
+    table.log { width: 100%; border-collapse: collapse; text-align: center; }
+    table.log th, table.log td { padding: 9px 6px; border-bottom: 1px solid #e5e5e5; font-size: 13px; }
+    table.log th { background: #eef2f7; }
+    table.log .reason { font-size: 12px; color: #666; }
+
+    .actions { display: flex; justify-content: space-between; margin: 4px 0 24px; }
+  </style>
+</head>
+
+<body>
+  <div layout:fragment="content">
+
+    <h2>회원 상세</h2>
+
+    <div class="msg" th:if="${msg}" th:text="${msg}">완료 메시지</div>
+    <div class="msg error" th:if="${error}" th:text="${error}">오류 메시지</div>
+
+    <div class="dt-wrap">
+
+      <!-- 왼쪽: 기본 정보 -->
+      <div class="dt-col">
+        <div class="card">
+          <h3>기본 정보 <span class="chip" th:text="${user.statusLabel}">정상</span></h3>
+          <table class="info">
+            <tr><th>학번/사번</th><td th:text="${user.userId}">2510001</td></tr>
+            <tr><th>이름</th><td th:text="${user.userName}">김학생</td></tr>
+            <tr><th>구분</th>
+                <td th:text="${user.userRole == 'S'} ? '학생' : (${user.userRole == 'P'} ? '교수' : '관리자')">학생</td></tr>
+            <tr><th>학과 / 학년</th>
+                <td th:text="${user.userRole == 'S' && (user.userGrade == null || user.userGrade == '9')} ? '하이테크과정' : (${user.userGrade != null} ? |${user.dept.deptName} ${user.userGrade}학년| : ${user.dept.deptName})">스마트소프트웨어과 2학년</td></tr>
+            <tr><th>생년월일</th><td th:text="${user.userBday}">20010101</td></tr>
+            <tr><th>휴대폰</th><td th:text="${user.userTel}">010-0000-0001</td></tr>
+            <tr><th>이메일</th><td th:text="${user.userEmail}">user@test.com</td></tr>
+            <tr><th>계정 발급일</th>
+                <td th:text="${#temporals.format(user.userCreated, 'yyyy-MM-dd')}">2026-03-02</td></tr>
+            <tr><th>최근 접속</th>
+                <td th:text="${user.userLastLogin != null} ? ${#temporals.format(user.userLastLogin, 'yyyy-MM-dd HH:mm')} : '-'">-</td></tr>
+            <tr><th>비밀번호 변경일자</th>
+                <td th:text="${user.userPwChanged != null} ? ${#temporals.format(user.userPwChanged, 'yyyy-MM-dd')} : '-'">-</td></tr>
+          </table>
+          <p class="note">※ 회원의 개인정보는 관리자가 임의로 수정할 수 없습니다. (본인 요청 시 1대1 문의로 처리)</p>
+        </div>
+      </div>
+
+      <!-- 오른쪽: 상태 관리 + 이력 -->
+      <div class="dt-col">
+
+        <div class="card">
+          <h3>계정 상태 관리</h3>
+
+          <form id="statusForm" th:action="@{/admin/user/status/{id}(id=${user.userId})}" method="post"
+                onsubmit="return confirm('계정 상태를 변경하시겠습니까?');">
+            <div class="field">
+              <span class="lab">상태 변경</span>
+              <div class="radios">
+                <label><input type="radio" name="status" value="A" th:checked="${user.userStatus == 'A'}" required> 정상 / 잠금 해제</label>
+                <label><input type="radio" name="status" value="B" th:checked="${user.userStatus == 'B'}"> 차단</label>
+                <label><input type="radio" name="status" value="W" th:checked="${user.userStatus == 'W'}"> 탈퇴 처리</label>
+              </div>
+            </div>
+			
+			<div id="blockDateFields" class="mb-3 d-none">
+			    
+			    <!-- font-size를 0.9rem !important로 정밀 세팅하여 주변 타이틀과 크기 완전 일치 -->
+			    <label for="blockStart" style="font-size: 0.9rem !important; font-weight: 600 !important; color: #212529 !important; display: inline-block; margin-bottom: 0.5rem;">
+			        차단 기간 <span style="color: #dc3545 !important; margin-left: 2px;">*</span>
+			    </label>
+			    
+			    <div class="d-flex align-items-center gap-2">
+			        <!-- 시작일 -->
+			        <input type="date" class="form-control" id="blockStart" name="blockStart" 
+			               style="width: 160px; height: 38px; padding: 0.375rem 0.75rem;">
+			        
+			        <span class="text-muted px-1">~</span>
+			        
+			        <!-- 종료일 -->
+			        <input type="date" class="form-control" id="blockEnd" name="blockEnd" 
+			               style="width: 160px; height: 38px; padding: 0.375rem 0.75rem;">
+			    </div>
+			    
+			    <div class="form-text text-muted mt-1 mb-2" style="font-size: 0.8rem; letter-spacing: -0.02em;">
+			        차단 처리 시 해당 기간 동안 로그인이 불가합니다.
+			    </div>
+			</div>
+			
+            <div class="field">
+              <label class="lab" for="reason">사유 <span class="req">*</span></label>
+              <textarea id="reason" name="reason" rows="4" required placeholder="변경 사유를 입력하세요."></textarea>
+            </div>
+
+            <div class="field" id="blockPeriod" style="display:none;">
+              <span class="lab">차단 기간</span>
+              <input type="date" name="blockStart"> ~ <input type="date" name="blockEnd">
+            </div>
+
+            <p class="warn" id="withdrawWarn" style="display:none;">
+              탈퇴 처리 시 로그인이 불가하며 되돌릴 수 없습니다.
+            </p>
+            <p class="warn" id="blockWarn" style="display:none;">
+              차단 처리 시 해당 기간 동안 로그인이 불가합니다.
+            </p>
+
+            <div class="card-actions">
+              <button type="submit" class="btn btn-primary">적용</button>
+            </div>
+          </form>
+        </div>
+
+        <div class="card">
+          <h3>상태 변경 이력</h3>
+          <table class="log">
+            <thead>
+              <tr><th>일시</th><th>변경</th><th>처리자</th></tr>
+            </thead>
+            <tbody>
+              <tr th:each="l : ${logs}">
+                <td th:text="${#temporals.format(l.changedAt, 'MM-dd HH:mm')}">10-13 16:31</td>
+                <td>
+                  <span th:text="${l.beforeLabel} + ' → ' + ${l.afterLabel}">정상 → 탈퇴</span>
+                  <span class="reason" th:if="${l.reason != null}" th:text="'(' + ${l.reason} + ')'"></span>
+                </td>
+                <td th:text="${l.changedBy == 'SYSTEM'} ? '시스템' : ${l.changedBy}">0000001</td>
+              </tr>
+              <tr th:if="${#lists.isEmpty(logs)}">
+                <td colspan="3" style="padding:20px; color:#888;">변경 이력이 없습니다.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <a class="btn" th:href="@{/admin/user/list}">목록</a>
+    </div>
+
+  </div>
+
+  <script>
+    // 선택한 상태에 따라 차단 기간 / 경고 문구 표시
+    const radios = document.querySelectorAll('input[name=status]');
+    const blockBox = document.getElementById('blockPeriod');
+    const blockWarn = document.getElementById('blockWarn');
+    const withdrawWarn = document.getElementById('withdrawWarn');
+    const startInput = document.querySelector('[name=blockStart]');
+    const endInput = document.querySelector('[name=blockEnd]');
+
+    function toggle() {
+      const checked = document.querySelector('input[name=status]:checked');
+      const v = checked ? checked.value : '';
+      blockBox.style.display = (v === 'B') ? 'block' : 'none';
+      blockWarn.style.display = (v === 'B') ? 'block' : 'none';
+      withdrawWarn.style.display = (v === 'W') ? 'block' : 'none';
+      startInput.required = endInput.required = (v === 'B');
+    }
+    radios.forEach(r => r.addEventListener('change', toggle));
+    toggle();
+	
+	function toggleBlockDates() {
+	    // 라디오 버튼 중 'B(차단)'가 체크되었는지 확인
+	    const isBlocked = document.getElementById('statusB').checked;
+	    const blockDateFields = document.getElementById('blockDateFields');
+	    const blockStartInput = document.getElementById('blockStart');
+	    const blockEndInput = document.getElementById('blockEnd');
+
+	    if (isBlocked) {
+	        // 차단 선택 시 입력창 표시 및 필수(required) 설정
+	        blockDateFields.classList.remove('d-none');
+	        blockStartInput.required = true;
+	        blockEndInput.required = true;
+	        
+	        // 날짜가 비어있다면 기본값으로 오늘 날짜 세팅 (선택 사항)
+	        if (!blockStartInput.value) {
+	            blockStartInput.value = new Date().toISOString().substring(0, 10);
+	        }
+	    } else {
+	        // 정상이나 탈퇴 선택 시 입력창 숨김 및 필수 해제, 값 초기화
+	        blockDateFields.classList.add('d-none');
+	        blockStartInput.required = false;
+	        blockEndInput.required = false;
+	        blockStartInput.value = '';
+	        blockEndInput.value = '';
+	    }
+	}
+
+	// 화면이 처음 로드될 때 현재 유저 상태에 맞춰 실행
+	document.addEventListener("DOMContentLoaded", function() {
+	    toggleBlockDates();
+	});
+  </script>
+</body>
+</html>

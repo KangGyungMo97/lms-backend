@@ -40,3 +40,5 @@ out/
 src/main/resources/application-maria.properties
 src/main/resources/application-h2.properties
 src/main/resources/application-prod.properties
+# STS workspace
+.metadata/

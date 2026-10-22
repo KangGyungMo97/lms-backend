@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{layout}">
+<head>
+  <title>수업 목록</title>
+  <style>
+    /* 1. 상단 레이아웃 및 헤더 스타일 (공지사항 완벽 매칭) */
+    .board-head { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 12px; }
+    .board-head h2 { margin: 0; font-size: 24px; color: #111; font-weight: 600; }
+    
+    /* 브레드크럼 및 카운트 폰트 스타일 정돈 */
+    .breadcrumb { font-size: 13px; color: #777; margin-bottom: 5px; }
+    .breadcrumb b { color: #1f3a5f; }
+    .total { color: #666; font-size: 13px; margin: 8px 0; }
+    
+    /* 2. 버튼 공통 테마 디자인 */
+    .btn { display: inline-block; padding: 7px 14px; border: 1px solid #1f3a5f; border-radius: 4px;
+           background: #fff; color: #1f3a5f; text-decoration: none; font-size: 14px; cursor: pointer; transition: all 0.2s; }
+    .btn:hover { background: #f8f9fa; }
+    .btn-primary { background: #1f3a5f; color: #fff; }
+    .btn-primary:hover { background: #152943; }
+    .btn-danger { border-color: #c0392b; color: #c0392b; background: #fff; }
+    .btn-danger:hover { background: #c0392b; color: #fff; }
+
+    /* 3. 테이블 구조화 스타일 가이드라인 개편 */
+    table.board { width: 100%; border-collapse: collapse; background: #fff; margin-top: 10px; }
+    table.board th, table.board td { padding: 10px 8px; border-bottom: 1px solid #e5e5e5; font-size: 14px; vertical-align: middle; }
+    table.board th { background: #eef2f7; border-top: 2px solid #1f3a5f; color: #333; font-weight: 600; text-align: center; }
+    table.board td { text-align: center; color: #444; }
+    
+    /* 제목 및 내용이 한쪽으로 쏠리지 않도록 왼쪽 정렬 및 호버링 보정 */
+    table.board td.title { text-align: left; padding-left: 15px; }
+    table.board td.title a { color: #222; text-decoration: none; font-weight: 500; }
+    table.board td.title a:hover { text-decoration: underline; color: #1f3a5f; }
+    .empty { padding: 40px 0; color: #888; font-size: 14px; text-align: center; }
+    
+    /* 4. 페이징 컴포넌트 간격 및 테마 색상 정렬 */
+    .paging { display: flex; justify-content: center; gap: 4px; margin: 20px 0; padding: 0; list-style: none; }
+    .paging a, .paging span { display: block; min-width: 32px; padding: 6px 8px; border: 1px solid #ccc;
+           border-radius: 4px; text-align: center; text-decoration: none; color: #333; font-size: 13px; }
+    .paging .active span { background: #1f3a5f; color: #fff; border-color: #1f3a5f; font-weight: bold; }
+    .paging .disabled span { color: #bbb; cursor: not-allowed; border-color: #eee; }
+  </style>
+</head>
+<body>
+<main layout:fragment="content">
+
+  <!-- 1. 페이지 제목 및 네비게이션 경로 영역 -->
+  <div class="breadcrumb">홈 &gt; 수업참여 &gt; <b>수업 목록</b></div>
+  <div class="board-head">
+    <h2>수업 목록</h2>
+  </div>
+
+  <!-- 2. 게시글 건수 표시 및 등록 버튼 영역 정돈 -->
+  <div class="board-head" style="margin-top: 15px;">
+    <p class="total">전체 <b th:text="${paging.totalElements}">0</b>건</p>
+    <!-- 등록 버튼은 교수(TEACHER) 권한 확인 시에만 노출 -->
+    <a class="btn btn-primary" th:href="@{/lesson/create}" sec:authorize="hasRole('TEACHER')">+ 수업 등록</a>
+  </div>
+
+  <!-- 3. 수업 리스트 테이블 영역 -->
+  <table class="board">
+    <colgroup>
+      <col style="width:70px">
+      <col style="width:220px">
+      <col style="width:180px">
+      <col style="width:150px">
+      <col>
+      <col sec:authorize="hasRole('TEACHER')" style="width:140px">
+    </colgroup>
+    <thead>
+      <tr>
+        <th>번호</th>
+        <th>수업 제목</th>
+        <th>과목</th>
+        <th>강좌</th>
+        <th>수업 내용</th>
+        <th sec:authorize="hasRole('TEACHER')">관리</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- 등록된 게시물이 비어있을 때 예외 안전 안내창 작동 -->
+      <tr th:if="${paging.isEmpty()}">
+        <td th:colspan="${#authorization.expression('hasRole(\'TEACHER\')')} ? 6 : 5" class="empty">등록된 수업이 없습니다.</td>
+      </tr>
+
+      <!-- 수업 루프 데이터 연동 구역 -->
+      <tr th:unless="${paging.isEmpty()}" th:each="l, loop : ${paging}">
+        <td th:text="${paging.totalElements - (paging.number * paging.size) - loop.index}">1</td>
+        
+        <!-- 📌 수업 상세 페이지(detail)로 매끄럽게 연결되는 타이틀 링크 매핑 처리 완료 -->
+        <td class="title">
+          <a th:href="@{|/lesson/detail/${l.lessonId}|}" th:text="${l.lessonTitle}">1주차 - 오리엔테이션</a>
+        </td>
+        
+        <td th:text="${l.course.subject.subjectName}">데이터베이스 설계와 SQL 실무</td>
+        <td th:text="${l.course.courseTitle}">월 1~3교시</td>
+        <td class="title" th:text="${#strings.abbreviate(l.lessonContent, 50)}">수업 내용</td>
+
+        <!-- 관리 제어 존: 담당 교수 당사자 식별 검사 완료 -->
+        <td sec:authorize="hasRole('TEACHER')">
+          <div th:if="${#authentication.name == l.course.teacher.userId}"
+               style="display:flex; gap:4px; justify-content:center; align-items:center;">
+            <a class="btn" style="padding:4px 10px; font-size:12px; line-height: 1.2;"
+               th:href="@{|/lesson/update/${l.lessonId}|}">수정</a>
+		<!-- 수업삭제버튼 삭제 -->
+          </div>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- 4. 하단 통합 페이징 영역 가독성 보완 -->
+  <ul class="paging" th:if="${paging.totalPages > 0}">
+    <!-- '처음' 및 '이전' 제어 버튼 세팅 -->
+    <li th:classappend="${!paging.hasPrevious()} ? 'disabled'">
+      <a th:if="${paging.hasPrevious()}" th:href="@{/lesson/list(page=${paging.number - 1})}">이전</a>
+      <span th:unless="${paging.hasPrevious()}">이전</span>
+    </li>
+    
+    <!-- 앞뒤 페이지 범위 순차 루프 출력 -->
+    <li th:each="i : ${#numbers.sequence(0, paging.totalPages - 1)}"
+        th:if="${i >= paging.number - 2 and i <= paging.number + 2}"
+        th:classappend="${i == paging.number} ? 'active'">
+      <span th:if="${i == paging.number}" th:text="${i + 1}">1</span>
+      <a th:unless="${i == paging.number}" th:href="@{/lesson/list(page=${i})}" th:text="${i + 1}">2</a>
+    </li>
+    
+    <!-- '다음' 및 '끝' 제어 버튼 세팅 -->
+    <li th:classappend="${!paging.hasNext()} ? 'disabled'">
+      <a th:if="${paging.hasNext()}" th:href="@{/lesson/list(page=${paging.number + 1})}">다음</a>
+      <span th:unless="${paging.hasNext()}">다음</span>
+    </li>
+  </ul>
+
+</main>
+</body>
+</html>

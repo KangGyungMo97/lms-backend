@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+
+<head>
+  <title>과정 소개</title>
+  <link rel="stylesheet" th:href="@{/css/about.css}">
+</head>
+
+<body>
+  <section layout:fragment="page-head">
+    <div th:replace="~{fragments/page_head :: head('과정 소개', '학과 안내', null)}"></div>
+  </section>
+
+  <!-- 과정 소개 (ABT-01) - 정적 화면 -->
+  <div layout:fragment="content">
+
+    <div class="ab-hero">
+      <div>
+        <span class="ab-tag">하이테크 과정</span>
+        <h2>현장 실무형 IT 인재를 키우는<br>스마트 하이테크 과정</h2>
+        <p>하이테크 과정은 4년제 대학 졸업(예정)자를 대상으로 1년간 산업 현장에서 바로 쓰이는 기술을
+           집중 교육하는 과정입니다. 실시간 온라인 수업과 프로젝트 실습을 병행합니다.</p>
+      </div>
+	  <div style="width: 100%; height: 100%; min-height: 250px; overflow: hidden; display: flex; align-items: center; justify-content: center; border-radius: 6px;">
+	    <img th:src="@{/img/preview.png}" alt="캠퍼스 전경 및 과정 대표 이미지" 
+	         style="width: 100%; height: 100%; object-fit: cover; display: block;">
+	  </div>
+    </div>
+
+    <div class="ab-stats">
+      <div class="ab-stat"><div class="label">교육 기간</div><div class="num">1<small>년</small></div></div>
+      <div class="ab-stat"><div class="label">운영 학과</div><div class="num">4<small>개</small></div></div>
+      <div class="ab-stat"><div class="label">취업률</div><div class="num">87<small>%</small></div></div>
+      <div class="ab-stat"><div class="label">협약 기업</div><div class="num">120<small>곳</small></div></div>
+    </div>
+
+    <section class="ab-sec">
+      <h3 class="ab-title">운영 학과</h3>
+      <table class="ab-table">
+        <thead>
+          <tr><th style="width:160px">학과</th><th>주요 교육 내용</th><th style="width:100px">정원</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>정보기술과</td><td class="left">DB, 백엔드(Spring), 프론트엔드, 클라우드</td><td>28명</td></tr>
+          <tr><td>데이터분석과</td><td class="left">Python, 통계, 머신러닝, 시각화</td><td>24명</td></tr>
+          <tr><td>디자인과</td><td class="left">UI/UX, 공공 웹 접근성, 화면설계</td><td>20명</td></tr>
+          <tr><td>경영회계과</td><td class="left">ERP, 직무 데이터 분석, 회계 실무</td><td>24명</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="ab-sec">
+      <h3 class="ab-title">교육 과정 흐름</h3>
+      <ul class="ab-flow" id="flow">
+        <li><button type="button" class="active" data-desc="서류 · 면접 전형으로 선발하고, 학과별 오리엔테이션과 기초 역량 진단을 진행합니다.">입학</button></li>
+        <li><button type="button" data-desc="프로그래밍 · 데이터베이스 · 협업 도구 등 모든 학과 공통 기초를 다집니다.">기초 역량</button></li>
+        <li><button type="button" data-desc="학과별 핵심 기술을 실시간 수업과 실습 과제로 깊이 있게 학습합니다.">전공 심화</button></li>
+        <li><button type="button" data-desc="팀을 꾸려 기업 연계 과제를 기획 · 개발 · 발표합니다.">프로젝트</button></li>
+        <li><button type="button" data-desc="협약 기업 채용 연계, 이력서 · 포트폴리오 · 면접 코칭을 지원합니다.">취업 연계</button></li>
+      </ul>
+      <div class="ab-flow-desc" id="flowDesc"><b>입학</b> · 서류 · 면접 전형으로 선발하고, 학과별 오리엔테이션과 기초 역량 진단을 진행합니다.</div>
+    </section>
+
+    <section class="ab-sec ab-visit">
+      <div class="box">
+        <h4>찾아오시는 길</h4>
+        <p>(35503) 대전광역시 동구 우암로 352-21<br>TEL 042-670-0600</p>
+      </div>
+	  <div style="width: 100%; height: 100%; overflow: hidden; position: relative; border-radius: 4px; background-color: #f8f9fa;">
+	    <img th:src="@{/img/map.png}" alt="오시는 길 지도" 
+	         style="width: 130%; height: 130%; object-fit: cover; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); display: block;">
+	  </div>
+    </section>
+
+    <!-- 교육 과정 흐름 단계 클릭 → 설명 바꾸기 (레이아웃 병합 때문에 content 안에 둠) -->
+    <script>
+      (function () {
+        var buttons = document.querySelectorAll('#flow button');
+        var desc = document.getElementById('flowDesc');
+        buttons.forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            buttons.forEach(function (b) { b.classList.remove('active'); });
+            btn.classList.add('active');
+            var b = document.createElement('b');
+            b.textContent = btn.textContent;
+            desc.textContent = ' · ' + btn.getAttribute('data-desc');
+            desc.insertBefore(b, desc.firstChild);
+          });
+        });
+      })();
+    </script>
+  </div>
+</body>
+
+</html>

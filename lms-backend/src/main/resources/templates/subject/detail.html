@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{layout}">
+
+<head>
+  <title>과목 상세</title>
+  <style>
+    .form-box { background: #fff; border-top: 2px solid #1f3a5f; padding: 20px 16px; }
+    .row { display: flex; margin-bottom: 14px; }
+    .row .label { width: 100px; font-weight: bold; font-size: 14px; }
+    .row .value { flex: 1; font-size: 14px; }
+    .actions { display: flex; justify-content: space-between; margin-top: 16px; }
+    .actions .right { display: flex; gap: 6px; }
+    .actions form { margin: 0; }
+    .btn { display: inline-block; padding: 7px 14px; border: 1px solid #1f3a5f; border-radius: 4px;
+           background: #fff; color: #1f3a5f; text-decoration: none; font-size: 14px; font-family: inherit; cursor: pointer; }
+    .btn-primary { background: #1f3a5f; color: #fff; }
+    .btn-danger { border-color: #c0392b; color: #c0392b; }
+  </style>
+</head>
+
+<body>
+  <div layout:fragment="content">
+
+    <h2>과목 상세</h2>
+
+    <div class="form-box">
+      <div class="row">
+        <span class="label">과목 코드</span>
+        <span class="value" th:text="${subject.subjectId}">DB101</span>
+      </div>
+      <div class="row">
+        <span class="label">과목명</span>
+        <span class="value" th:text="${subject.subjectName}">데이터베이스 설계와 SQL 실무</span>
+      </div>
+      <div class="row">
+        <span class="label">학과</span>
+        <span class="value" th:text="${subject.dept.deptName}">스마트소프트웨어과</span>
+      </div>
+    </div>
+
+    <div class="actions">
+      <a class="btn" th:href="@{/subject/list}">목록</a>
+
+      <div class="right" sec:authorize="hasAnyRole('TEACHER', 'ADMIN')">
+        <a class="btn btn-primary" th:href="@{|/subject/update/${subject.subjectId}|}">수정</a>
+        <form th:action="@{|/subject/delete/${subject.subjectId}|}" method="post"
+              onsubmit="return confirm('정말 삭제하시겠습니까?');">
+          <button type="submit" class="btn btn-danger">삭제</button>
+        </form>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+
+<head>
+  <title>수업 Q&amp;A</title>
+  <style>
+    .board-head { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 12px; }
+    .board-head h2 { margin: 0; }
+    .search { display: flex; gap: 6px; }
+    .search input { padding: 7px 10px; border: 1px solid #ccc; border-radius: 4px; width: 240px; }
+    .btn { display: inline-block; padding: 7px 14px; border: 1px solid #1f3a5f; border-radius: 4px;
+           background: #fff; color: #1f3a5f; text-decoration: none; font-size: 14px; cursor: pointer; }
+    .btn-primary { background: #1f3a5f; color: #fff; }
+    .total { color: #666; font-size: 13px; margin: 8px 0; }
+    table.board { width: 100%; border-collapse: collapse; background: #fff; }
+    table.board th, table.board td { padding: 10px 8px; border-bottom: 1px solid #e5e5e5; font-size: 14px; }
+    table.board th { background: #eef2f7; border-top: 2px solid #1f3a5f; }
+    table.board td { text-align: center; }
+    table.board td.title { text-align: left; }
+    table.board td.title a { color: #222; text-decoration: none; }
+    table.board td.title a:hover { text-decoration: underline; }
+    .empty { padding: 40px 0; color: #888; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 12px; }
+    .b-wait { background: #fdecea; color: #c0392b; }   /* 답변대기 */
+    .b-done { background: #e7f5ec; color: #1e7e46; }   /* 답변완료 */
+    .paging { display: flex; justify-content: center; gap: 4px; margin: 20px 0; padding: 0; list-style: none; }
+    .paging a, .paging span { display: block; min-width: 32px; padding: 6px 8px; border: 1px solid #ccc;
+           border-radius: 4px; text-align: center; text-decoration: none; color: #333; font-size: 13px; }
+    .paging .active span { background: #1f3a5f; color: #fff; border-color: #1f3a5f; }
+    .paging .disabled span { color: #bbb; }
+  </style>
+</head>
+
+<body>
+  <div layout:fragment="content">
+
+    <div class="board-head">
+      <h2>수업 Q&amp;A</h2>
+      <!-- 검색: 제목 · 내용 · 작성자 · 수업 (GET 이라 CSRF 필요 없음) -->
+      <form class="search" th:action="@{/qna/list}" method="get">
+        <input type="text" name="kw" th:value="${kw}" placeholder="제목, 내용, 작성자, 수업 검색">
+        <button type="submit" class="btn">검색</button>
+      </form>
+    </div>
+
+    <div class="board-head">
+      <p class="total">전체 <b th:text="${paging.totalElements}">0</b>건</p>
+      <!-- 질문은 학생만 -->
+      <a th:if="${isStudent}" th:href="@{/qna/create}" class="btn btn-primary">질문하기</a>
+    </div>
+
+    <table class="board">
+      <thead>
+        <tr>
+          <th style="width:70px">번호</th>
+          <th style="width:160px">수업</th>
+          <th>제목</th>
+          <th style="width:100px">작성자</th>
+          <th style="width:110px">작성일</th>
+          <th style="width:100px">상태</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:if="${paging.totalElements == 0}">
+          <td colspan="6" class="empty">등록된 질문이 없습니다.</td>
+        </tr>
+        <!-- 번호 = 전체 개수 - (현재 페이지 * 10) - 반복 순서  → 최신 질문이 가장 큰 번호 -->
+        <tr th:each="qna, loop : ${paging}">
+          <td th:text="${paging.totalElements - (paging.number * paging.size) - loop.index}">1</td>
+          <td th:text="${qna.lesson.lessonTitle}">6주차 조인</td>
+          <td class="title">
+            <a th:href="@{|/qna/detail/${qna.qnaId}|}" th:text="${qna.qnaTitle}">질문 제목</a>
+          </td>
+          <td th:text="${qna.writer.userName}">작성자</td>
+          <td th:text="${#temporals.format(qna.qnaCreateDate, 'yyyy-MM-dd')}">2026-10-13</td>
+          <td>
+            <span th:if="${qna.qnaStatus == 'C'}" class="badge b-done">답변완료</span>
+            <span th:unless="${qna.qnaStatus == 'C'}" class="badge b-wait">답변대기</span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- 페이징: 현재 페이지 앞뒤로 5페이지씩 표시, 검색어(kw) 유지 -->
+    <ul class="paging" th:if="${paging.totalPages > 0}">
+      <li th:classappend="${!paging.hasPrevious()} ? 'disabled'">
+        <a th:if="${paging.hasPrevious()}" th:href="@{/qna/list(page=${paging.number - 1}, kw=${kw})}">이전</a>
+        <span th:unless="${paging.hasPrevious()}">이전</span>
+      </li>
+      <li th:each="page : ${#numbers.sequence(0, paging.totalPages - 1)}"
+          th:if="${page >= paging.number - 5 and page <= paging.number + 5}"
+          th:classappend="${page == paging.number} ? 'active'">
+        <a th:unless="${page == paging.number}" th:href="@{/qna/list(page=${page}, kw=${kw})}" th:text="${page + 1}">1</a>
+        <span th:if="${page == paging.number}" th:text="${page + 1}">1</span>
+      </li>
+      <li th:classappend="${!paging.hasNext()} ? 'disabled'">
+        <a th:if="${paging.hasNext()}" th:href="@{/qna/list(page=${paging.number + 1}, kw=${kw})}">다음</a>
+        <span th:unless="${paging.hasNext()}">다음</span>
+      </li>
+    </ul>
+
+  </div>
+</body>
+
+</html>

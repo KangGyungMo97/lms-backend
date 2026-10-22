@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+
+<head>
+  <title>강의 상세</title>
+  <style>
+    .btn { display: inline-block; padding: 7px 14px; border: 1px solid #1f3a5f; border-radius: 4px;
+           background: #fff; color: #1f3a5f; text-decoration: none; font-size: 14px; cursor: pointer; }
+    .btn-danger { border-color: #c0392b; color: #c0392b; }
+
+    .view-box { background: #fff; border-top: 2px solid #1f3a5f; }
+    .view-title { margin: 0; padding: 18px 16px; font-size: 20px; font-weight: 700;
+                  border-bottom: 1px solid #e5e5e5; }
+    .view-meta { display: flex; gap: 0; padding: 12px 16px; font-size: 13px; color: #666;
+                 border-bottom: 1px solid #e5e5e5; flex-wrap: wrap; }
+    .view-meta span + span::before { content: "|"; margin: 0 10px; color: #ccc; }
+    .view-meta b { color: #333; }
+
+    .view-body { padding: 20px 16px; min-height: 160px; font-size: 14px; line-height: 1.7; }
+    .view-body dl { display: flex; margin: 0 0 14px; }
+    .view-body dt { width: 100px; flex-shrink: 0; color: #666; font-weight: 600; }
+    .view-body dd { margin: 0; }
+    .view-body ul { margin: 0; padding: 0; list-style: none; }
+
+    .view-actions { display: flex; justify-content: space-between; margin: 16px 0 24px;
+                    border-top: 1px solid #e5e5e5; padding-top: 16px; }
+    .view-actions .right { display: flex; gap: 6px; }
+    .view-actions form { margin: 0; }
+  </style>
+</head>
+
+<body>
+  <section layout:fragment="page-head">
+    <div th:replace="~{fragments/page_head :: head('강의 상세', '수업', null)}"></div>
+  </section>
+
+  <div layout:fragment="content">
+
+    <div class="view-box">
+      <!-- 제목 -->
+      <h3 class="view-title" th:text="${course.courseTitle}">과목명</h3>
+
+      <!-- 메타 줄 -->
+      <div class="view-meta">
+        <span>분류 <b th:text="${course.subject.subjectName}">분류</b></span>
+        <span>대상 <b th:text="${course.courseTarget != null} ? ${targetLabels[course.courseTarget]} : '-'">1학년</b></span>
+        <span>담당 교수 <b th:text="${course.teacher.userName}">교수</b></span>
+      </div>
+
+      <!-- 본문 -->
+      <div class="view-body">
+        <dl>
+          <dt>수업 기간</dt>
+          <dd>
+            <span th:if="${course.courseStartDate != null}"
+                  th:text="|${course.courseStartDate} ~ ${course.courseEndDate}|">2026-10-01 ~ 2026-10-30</span>
+            <span th:if="${course.courseStartDate == null}">-</span>
+          </dd>
+        </dl>
+
+        <dl>
+          <dt>수업 시간</dt>
+          <dd>
+            <ul>
+              <li th:each="t : ${course.times}"
+                  th:text="|${weekdayLabels[t.weekday]}요일 ${t.startTime}~${t.endTime}교시 (${startLabels[t.startTime]} ~ ${endLabels[t.endTime]})|">월요일 2~3교시</li>
+              <!-- 이전 방식으로 등록된 강의 -->
+              <li th:if="${#lists.isEmpty(course.times)}"
+                  th:text="|${weekdayLabels[course.courseWeekday]}요일 ${course.courseStartTime}~${course.courseEndTime}교시|"></li>
+            </ul>
+          </dd>
+        </dl>
+
+        <dl th:if="${course.courseCriteria != null and !#strings.isEmpty(course.courseCriteria)}">
+          <dt>수료 기준</dt>
+          <dd th:text="${course.courseCriteria}">출석 80% 이상</dd>
+        </dl>
+      </div>
+    </div>
+
+    <!-- 하단 버튼 -->
+    <div class="view-actions">
+      <a th:href="@{/course/list}" class="btn">목록</a>
+
+      <div class="right"
+           sec:authorize="hasRole('TEACHER')"
+           th:if="${#authentication.name == course.teacher.userId}">
+        <a th:href="@{|/course/modify/${course.courseId}|}" class="btn">수정</a>
+        <form th:action="@{|/course/delete/${course.courseId}|}" method="post"
+              onsubmit="return confirm('이 강의를 삭제할까요?');">
+          <button type="submit" class="btn btn-danger">삭제</button>
+        </form>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>

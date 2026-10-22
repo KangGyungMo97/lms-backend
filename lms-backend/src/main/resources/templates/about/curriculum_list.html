@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+
+<head>
+  <title>교육과정 안내</title>
+  <link rel="stylesheet" th:href="@{/css/about.css}">
+</head>
+
+<body>
+  <section layout:fragment="page-head">
+    <div th:replace="~{fragments/page_head :: head('교육과정 안내', '학과 안내', null)}"></div>
+  </section>
+
+  <!-- 교육과정 안내 - 정적 화면 (데이터: static/js/curriculum-data.js, 검색 · 정렬 · 페이지는 화면에서 처리) -->
+  <div layout:fragment="content">
+
+    <form class="ab-filter" id="filter" onsubmit="return false;">
+      <div>
+        <label for="fField">교육분야</label>
+        <select id="fField">
+          <option value="">전체</option>
+          <option>정보기술</option>
+          <option>데이터분석</option>
+          <option>디자인</option>
+          <option>경영회계</option>
+        </select>
+      </div>
+      <div>
+        <label for="fSem">학기</label>
+        <select id="fSem">
+          <option value="">전체</option>
+          <option value="2026-2" selected>2026-2학기</option>
+          <option value="2026-1">2026-1학기</option>
+        </select>
+      </div>
+      <div class="kw">
+        <label for="fKw">검색어</label>
+        <input type="text" id="fKw" placeholder="과정명 또는 교수명을 입력하세요">
+      </div>
+      <button type="submit" class="ab-btn primary" id="btnSearch">검색</button>
+      <button type="button" class="ab-btn" id="btnReset">초기화</button>
+    </form>
+
+    <div class="ab-listbar">
+      <span>전체 <b id="total">0</b>건</span>
+      <select class="ab-sort" id="fSort">
+        <option value="new">최신순</option>
+        <option value="title">과정명순</option>
+      </select>
+    </div>
+
+    <div class="ab-cards" id="cards" th:attr="data-detail=@{/about/curriculum/detail}"></div>
+    <div class="ab-paging" id="paging"></div>
+
+    <script th:src="@{/js/curriculum-data.js}"></script>
+    <script th:inline="none">
+      (function () {
+        var PER_PAGE = 6;
+        var detailUrl = document.getElementById('cards').getAttribute('data-detail');
+        var page = 1;
+
+        function esc(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+        function short(d) { return d.substring(5).replace('-', '.'); }   // 2026-09-01 → 09.01
+        // 과정 대표 이미지 (없으면 교육분야 이름을 대신 표시)
+        function imgBox(c) {
+          return c.img
+            ? '<div class="ab-img"><img src="' + c.img + '" alt="' + esc(c.title) + ' 대표 이미지" loading="lazy"></div>'
+            : '<div class="ab-img noimg">' + esc(c.field) + '</div>';
+        }
+
+        function filtered() {
+          var field = document.getElementById('fField').value;
+          var sem = document.getElementById('fSem').value;
+          var kw = document.getElementById('fKw').value.trim();
+          var list = CURRICULUM.filter(function (c) {
+            return (!field || c.field === field) && (!sem || c.sem === sem)
+                && (!kw || c.title.indexOf(kw) >= 0 || c.teacher.indexOf(kw) >= 0);
+          });
+          var sort = document.getElementById('fSort').value;
+          list.sort(sort === 'title'
+            ? function (a, b) { return a.title.localeCompare(b.title); }
+            : function (a, b) { return b.start.localeCompare(a.start) || a.id - b.id; });
+          return list;
+        }
+
+        function render() {
+          var list = filtered();
+          var pages = Math.max(1, Math.ceil(list.length / PER_PAGE));
+          if (page > pages) page = pages;
+          document.getElementById('total').textContent = list.length;
+
+          var html = '';
+          list.slice((page - 1) * PER_PAGE, page * PER_PAGE).forEach(function (c) {
+            html += '<a class="ab-card" href="' + detailUrl + '?id=' + c.id + '">'
+                  + imgBox(c)
+                  + '<div class="body"><span class="ab-tag">' + esc(c.field) + '</span>'
+                  + '<h4>' + esc(c.title) + '</h4>'
+                  + '<div class="meta">교수 ' + esc(c.teacher) + '<br>교육기간 ' + short(c.start) + ' ~ ' + short(c.end)
+                  + '<br>' + c.weeks + '주 · ' + c.hours + '시간</div></div></a>';
+          });
+          document.getElementById('cards').innerHTML = html || '<div class="ab-empty">조건에 맞는 교육과정이 없습니다.</div>';
+
+          var p = '';
+          if (pages > 1) {
+            p += '<a href="#" data-p="1">«</a><a href="#" data-p="' + Math.max(1, page - 1) + '">‹</a>';
+            for (var i = 1; i <= pages; i++) p += '<a href="#" data-p="' + i + '"' + (i === page ? ' class="on"' : '') + '>' + i + '</a>';
+            p += '<a href="#" data-p="' + Math.min(pages, page + 1) + '">›</a><a href="#" data-p="' + pages + '">»</a>';
+          }
+          document.getElementById('paging').innerHTML = p;
+        }
+
+        document.getElementById('paging').addEventListener('click', function (e) {
+          var p = e.target.getAttribute('data-p');
+          if (!p) return;
+          e.preventDefault();
+          page = Number(p);
+          render();
+        });
+        document.getElementById('btnSearch').addEventListener('click', function () { page = 1; render(); });
+        document.getElementById('fSort').addEventListener('change', render);
+        document.getElementById('btnReset').addEventListener('click', function () {
+          document.getElementById('fField').value = '';
+          document.getElementById('fSem').value = '2026-2';
+          document.getElementById('fKw').value = '';
+          page = 1;
+          render();
+        });
+        render();
+      })();
+    </script>
+  </div>
+</body>
+
+</html>

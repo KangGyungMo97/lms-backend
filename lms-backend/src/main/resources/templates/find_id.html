@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<!-- 아이디(학번/사번) 찾기 - 로그인 화면과 같은 디자인 (레이아웃 없음, static/css/auth.css) -->
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>아이디 찾기 | Smart Learning Hub</title>
+  <link rel="icon" type="image/png" th:href="@{/img/favicon.png}">
+  <link rel="stylesheet" th:href="@{/css/auth.css}">
+</head>
+
+<body>
+  <div class="form-side">
+    <div th:replace="~{fragments/auth :: top}"></div>
+
+    <div class="login">
+      <a class="back" th:href="@{/user/login}">← 로그인으로 돌아가기</a>
+      <h1 class="small">계정 찾기</h1>
+
+      <!-- 탭 -->
+      <div class="tabs">
+        <a class="on" th:href="@{/user/find-id}">아이디(학번/사번) 찾기</a>
+        <a th:href="@{/user/find-pw}">비밀번호 찾기</a>
+      </div>
+
+      <!-- 단계 표시 -->
+      <ol class="steps">
+        <li th:classappend="${foundIds == null} ? 'on' : 'done'"><b>1</b>정보 입력</li>
+        <li th:classappend="${foundIds != null} ? 'on'"><b>2</b>결과 확인</li>
+      </ol>
+
+      <!-- ===== 1단계: 정보 입력 ===== -->
+      <form th:if="${foundIds == null}" th:action="@{/user/find-id}" method="post">
+        <p class="guide">등록된 이름과 생년월일을 입력하면 학번/사번을 확인할 수 있습니다.</p>
+
+        <div class="msg error" th:if="${error}" th:text="${error}">일치하는 계정이 없습니다.</div>
+
+        <div class="field show">
+          <label for="userName">이름<span class="req">*</span></label>
+          <input type="text" id="userName" name="userName" th:value="${param.userName != null} ? ${param.userName[0]} : ''" placeholder="이름 입력" required autofocus>
+        </div>
+        <div class="field show">
+          <label for="userBday">생년월일<span class="req">*</span></label>
+          <input type="text" id="userBday" name="userBday" th:value="${param.userBday != null} ? ${param.userBday[0]} : ''" placeholder="예) 20000101 (8자리)"
+                 maxlength="8" pattern="\d{8}" inputmode="numeric" required>
+        </div>
+
+        <div class="roles">
+          <label><input type="radio" name="userRole" value="S"
+                        th:checked="${param.userRole == null or param.userRole[0] != 'P'}"><span>학생</span></label>
+          <label><input type="radio" name="userRole" value="P"
+                        th:checked="${param.userRole != null and param.userRole[0] == 'P'}"><span>교수</span></label>
+        </div>
+
+        <div class="btns">
+          <a class="btn-line" th:href="@{/user/login}">취소</a>
+          <button type="submit" class="btn-login">아이디 찾기</button>
+        </div>
+      </form>
+
+      <!-- ===== 2단계: 결과 확인 ===== -->
+      <div th:if="${foundIds != null}">
+        <div class="result">
+          <p>입력한 정보와 일치하는 아이디(학번/사번)입니다.</p>
+          <ul>
+            <li th:each="id : ${foundIds}" th:text="${id}">2610001</li>
+          </ul>
+        </div>
+        <div class="btns">
+          <a class="btn-line" th:href="@{/user/find-pw}">비밀번호 찾기</a>
+          <a class="btn-login" th:href="@{/user/login}"
+             style="display:flex; align-items:center; justify-content:center; text-decoration:none;">로그인하기</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="copy">© 2026 하이테크 LMS 팀 프로젝트</div>
+  </div>
+
+  <div th:replace="~{fragments/auth :: art}"></div>
+</body>
+</html>

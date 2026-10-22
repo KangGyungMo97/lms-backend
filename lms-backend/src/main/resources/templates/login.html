@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<!-- 로그인 화면 - 레이아웃(헤더 · 메뉴 · 푸터) 없이 단독 화면 (layout:decorate 안 씀) -->
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>로그인 | Smart Learning Hub</title>
+  <link rel="icon" type="image/png" th:href="@{/img/favicon.png}">
+  <link rel="stylesheet" th:href="@{/css/auth.css}">
+</head>
+
+<body>
+
+  <!-- ===== 왼쪽: 로그인 폼 ===== -->
+  <div class="form-side">
+    <!-- 왼쪽 위: 학교 마크 | 학과 이름 -->
+    <div th:replace="~{fragments/auth :: top}"></div>
+
+    <!-- POST /user/login 은 스프링 시큐리티가 처리, th:action 이 CSRF 값도 자동으로 넣어 줌 -->
+    <div class="login">
+      <h1><img class="title-icon" th:src="@{/img/logo.png}" alt="">Smart Learning Hub</h1>
+      <p class="sub">수업 · 과제 · 출석을 한곳에서 관리하세요.</p>
+
+      <div class="msg error" th:if="${param.error}">학번(사번) 또는 비밀번호가 올바르지 않습니다.</div>
+      <div class="msg ok" th:if="${param.logout}">로그아웃되었습니다.</div>
+      <div class="msg ok" th:if="${param.pwChanged}">비밀번호가 변경되었습니다. 새 비밀번호로 로그인해 주세요.</div>
+
+      <form th:action="@{/user/login}" method="post" id="loginForm">
+        <div class="field">
+          <label for="username">아이디 (학번/사번)</label>
+          <input type="text" id="username" name="username" placeholder="학번 또는 사번" required autofocus autocomplete="username">
+        </div>
+        <div class="field">
+          <label for="password">비밀번호</label>
+          <input type="password" id="password" name="password" placeholder="비밀번호" required autocomplete="current-password">
+        </div>
+
+        <div class="row">
+          <label class="save"><input type="checkbox" id="saveId"> 학번 저장</label>
+        </div>
+
+        <button type="submit" class="btn-login">로그인</button>
+      </form>
+
+      <!-- 로그인 버튼 아래: 아이디 찾기 | 비밀번호 찾기 -->
+      <div class="finds">
+        <a th:href="@{/user/find-id}">아이디(학번/사번) 찾기</a>
+        <span class="sep"></span>
+        <a th:href="@{/user/find-pw}">비밀번호 찾기</a>
+      </div>
+
+      <p class="foot">계정이 없나요? <a th:href="@{/user/request}">학과(관리자)에 발급 요청</a><br>
+        처음 비밀번호는 생년월일 8자리입니다. (예: 20070315)</p>
+    </div>
+
+    <div class="copy">© 2026 하이테크 LMS 팀 프로젝트</div>
+  </div>
+
+  <!-- ===== 오른쪽: 그림 ===== -->
+  <div th:replace="~{fragments/auth :: art}"></div>
+
+  <!-- 학번 저장 (이 브라우저에만 저장, 비밀번호는 저장 안 함) -->
+  <script>
+    (function () {
+      var KEY = 'lms.savedId';
+      var id = document.getElementById('username');
+      var save = document.getElementById('saveId');
+      try {
+        var saved = localStorage.getItem(KEY);
+        if (saved) { id.value = saved; save.checked = true; document.getElementById('password').focus(); }
+      } catch (e) {}
+      document.getElementById('loginForm').addEventListener('submit', function () {
+        try {
+          if (save.checked) localStorage.setItem(KEY, id.value.trim());
+          else localStorage.removeItem(KEY);
+        } catch (e) {}
+      });
+    })();
+  </script>
+</body>
+</html>

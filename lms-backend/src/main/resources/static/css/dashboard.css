@@ -1,0 +1,129 @@
+/* =========================================================
+   대시보드 · 오늘의 수업 카드 (dashboard/student · teacher, attendance 화면)
+   색은 layout.css 의 :root 변수를 그대로 씀
+   ========================================================= */
+:root {
+  --ok: #2e7d32;
+  --ok-light: #e8f5e9;
+  --warn: #e67e22;
+  --danger-light: #fdecea;
+}
+
+/* ----- 인사 ----- */
+.dash-hello { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin: 4px 0 18px; }
+.dash-hello h2 { margin: 0; font-size: 22px; color: var(--navy); }
+.dash-hello span { color: var(--text-sub); font-size: 13px; }
+
+/* ----- 요약 숫자 4개 ----- */
+.stat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 30px; }
+.stat {
+  display: block; background: var(--white); border: 1px solid var(--line); border-top: 2px solid var(--navy);
+  padding: 14px 18px 16px; text-decoration: none;
+}
+.stat:hover { background: var(--navy-light); }
+.stat .label { font-size: 12px; color: var(--text-sub); }
+.stat .num { margin-top: 8px; font-size: 26px; font-weight: 700; color: var(--navy); line-height: 1; }
+.stat .num small { font-size: 13px; font-weight: 400; color: var(--text-sub); margin-left: 3px; }
+.stat.alert { border-top-color: var(--danger); }
+.stat.alert .num { color: var(--danger); }
+
+/* ----- 섹션 제목 ----- */
+.dash-sec { margin-bottom: 30px; }
+.sec-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.sec-head h3 { margin: 0; font-size: 16px; padding-left: 10px; border-left: 3px solid var(--navy); line-height: 1.2; }
+.sec-head h3.red { border-left-color: var(--danger); }
+.sec-head .more { font-size: 12px; color: var(--text-sub); text-decoration: none; }
+.sec-head .more:hover { color: var(--navy); }
+.dash-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.dash-empty { background: var(--white); border: 1px solid var(--line); padding: 26px 0; text-align: center; color: var(--text-muted); }
+
+/* ----- 표 ----- */
+table.dash-table { width: 100%; border-collapse: collapse; background: var(--white); border-top: 2px solid var(--navy); }
+.dash-table th { background: var(--navy-light); font-weight: 600; font-size: 13px; padding: 9px 8px; }
+.dash-table td { padding: 10px 8px; border-bottom: 1px solid var(--line); text-align: center; font-size: 13px; }
+.dash-table td.title { text-align: left; }
+.dash-table td.title a { color: var(--text); text-decoration: none; }
+.dash-table td.title a:hover { color: var(--navy); text-decoration: underline; }
+.dash-table td.red { color: var(--danger); }
+.dash-table .sub { color: var(--text-sub); }
+
+/* 진도율 막대 */
+.bar { display: inline-flex; align-items: center; gap: 8px; }
+.bar i { display: block; width: 90px; height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; }
+.bar i b { display: block; height: 100%; background: var(--navy); }
+.bar span { font-size: 12px; color: var(--text-sub); min-width: 32px; text-align: left; }
+
+/* 작은 버튼 · 상태 칩 */
+.mini-btn {
+  display: inline-block; padding: 4px 10px; border: 1px solid var(--navy); border-radius: 3px;
+  color: var(--navy); background: var(--white); font-size: 12px; text-decoration: none;
+}
+.mini-btn:hover { background: var(--navy); color: var(--white); }
+.chip { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 11px; font-weight: 600; color: var(--white); background: #8a919c; }
+.chip.red { background: var(--danger); }
+.chip.green { background: var(--ok); }
+.chip.navy { background: var(--navy); }
+.chip.line { background: var(--navy-light); color: var(--navy); }
+
+/* 공지 · Q&A 목록 */
+ul.dash-list { list-style: none; margin: 0; padding: 0; background: var(--white); border-top: 2px solid var(--navy); }
+.dash-list li { display: flex; align-items: center; gap: 8px; padding: 10px 8px; border-bottom: 1px solid var(--line); font-size: 13px; }
+.dash-list li a { flex: 1; color: var(--text); text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dash-list li a:hover { color: var(--navy); text-decoration: underline; }
+.dash-list li .date { color: var(--text-muted); font-size: 12px; }
+.dash-list li.empty { justify-content: center; color: var(--text-muted); padding: 24px 0; }
+
+/* ----- 오늘의 수업 카드 ----- */
+.today-list { display: flex; flex-direction: column; gap: 10px; }
+.today-card {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  background: var(--white); border: 1px solid var(--line); border-top: 2px solid var(--navy); padding: 16px 18px;
+}
+.today-card.live { box-shadow: 0 2px 10px rgba(31, 58, 95, .08); }
+.tc-title { display: flex; align-items: center; gap: 10px; font-size: 16px; }
+.tc-meta { margin-top: 6px; color: var(--text-sub); font-size: 12px; }
+.tc-meta span + span::before { content: "·"; margin: 0 6px; color: #bbb; }
+.tc-warn { color: var(--danger); }
+.tc-badge { padding: 2px 8px; border-radius: 3px; font-size: 11px; font-weight: 600; color: var(--white); white-space: nowrap; }
+.tc-badge.live { background: var(--danger); }
+.tc-badge.soon { background: var(--warn); }
+.tc-badge.wait { background: var(--navy-light); color: var(--navy); }
+.tc-badge.end  { background: #8a919c; }
+.tc-action { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.tc-action form { margin: 0; }
+.tc-btn {
+  display: inline-block; padding: 10px 20px; border: 1px solid var(--navy); border-radius: 3px;
+  background: var(--navy); color: var(--white); font-size: 14px; font-weight: 600; text-decoration: none; cursor: pointer;
+  font-family: inherit;
+}
+.tc-btn:hover { background: var(--navy-dark); }
+.tc-btn.line { background: var(--white); color: var(--navy); }
+.tc-btn.line:hover { background: var(--navy-light); }
+.tc-btn[disabled] { background: #c9ced6; border-color: #c9ced6; color: var(--white); cursor: default; }
+.tc-hint { font-size: 12px; color: var(--text-sub); }
+.tc-state { font-size: 13px; font-weight: 700; }
+.tc-state.Y { color: var(--ok); }
+.tc-state.L { color: var(--warn); }
+.tc-state.E { color: var(--navy); }
+.tc-state.N { color: var(--danger); }
+
+/* ----- 모바일 ----- */
+@media (max-width: 860px) {
+  .stat-row { grid-template-columns: repeat(2, 1fr); }
+  .dash-2col { grid-template-columns: 1fr; }
+  .today-card { flex-direction: column; align-items: stretch; }
+  .tc-action { justify-content: flex-end; }
+  .dash-table .hide-m { display: none; }
+}
+
+/* ----- 출석 코드 (학생 입력칸 · 교수 코드 표시) ----- */
+.tc-code { display: flex; align-items: center; gap: 8px; }
+.tc-code input {
+  width: 150px; height: 42px; padding: 0 12px; border: 1px solid #cfd6df; border-radius: 3px;
+  font-size: 18px; letter-spacing: 4px; text-align: center; font-family: Consolas, monospace;
+}
+.tc-code input::placeholder { letter-spacing: 0; font-size: 13px; font-family: inherit; color: #a3abb5; }
+.tc-code input:focus { outline: none; border-color: var(--navy); box-shadow: 0 0 0 3px rgba(31, 58, 95, .12); }
+.tc-codechip { padding: 8px 12px; border-radius: 4px; background: var(--navy-light); color: var(--navy); font-size: 13px; white-space: nowrap; }
+.tc-codechip b { font-family: Consolas, monospace; font-size: 18px; letter-spacing: 3px; margin-left: 4px; }
+@media (max-width: 860px) { .tc-code { flex-wrap: wrap; justify-content: flex-end; } }

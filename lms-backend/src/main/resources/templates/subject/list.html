@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{layout}">
+
+<head>
+  <title>과목 목록</title>
+  <style>
+    .board-head { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 12px; }
+    .board-head h2 { margin: 0; }
+    .guide { color: #666; font-size: 13px; margin: 6px 0 0; }
+    .search { display: flex; gap: 6px; }
+    .search input { padding: 7px 10px; border: 1px solid #ccc; border-radius: 4px; width: 240px; }
+    .btn { display: inline-block; padding: 7px 14px; border: 1px solid #1f3a5f; border-radius: 4px;
+           background: #fff; color: #1f3a5f; text-decoration: none; font-size: 14px; font-family: inherit; cursor: pointer; }
+    .btn-primary { background: #1f3a5f; color: #fff; }
+    .btn-sm { padding: 3px 10px; font-size: 12px; }
+    .btn-danger { border-color: #c0392b; color: #c0392b; }
+    .msg { background: #e8f5e9; color: #2e7d32; border-radius: 4px; padding: 10px 14px; margin-bottom: 12px; font-size: 14px; }
+    .msg.error { background: #fdecea; color: #c0392b; }
+    .total { color: #666; font-size: 13px; margin: 8px 0; }
+    table.board { width: 100%; border-collapse: collapse; background: #fff; }
+    table.board th, table.board td { padding: 10px 8px; border-bottom: 1px solid #e5e5e5; font-size: 14px; text-align: center; }
+    table.board th { background: #eef2f7; border-top: 2px solid #1f3a5f; }
+    table.board td.title { text-align: left; }
+    table.board td.title a { color: #222; text-decoration: none; }
+    table.board td.title a:hover { text-decoration: underline; }
+    table.board td.manage { white-space: nowrap; }
+    table.board td.manage form { display: inline; margin: 0; }
+    .empty { padding: 40px 0; color: #888; }
+    .paging { display: flex; justify-content: center; gap: 4px; margin: 20px 0; padding: 0; list-style: none; }
+    .paging a, .paging span { display: block; min-width: 32px; padding: 6px 8px; border: 1px solid #ccc;
+           border-radius: 4px; text-align: center; text-decoration: none; color: #333; font-size: 13px; }
+    .paging .active span { background: #1f3a5f; color: #fff; border-color: #1f3a5f; }
+    .paging .disabled span { color: #bbb; }
+  </style>
+</head>
+
+<body>
+  <div layout:fragment="content">
+
+    <div class="board-head">
+      <div>
+        <h2>과목 목록</h2>
+        <p class="guide">여기서 등록한 과목은 <b>강의 등록</b>의 분류에서 선택할 수 있습니다.</p>
+      </div>
+      <form class="search" th:action="@{/subject/list}" method="get">
+        <input type="text" name="kw" th:value="${kw}" placeholder="과목코드, 과목명, 학과 검색">
+        <button type="submit" class="btn">검색</button>
+      </form>
+    </div>
+
+    <div class="msg" th:if="${msg}" th:text="${msg}">완료 메시지</div>
+    <div class="msg error" th:if="${error}" th:text="${error}">오류 메시지</div>
+
+    <div class="board-head">
+      <p class="total">전체 <b th:text="${paging.totalElements}">0</b>건</p>
+      <a th:href="@{/subject/create}" class="btn btn-primary"
+         sec:authorize="hasAnyRole('TEACHER', 'ADMIN')">과목 등록</a>
+    </div>
+
+    <table class="board">
+      <thead>
+        <tr>
+          <th style="width:70px">번호</th>
+          <th style="width:120px">과목코드</th>
+          <th>과목명</th>
+          <th style="width:170px">학과</th>
+          <th style="width:130px" sec:authorize="hasAnyRole('TEACHER', 'ADMIN')">관리</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:if="${paging.totalElements == 0}">
+          <td colspan="5" class="empty">등록된 과목이 없습니다.</td>
+        </tr>
+        <tr th:each="subject, loop : ${paging}">
+          <td th:text="${paging.totalElements - (paging.number * paging.size) - loop.index}">1</td>
+          <td th:text="${subject.subjectId}">DB101</td>
+          <td class="title">
+            <a th:href="@{|/subject/detail/${subject.subjectId}|}" th:text="${subject.subjectName}">데이터베이스</a>
+          </td>
+          <td th:text="${subject.dept.deptName}">스마트소프트웨어과</td>
+          <td class="manage" sec:authorize="hasAnyRole('TEACHER', 'ADMIN')">
+            <a th:href="@{|/subject/update/${subject.subjectId}|}" class="btn btn-sm">수정</a>
+            <form th:action="@{|/subject/delete/${subject.subjectId}|}" method="post"
+                  onsubmit="return confirm('정말 삭제하시겠습니까?');">
+              <button type="submit" class="btn btn-sm btn-danger">삭제</button>
+            </form>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <ul class="paging" th:if="${paging.totalPages > 0}">
+      <li th:classappend="${!paging.hasPrevious()} ? 'disabled'">
+        <a th:if="${paging.hasPrevious()}" th:href="@{/subject/list(page=${paging.number - 1}, kw=${kw})}">이전</a>
+        <span th:unless="${paging.hasPrevious()}">이전</span>
+      </li>
+      <li th:each="page : ${#numbers.sequence(0, paging.totalPages - 1)}"
+          th:if="${page >= paging.number - 5 and page <= paging.number + 5}"
+          th:classappend="${page == paging.number} ? 'active'">
+        <a th:unless="${page == paging.number}" th:href="@{/subject/list(page=${page}, kw=${kw})}" th:text="${page + 1}">1</a>
+        <span th:if="${page == paging.number}" th:text="${page + 1}">1</span>
+      </li>
+      <li th:classappend="${!paging.hasNext()} ? 'disabled'">
+        <a th:if="${paging.hasNext()}" th:href="@{/subject/list(page=${paging.number + 1}, kw=${kw})}">다음</a>
+        <span th:unless="${paging.hasNext()}">다음</span>
+      </li>
+    </ul>
+
+  </div>
+</body>
+</html>

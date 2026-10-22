@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+
+<head>
+  <title>강의실</title>
+  <link rel="stylesheet" th:href="@{/css/dashboard.css}">
+  <style>
+    /* 강의 정보 */
+    .room-info { display: grid; grid-template-columns: 1fr auto; gap: 20px; align-items: center;
+                 background: #fff; border: 1px solid var(--line); border-top: 2px solid var(--navy); padding: 20px 22px; margin-bottom: 26px; }
+    .room-info .tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+    .room-info dl { display: grid; grid-template-columns: 80px 1fr; gap: 6px 12px; margin: 0; font-size: 14px; }
+    .room-info dt { color: var(--text-sub); }
+    .room-info dd { margin: 0; }
+    .room-side { display: flex; flex-direction: column; gap: 12px; align-items: flex-end; }
+    .room-stats { display: flex; gap: 10px; }
+    .room-stat { min-width: 110px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 6px; text-align: center; background: #fafbfd; }
+    .room-stat .label { font-size: 12px; color: var(--text-sub); }
+    .room-stat .num { margin-top: 4px; font-size: 22px; font-weight: 700; color: var(--navy); }
+    .room-stat .num small { font-size: 12px; font-weight: 400; color: var(--text-sub); margin-left: 2px; }
+    .room-btns { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+    .sec-head .tools { display: flex; align-items: center; gap: 10px; }
+    .add-btn { font-size: 12px; padding: 4px 10px; border-radius: 3px; background: var(--navy); color: #fff; text-decoration: none; }
+    .add-btn:hover { background: var(--navy-dark); }
+    .dash-table tr.none td { color: #b3bac3; }
+    @media (max-width: 860px) {
+      .room-info { grid-template-columns: 1fr; }
+      .room-side { align-items: stretch; }
+      .room-stats .room-stat { flex: 1; }
+      .room-btns { justify-content: flex-start; }
+    }
+  </style>
+</head>
+
+<body>
+  <section layout:fragment="page-head">
+    <div th:replace="~{fragments/page_head :: head(${course.courseTitle}, '수업', '강의실')}"></div>
+  </section>
+
+  <div layout:fragment="content">
+
+    <!-- ===== 강의 정보 ===== -->
+    <div class="room-info">
+      <div>
+        <div class="tags">
+          <span class="chip line" th:text="${course.subject.subjectName}">데이터베이스</span>
+          <span class="chip line" th:if="${course.courseTarget != null}" th:text="|${course.courseTarget}학년|">2학년</span>
+          <span class="chip navy" th:text="|${course.teacher.userName} 교수|">박지훈 교수</span>
+        </div>
+        <dl>
+          <dt>수업 시간</dt><dd th:text="${timeLabel}">월·수·금 10:00~12:50</dd>
+          <dt>수업 기간</dt>
+          <dd th:text="${course.courseStartDate != null} ? |${course.courseStartDate} ~ ${course.courseEndDate}| : '-'">2026-09-01 ~ 2026-12-19</dd>
+          <dt>수료 기준</dt><dd th:text="${course.courseCriteria} ?: '-'">출석 80% 이상</dd>
+        </dl>
+      </div>
+      <div class="room-side">
+        <div class="room-stats">
+          <div class="room-stat">
+            <div class="label">진행 차시</div>
+            <div class="num"><th:block th:text="${doneLessons}">6</th:block><small th:text="|/ ${#lists.size(lessonRows)}|">/ 8</small></div>
+          </div>
+          <div class="room-stat" th:unless="${isStudent}">
+            <div class="label">평균 출석률</div>
+            <div class="num"><th:block th:text="${avgRate != null} ? ${avgRate} : '-'">94</th:block><small th:if="${avgRate != null}">%</small></div>
+          </div>
+          <div class="room-stat" th:if="${isStudent}">
+            <div class="label">내 출석률</div>
+            <div class="num"><th:block th:text="${myRate != null} ? ${myRate} : '-'">100</th:block><small th:if="${myRate != null}">%</small></div>
+          </div>
+          <div class="room-stat">
+            <div class="label">수강생</div>
+            <div class="num"><th:block th:text="${rosterCount}">12</th:block><small>명</small></div>
+          </div>
+        </div>
+        <div class="room-btns">
+          <a class="mini-btn" th:if="${isOwner}" th:href="@{|/attendance/list?courseId=${course.courseId}|}">출석부</a>
+          <a class="mini-btn" th:if="${isStudent}" th:href="@{/attendance/list}">출석 현황</a>
+          <a class="mini-btn" th:href="@{/timetable}">시간표</a>
+          <a class="mini-btn" th:if="${isOwner}" th:href="@{|/course/modify/${course.courseId}|}">강의 정보 수정</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== 오늘 수업 (오늘 수업이 있을 때만) ===== -->
+    <section class="dash-sec" th:unless="${#lists.isEmpty(todayList)}">
+      <div class="sec-head"><h3>오늘 수업</h3></div>
+      <div class="today-list">
+        <th:block th:each="t : ${todayList}">
+          <div th:replace="~{fragments/today_class :: card(${t}, ${!isStudent}, '')}"></div>
+        </th:block>
+      </div>
+    </section>
+
+    <div class="dash-2col">
+
+      <!-- ===== 과제 ===== -->
+      <section class="dash-sec">
+        <div class="sec-head">
+          <h3 class="red">과제</h3>
+          <div class="tools">
+            <a class="add-btn" th:if="${isOwner}" th:href="@{/homework/create}">+ 과제 등록</a>
+            <a class="more" th:href="@{/homework/list}">전체보기 +</a>
+          </div>
+        </div>
+        <table class="dash-table">
+          <thead>
+            <tr th:if="${isStudent}"><th>과제명</th><th style="width:70px">마감</th><th style="width:80px">상태</th></tr>
+            <tr th:unless="${isStudent}"><th>과제명</th><th style="width:60px">마감</th><th style="width:70px">제출</th><th style="width:80px">채점</th></tr>
+          </thead>
+          <tbody>
+            <tr th:if="${#lists.isEmpty(homeworkRows)}"><td th:colspan="${isStudent} ? 3 : 4" class="sub">진행 중인 과제가 없습니다.</td></tr>
+            <tr th:each="r : ${homeworkRows}">
+              <td class="title">
+                <a th:href="${isStudent} ? @{|/homework/detail/${r.homework.homeworkId}|} : @{|/homework/submit/list/${r.homework.homeworkId}|}"
+                   th:text="${r.homework.homeworkTitle}">ERD 작성 과제</a>
+              </td>
+              <td th:text="${#temporals.format(r.homework.homeworkEndDate, 'MM-dd')}">10-17</td>
+              <th:block th:if="${isStudent}">
+                <td><span class="chip"
+                          th:classappend="${r.state == '미제출'} ? 'red' : (${r.state == '채점완료'} ? 'green' : (${r.state == '제출완료'} ? 'navy' : ''))"
+                          th:text="${r.state}">미제출</span></td>
+              </th:block>
+              <th:block th:unless="${isStudent}">
+                <td th:text="|${r.submitted}/${r.rosterCount}|">11/12</td>
+                <td th:if="${r.ungraded > 0}" class="red" th:text="|${r.ungraded}건 남음|">3건 남음</td>
+                <td th:unless="${r.ungraded > 0}" class="sub" th:text="${r.state}">진행 중</td>
+              </th:block>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- ===== 공지사항 ===== -->
+      <section class="dash-sec">
+        <div class="sec-head">
+          <h3>공지사항</h3>
+          <div class="tools">
+            <a class="add-btn" th:if="${isOwner}" th:href="@{/notice/create}">+ 공지 작성</a>
+            <a class="more" th:href="@{/notice/list}">전체보기 +</a>
+          </div>
+        </div>
+        <ul class="dash-list">
+          <li class="empty" th:if="${#lists.isEmpty(notices)}">공지사항이 없습니다.</li>
+          <li th:each="n : ${notices}">
+            <a th:href="@{|/notice/detail/${n.noticeId}|}" th:text="${n.noticeTitle}">6차시 실습 데이터 업로드 안내</a>
+            <span class="date" th:text="${#temporals.format(n.noticeCreateDate, 'MM-dd')}">10-15</span>
+          </li>
+        </ul>
+      </section>
+    </div>
+
+    <!-- ===== 차시 목록 ===== -->
+    <section class="dash-sec">
+      <div class="sec-head">
+        <h3>차시 목록</h3>
+        <div class="tools">
+          <a class="add-btn" th:if="${isOwner}" th:href="@{/lesson/create}">+ 차시 등록</a>
+        </div>
+      </div>
+      <table class="dash-table">
+        <thead>
+          <tr>
+            <th style="width:60px">차시</th>
+            <th>수업명</th>
+            <th style="width:110px">진행일</th>
+            <th style="width:90px">상태</th>
+            <th style="width:150px" th:text="${isStudent} ? '내 출석' : '출석률'">출석률</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr th:if="${#lists.isEmpty(lessonRows)}"><td colspan="5" class="sub">등록된 차시가 없습니다.</td></tr>
+          <tr th:each="r : ${lessonRows}" th:classappend="${r.state == 'NONE'} ? 'none'">
+            <td th:text="${r.no}">1</td>
+            <td class="title"><a th:href="@{|/lesson/detail/${r.lesson.lessonId}|}" th:text="${r.lesson.lessonTitle}">데이터베이스 개요</a></td>
+            <td th:text="${r.date != null} ? ${#temporals.format(r.date, 'MM-dd (E)')} : '-'">10-05 (월)</td>
+            <td>
+              <span class="chip red"   th:if="${r.state == 'ON'}">진행 중</span>
+              <span class="chip green" th:if="${r.state == 'DONE'}">완료</span>
+              <span class="chip line"  th:if="${r.state == 'NONE'}">예정</span>
+            </td>
+            <!-- 교수: 출석률 막대 / 학생: 내 출석 상태 -->
+            <td th:unless="${isStudent}">
+              <span class="bar" th:if="${r.state != 'NONE'}"><i><b th:style="|width:${r.rate}%|" style="width:92%"></b></i><span th:text="|${r.rate}%|">92%</span></span>
+              <th:block th:if="${r.state == 'NONE'}">-</th:block>
+            </td>
+            <td th:if="${isStudent}" th:with="st=${myAtt[r.lesson.lessonId]}">
+              <span class="tc-state Y" th:if="${st == 'Y'}">출석</span>
+              <span class="tc-state L" th:if="${st == 'L'}">지각</span>
+              <span class="tc-state E" th:if="${st == 'E'}">공결</span>
+              <span class="tc-state N" th:if="${st == 'N' or (st == null and r.state == 'DONE')}">결석</span>
+              <th:block th:if="${st == null and r.state != 'DONE'}">-</th:block>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+  </div>
+</body>
+
+</html>

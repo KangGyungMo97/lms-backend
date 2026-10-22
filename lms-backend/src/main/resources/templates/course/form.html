@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+
+<head>
+  <title th:text="${courseId != null} ? '강의 수정' : '강의 등록'">강의 등록</title>
+  <style>
+    .form-box { border-top: 2px solid #1f3a5f; background: #fff; }
+    .form-row { display: flex; border-bottom: 1px solid #e5e5e5; }
+    .form-row > label { width: 140px; flex-shrink: 0; padding: 16px 12px; background: #f7f9fc;
+                        font-size: 14px; font-weight: 600; }
+    .form-row > label .req { color: #d93025; font-size: 12px; margin-left: 2px; }
+    .form-row > .field { flex: 1; padding: 10px 16px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .field input[type=text], .field input[type=date], .field select {
+      padding: 7px 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
+    .field input[type=text].wide { width: 100%; box-sizing: border-box; }
+    .field .hint { color: #888; font-size: 12px; }
+    .field .error { flex-basis: 100%; color: #d93025; font-size: 12px; }
+    .form-actions { display: flex; justify-content: space-between; margin: 24px 0; }
+    .btn { display: inline-block; padding: 8px 20px; border: 1px solid #1f3a5f; border-radius: 4px;
+           background: #fff; color: #1f3a5f; text-decoration: none; font-size: 14px; cursor: pointer; }
+    .btn-primary { background: #1f3a5f; color: #fff; }
+	.slot { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+	.btn-sm { padding: 4px 10px; font-size: 13px; }
+  </style>
+</head>
+
+<body>
+  <section layout:fragment="page-head">
+    <div th:replace="~{fragments/page_head :: head(${courseId != null} ? '강의 수정' : '강의 등록', '수업', null)}"></div>
+  </section>
+
+  <div layout:fragment="content">
+    <form th:action="${courseId != null} ? @{|/course/modify/${courseId}|} : @{/course/create}"
+          th:object="${courseForm}" method="post">
+
+      <div class="form-box">
+
+        <div class="form-row">
+          <label>강의명<span class="req">필수</span></label>
+          <div class="field">
+            <input type="text" class="wide" th:field="*{courseTitle}" maxlength="50" placeholder="강의명을 입력하세요">
+            <span class="error" th:if="${#fields.hasErrors('courseTitle')}" th:errors="*{courseTitle}"></span>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <label>과목 선택 / 학년<span class="req">필수</span></label>
+          <div class="field">
+            <select th:field="*{subjectId}">
+              <option value="">과목 선택</option>
+              <option th:each="s : ${subjects}" th:value="${s.subjectId}" th:text="${s.subjectName}"></option>
+            </select>
+            <select th:field="*{courseTarget}">
+              <option value="">학년 선택</option>
+              <option th:each="t : ${targetLabels}" th:value="${t.key}" th:text="${t.value}"></option>
+            </select>
+            <span class="error" th:if="${#fields.hasErrors('subjectId')}" th:errors="*{subjectId}"></span>
+            <span class="error" th:if="${#fields.hasErrors('courseTarget')}" th:errors="*{courseTarget}"></span>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <label>수업 기간<span class="req">필수</span></label>
+          <div class="field">
+            <input type="date" th:field="*{courseStartDate}"> ~
+            <input type="date" th:field="*{courseEndDate}">
+            <span class="error" th:if="${#fields.hasErrors('courseStartDate')}" th:errors="*{courseStartDate}"></span>
+            <span class="error" th:if="${#fields.hasErrors('courseEndDate')}" th:errors="*{courseEndDate}"></span>
+          </div>
+        </div>
+
+		<div class="form-row">
+		  <label>수업 시간<span class="req">필수</span></label>
+		  <div class="field" style="display:block">
+		    <div id="slotList">
+		      <div class="slot" th:each="s, i : *{times}">
+		        <select th:field="*{times[__${i.index}__].weekday}">
+		          <option value="">요일</option>
+		          <option th:each="w : ${weekdayLabels}" th:value="${w.key}" th:text="${w.value}"></option>
+		        </select>
+		        <select th:field="*{times[__${i.index}__].startTime}">
+		          <option value="">시작</option>
+		          <option th:each="t : ${startLabels}" th:value="${t.key}" th:text="|${t.key}교시 (${t.value})|"></option>
+		        </select> ~
+		        <select th:field="*{times[__${i.index}__].endTime}">
+		          <option value="">종료</option>
+		          <option th:each="t : ${endLabels}" th:value="${t.key}" th:text="|${t.key}교시 (${t.value})|"></option>
+		        </select>
+		        <button type="button" class="btn btn-sm slot-remove">삭제</button>
+		        <span class="error" th:if="${#fields.hasErrors('times[__${i.index}__].weekday')}"
+		              th:errors="*{times[__${i.index}__].weekday}"></span>
+		        <span class="error" th:if="${#fields.hasErrors('times[__${i.index}__].startTime')}"
+		              th:errors="*{times[__${i.index}__].startTime}"></span>
+		        <span class="error" th:if="${#fields.hasErrors('times[__${i.index}__].endTime')}"
+		              th:errors="*{times[__${i.index}__].endTime}"></span>
+		      </div>
+		    </div>
+
+		    <button type="button" id="slotAdd" class="btn btn-sm">+ 수업 시간 추가</button>
+		    <span class="hint">시간표에 자동 반영</span>
+		    <span class="error" th:if="${#fields.hasErrors('times')}" th:errors="*{times}"></span>
+		  </div>
+		</div>
+
+		<!-- 새 줄 복제용 템플릿 (화면에는 안 보임) -->
+		<template id="slotTpl">
+		  <div class="slot">
+		    <select name="times[__IDX__].weekday">
+		      <option value="">요일</option>
+		      <option th:each="w : ${weekdayLabels}" th:value="${w.key}" th:text="${w.value}"></option>
+		    </select>
+		    <select name="times[__IDX__].startTime">
+		      <option value="">시작</option>
+		      <option th:each="t : ${startLabels}" th:value="${t.key}" th:text="|${t.key}교시 (${t.value})|"></option>
+		    </select> ~
+		    <select name="times[__IDX__].endTime">
+		      <option value="">종료</option>
+		      <option th:each="t : ${endLabels}" th:value="${t.key}" th:text="|${t.key}교시 (${t.value})|"></option>
+		    </select>
+		    <button type="button" class="btn btn-sm slot-remove">삭제</button>
+		  </div>
+		</template>
+
+        <div class="form-row">
+          <label>수료 기준</label>
+          <div class="field">
+            <input type="text" class="wide" th:field="*{courseCriteria}" maxlength="200"
+                   placeholder="예) 출석 80% 이상 · 과제 2건 제출">
+          </div>
+        </div>
+
+      </div>
+
+      <div class="form-actions">
+        <a th:href="${courseId != null} ? @{|/course/detail/${courseId}|} : @{/course/list}" class="btn">취소</a>
+        <button type="submit" class="btn btn-primary">저장</button>
+      </div>
+    </form>
+	<script>
+	  (function () {
+	    var list = document.getElementById('slotList');
+	    var tpl = document.getElementById('slotTpl');
+
+	    // 줄 번호를 0부터 다시 매겨야 서버에서 times[0], times[1]... 순서대로 받는다
+	    function reindex() {
+	      list.querySelectorAll('.slot').forEach(function (row, i) {
+	        row.querySelectorAll('select').forEach(function (sel) {
+	          sel.name = sel.name.replace(/times\[\d+\]|times\[__IDX__\]/, 'times[' + i + ']');
+	        });
+	      });
+	    }
+
+	    document.getElementById('slotAdd').addEventListener('click', function () {
+	      var html = tpl.innerHTML.replace(/__IDX__/g, list.querySelectorAll('.slot').length);
+	      list.insertAdjacentHTML('beforeend', html);
+	    });
+
+	    list.addEventListener('click', function (e) {
+	      if (!e.target.classList.contains('slot-remove')) return;
+	      if (list.querySelectorAll('.slot').length <= 1) {   // 최소 한 줄은 유지
+	        alert('수업 시간은 한 개 이상 필요합니다.');
+	        return;
+	      }
+	      e.target.closest('.slot').remove();
+	      reindex();
+	    });
+	  })();
+	</script>
+  </div>
+</body>
+</html>
